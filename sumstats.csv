@@ -1,0 +1,4 @@
+cohort,filekey,build,cluster
+GenScot,GS20K_TOPMedFreeze5b_nomono_I1-bt-ad_ehr-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie,GRCh38,EUR
+BBJ,GWASsummary_ATC_N06A_Japanese_SakaueKanai2020.auto.txt,GRCh37,EAS
+FinnGen,summary_stats-finngen_R9_ANTIDEPRESSANTS,GRCh38,EUR
