@@ -25,9 +25,7 @@
 
 params.sumstats = "sumstats/*.{gz,sh}"
 params.meta = "sumstats.csv"
-params.fasta = "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta"
-params.fai = "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta.fai"
-params.dict = "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.dict"
+params.assembly = "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38"
 
 workflow {
 
@@ -49,6 +47,21 @@ workflow {
 	SUMSTATS_META_CH = META_CH
 		.cross(SUMSTATS_CH)
 		.map {it -> [it[0][1].cohort, it[0][1], it[0][0], it[1][1]] }
+
+/*
+	Reference files
+*/
+
+	FASTA_CH = Channel
+		.fromPath("${params.assembly}.fasta")
+	FAI_CH = Channel
+		.fromPath("${params.assembly}.fasta.fai")
+	DICT_CH = Channel
+		.fromPath("${params.assembly}.dict")
+
+/*
+	Process sumstats
+*/
 	
 	// run original sumstats through its reformatting script
 	FORMAT_CH = FORMAT(SUMSTATS_META_CH)
