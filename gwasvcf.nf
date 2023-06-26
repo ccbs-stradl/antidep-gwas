@@ -28,10 +28,10 @@ params.sumstats = "sumstats/*.{gz,sh}"
 params.meta = "sumstats.csv"
 
 // reference files
-// fasta, fai, and dict URL prefix
-params.assembly = "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38"
+// assembly fasta, fai, and dict 
+params.assembly = "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}"
 // dbsnp rsID vcf
-params.dbsnp = "https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz"
+params.dbsnp = "reference/common_all_20180418.vcf.{gz,gz.tbi}"
 
 workflow {
 
@@ -58,17 +58,12 @@ workflow {
 	Reference files
 */
 
-	FASTA_CH = Channel
-		.fromPath("${params.assembly}.fasta")
-	FAI_CH = Channel
-		.fromPath("${params.assembly}.fasta.fai")
-	DICT_CH = Channel
-		.fromPath("${params.assembly}.dict")
+	ASSEMBLY_CH = Channel
+		.fromFilePairs(params.assembly, size: 3)
 
 	DBSNP_CH = Channel
-		.fromPath([params.dbsnp, "${params.dbsnp}.tbi"])
-		.map { it -> [it.simpleName, it]}
-		.groupTuple()
+		.fromFilePairs(params.dbsnp, size: 2) { it -> it.simpleName }
+
 /*
 	Process sumstats
 */
