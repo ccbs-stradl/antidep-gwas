@@ -11,7 +11,7 @@ Cohorts
 ```sh
 mkdir reference
 curl "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}" -o "reference/Homo_sapiens_assembly38.#1"
-curl "https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.{gz,gz.tbi}" -o "reference/common_all_20180418.vcf.#1"
+curl "https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/All_20180418.vcf.{gz,gz.tbi}" -o "reference/All_20180418.vcf.#1"
 ```
 
 ## 1. GWAS VCF

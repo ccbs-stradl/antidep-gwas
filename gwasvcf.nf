@@ -31,7 +31,7 @@ params.meta = "sumstats.csv"
 // assembly fasta, fai, and dict 
 params.assembly = "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}"
 // dbsnp rsID vcf
-params.dbsnp = "reference/common_all_20180418.vcf.{gz,gz.tbi}"
+params.dbsnp = "reference/All_20180418.vcf.{gz,gz.tbi}"
 
 workflow {
 
