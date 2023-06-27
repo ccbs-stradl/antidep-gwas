@@ -3,3 +3,4 @@
 reference/
 .nextflow*
 work/
+vendor/

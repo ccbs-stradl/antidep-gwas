@@ -31,9 +31,13 @@ params.meta = "sumstats.csv"
 // assembly fasta, fai, and dict 
 params.assembly = "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}"
 // dbsnp rsID vcf
-params.dbsnp = "reference/All_20180418.vcf.{gz,gz.tbi}"
+params.dbsnp = "reference/dbsnp.v153.hg38.vcf.{gz,gz.tbi}"
 // hg19 to hg38 liftover chain
 params.chain = "reference/hg19ToHg38.over.chain.gz"
+
+// gwas2vcf files
+params.json = "sumstats/gwas.json"
+params.gwas2vcf = "vendor/gwas2vcf"
 
 workflow {
 
@@ -64,10 +68,19 @@ workflow {
 		.fromFilePairs(params.assembly, size: 3)
 
 	DBSNP_CH = Channel
-		.fromFilePairs(params.dbsnp, size: 2) { it -> it.simpleName }
+		.fromFilePairs(params.dbsnp, size: 2)
 
 	CHAIN_CH = Channel
 		.fromPath(params.chain)
+
+/*
+	gwas2vcf files
+*/
+	JSON_CH = Channel
+		.fromPath(params.json)
+	
+	GWAS2VCF_CH = Channel
+		.fromPath(params.gwas2vcf, type: "dir")
 
 /*
 	Process sumstats
@@ -107,16 +120,22 @@ workflow {
 			[it[0], [cohort: it[1].cohort, filekey: it[1].filekey, build: "GRCh38", cluster: it[1].cluster], it[2]]
 		}
 
-	DATA_CH = BUILDS_CH.GRCh38
-		.concat(BUILDS_37_TO_38_CH)
-		.combine(ASSEMBLY_CH)
-		.combine(DBSNP_CH)
-
 /*
 	GWASVCF
 */
 
-	//VCF_CH = VCF(FASTA_CH, FAI_CH, DICT_CH)
+	// merge b38 sumstats with lifted-over b37 sumstats
+	// tack on reference fasta and dbsnp vcf
+	// and gwas2vcf files
+	DATA_CH = BUILDS_CH.GRCh38
+		.concat(BUILDS_37_TO_38_CH)
+		.combine(ASSEMBLY_CH)
+		.combine(DBSNP_CH)
+		.combine(JSON_CH)
+		.combine(GWAS2VCF_CH)
+
+	VCF_CH = VCF(DATA_CH)
+		.view()
 
 }
 
@@ -147,7 +166,7 @@ process SELECT {
 	tag "${cohort} ${dbsnp}"
 
 	cpus = 1
-	memory =4.GB
+	memory =16.GB
 	time = '4h'
 
 	input:
@@ -163,7 +182,7 @@ process SELECT {
 
 	# extract variants from the dbSNP reference based on rsID
 	gatk SelectVariants \
-	-V ${dbsnp}.vcf.gz \
+	-V ${dbsnp}.gz \
 	--keep-ids ${cohort}.list \
 	-O ${cohort}-select.vcf.gz
 
@@ -258,8 +277,7 @@ process LIFT {
 	library(stringr)
 
 	gwas <- read_tsv("${gwas}")
-	rsid_liftover <- read_tsv("${rsid}", col_names = c("chr", "pos", "snp")) |>
-		mutate(chr=paste0("chr", chr))
+	rsid_liftover <- read_tsv("${rsid}", col_names = c("chr", "pos", "snp"))
 	cpid_liftover <- read_tsv("${lifted}", col_names = c("chr", "start", "end", "snp"))
 
 	# merge by snp and replace chr/pos with liftover positions
@@ -293,23 +311,28 @@ process LIFT {
 }
 
 process VCF {
+	tag "${cohort} ${assembly} ${dbsnp}"
+
+	container = "docker://mrcieu/gwas2vcf:latest"
 
 	cpus = 1
 	memory =16.GB
-	time = '4h'
+	time = '24h'
 
 	input:
-	path(fasta)
-	path(fai)
-	path(dict)
+	tuple val(cohort), val(dict), path(gwas), val(assembly), path(fasta), val(dbsnp), path(vcf), path(json), path(gwas2vcf)
 
 	output:
-	path("*.vcf")
+	tuple val(cohort), val(dict), path("${cohort}-${dict.cluster}.vcf.gz")
 
 	script:
 	"""
-	ls ${fasta}
-	ls ${fai}
-	ls ${dict}
+	python ${gwas2vcf}/main.py \
+	--data ${gwas} \
+	--json ${json} \
+	--id ${cohort} \
+	--ref ${assembly}.fasta \
+	--dbsnp ${dbsnp}.gz \
+	--out ./${cohort}-${dict.cluster}.vcf.gz
 	"""
 }
