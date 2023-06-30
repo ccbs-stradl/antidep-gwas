@@ -1,4 +1,4 @@
-nextflow.enable.dsl=2
+nextflow.preview.dsl=2
 
 /* 
 	Convert sumstats to GWAS VCF format
@@ -65,22 +65,22 @@ workflow {
 */
 
 	ASSEMBLY_CH = Channel
-		.fromFilePairs(params.assembly, size: 3)
+		.fromFilePairs(params.assembly, size: 3, checkIfExists: true)
 
 	DBSNP_CH = Channel
-		.fromFilePairs(params.dbsnp, size: 2)
+		.fromFilePairs(params.dbsnp, size: 2, checkIfExists: true)
 
 	CHAIN_CH = Channel
-		.fromPath(params.chain)
+		.fromPath(params.chain, checkIfExists: true)
 
 /*
 	gwas2vcf files
 */
 	JSON_CH = Channel
-		.fromPath(params.json)
+		.fromPath(params.json, checkIfExists: true)
 	
 	GWAS2VCF_CH = Channel
-		.fromPath(params.gwas2vcf, type: "dir")
+		.fromPath(params.gwas2vcf, type: "dir", checkIfExists: true)
 
 /*
 	Process sumstats
@@ -135,15 +135,12 @@ workflow {
 		.combine(GWAS2VCF_CH)
 
 	VCF_CH = VCF(DATA_CH)
-		.view()
 
 }
 
 // Reformat sumstats for GWASVCF input
 process FORMAT {
 	tag "${cohort}"
-
-	executor = 'local'
 
 	cpus = 1
 	memory = 1.GB
@@ -166,7 +163,7 @@ process SELECT {
 	tag "${cohort} ${dbsnp}"
 
 	cpus = 1
-	memory =16.GB
+	memory =32.GB
 	time = '4h'
 
 	input:
@@ -259,7 +256,7 @@ process LIFT {
 	tag "${cohort}"
 
 	cpus = 1
-	memory =4.GB
+	memory =16.GB
 	time = '1h'
 
 	input:
@@ -270,7 +267,7 @@ process LIFT {
 
 	script:
 	"""
-	#! /bin/env Rscript
+	#!/bin/env Rscript
 
 	library(readr)
 	library(dplyr)
@@ -314,6 +311,8 @@ process VCF {
 	tag "${cohort} ${assembly} ${dbsnp}"
 
 	container = "docker://mrcieu/gwas2vcf:latest"
+
+	publishDir "vcf", mode: "copy"
 
 	cpus = 1
 	memory =16.GB

@@ -4,3 +4,4 @@ reference/
 .nextflow*
 work/
 vendor/
+bin/
