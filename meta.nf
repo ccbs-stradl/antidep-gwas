@@ -5,10 +5,14 @@ nextflow.enable.dsl=2
 */
 
 params.vcf = "vcf/*.vcf.gz"
+params.ref = "reference/all_hg38.{pgen,psam,pvar.zst}"
 
 workflow {
     VCF_CH = Channel
         .fromPath(params.vcf)
+
+    REF_CH = Channel
+        .fromFilePairs(params.ref, size: 3)
 
     /*
         MR-MEGA
@@ -27,6 +31,13 @@ workflow {
         .flatten()
 
     MANHATTAN(MEGA_ASSOC_CH)
+
+    REF_BED_CH = REF_BED(MEGA_POST_CH, REF_CH)
+
+    ASSOC_REF_CH = MEGA_ASSOC_CH
+        .combine(REF_BED_CH)
+
+    CLUMP_CH = CLUMP(ASSOC_REF_CH)
 }
 
 /* Query VCF to create MR-MEGA GWA input file 
@@ -144,7 +155,8 @@ process MEGA_POST {
         mutate(`P-value_association` = pchisq(chisq_association, ndf_association, lower.tail=FALSE),
                `P-value_ancestry_het` = pchisq(chisq_ancestry_het, ndf_ancestry_het, lower.tail=FALSE),
                `P-value_residual_het` = pchisq(chisq_residual_het, ndf_residual_het, lower.tail=FALSE)
-        )
+        ) |>
+        filter(`P-value_association` > 0, `P-value_ancestry_het` > 0, `P-value_residual_het` > 0)
 
     mega_assoc <- mega_p |>
         transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_association`)
@@ -197,4 +209,67 @@ process MANHATTAN {
 	fastqq(p1=pull(mega_p, P), maxP=NULL)
 	dev.off()
 	"""
+}
+
+process REF_BED {
+    tag "${ref}"
+
+    cpus = 1
+    memory = 8.GB
+    time = '10m'
+
+    input:
+    tuple path(result), path(assoc)
+    tuple val(ref), path(pgen)
+
+    output:
+    tuple val(ref), path("${ref}.{bed,bim,fam}")
+
+    script:
+    """
+    # chr/pos to extract
+    gunzip -c ${result} | awk 'NR > 1 {print \$2, \$3, \$3, \$1}' > ${result.baseName}.bed1
+    # rename CPIDs to rsID
+    gunzip -c ${result} | awk 'NR > 1 {print \$2":"\$3":"\$5":"\$4, \$1}' > ${result.baseName}.names
+
+    plink2 \
+    --make-bed \
+    --pfile 'vzs' ${ref} \
+    --extract 'bed1' ${result.baseName}.bed1 \
+    --update-name ${result.baseName}.names \
+    --out ${ref} \
+    --allow-extra-chr \
+	--threads ${task.cpus} \
+	--memory ${task.memory.bytes.intdiv(1000000)}
+    """
+}
+
+process CLUMP {
+    tag "${ref}"
+
+    publishDir 'meta', mode: 'copy'
+
+    cpus = 8
+    memory = 8.GB
+    time = '1h'
+
+    input:
+    tuple path(assoc), val(ref), path(bed)
+
+    output:
+    tuple path("${assoc.baseName}.clumped"), path("${assoc.baseName}.log")
+
+    script:
+    """
+    plink \
+    --clump ${assoc} \
+    --clump-p1 5e-7 \
+    --clump-p2 5e-5 \
+    --clump-r2 0.4 \
+    --clump-kb 3000 \
+    --bfile ${ref} \
+    --out ${assoc.baseName} \
+	--threads ${task.cpus} \
+	--memory ${task.memory.bytes.intdiv(1000000)}
+    """
 }
