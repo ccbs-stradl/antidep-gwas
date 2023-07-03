@@ -6,6 +6,7 @@ nextflow.enable.dsl=2
 
 params.vcf = "vcf/*.vcf.gz"
 params.ref = "reference/all_hg38.{pgen,psam,pvar.zst}"
+params.genes = "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg38_v40_symbol_gene_names.txt"
 
 workflow {
     VCF_CH = Channel
@@ -13,6 +14,9 @@ workflow {
 
     REF_CH = Channel
         .fromFilePairs(params.ref, size: 3)
+
+    GENES_CH = Channel
+        .fromPath(params.genes)
 
     /*
         MR-MEGA
@@ -36,6 +40,7 @@ workflow {
 
     ASSOC_REF_CH = MEGA_ASSOC_CH
         .combine(REF_BED_CH)
+        .combine(GENES_CH)
 
     CLUMP_CH = CLUMP(ASSOC_REF_CH)
 }
@@ -254,15 +259,19 @@ process CLUMP {
     time = '1h'
 
     input:
-    tuple path(assoc), val(ref), path(bed)
+    tuple path(assoc), val(ref), path(bed), path(genes)
 
     output:
-    tuple path("${assoc.baseName}.clumped"), path("${assoc.baseName}.log")
+    tuple path("${assoc.baseName}.clumped"), path("${assoc.baseName}.clumped.ranges"), path("${assoc.baseName}.log")
 
     script:
     """
+    tail -n +2 ${genes} > ${genes.baseName}.bed1
+
     plink \
     --clump ${assoc} \
+    --clump-range ${genes.baseName}.bed1 \
+    --clump-range-border 1000 \
     --clump-p1 5e-7 \
     --clump-p2 5e-5 \
     --clump-r2 0.4 \
