@@ -2,6 +2,8 @@
 *.gz.tbi
 reference/
 .nextflow*
+hail-*.log
 work/
 vendor/
 bin/
+mt/
