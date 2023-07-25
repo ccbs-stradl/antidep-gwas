@@ -32,6 +32,6 @@ git clone https://github.com/MRCIEU/gwas2vcf.git vendor/gwas2vcf
 Convert sumstats to [GWAS VCF](https://github.com/MRCIEU/gwas-vcf-specification) format. 
 
 ```sh
-nextflow run gwasvcf.nf --sumstats sumstats/*.{gz,sh} -resume
+nextflow run gwasvcf.nf --sumstats "sumstats/*.{gz,sh}" -resume
 ```
 

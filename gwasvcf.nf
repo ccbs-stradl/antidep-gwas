@@ -58,7 +58,7 @@ workflow {
 	// merge sumstats and meta data information
 	SUMSTATS_META_CH = META_CH
 		.cross(SUMSTATS_CH)
-		.map {it -> [it[0][1].cohort, it[0][1], it[0][0], it[1][1]] }
+		.map {it -> ["${it[0][1].cohort}-${it[0][1].pheno}-${it[0][1].cluster}", it[0][1], it[0][0], it[1][1]] }
 
 /*
 	Reference files
@@ -117,7 +117,7 @@ workflow {
 	// update sumstats to new build
 	BUILDS_37_TO_38_CH = LIFT(BUILDS_37_LIFTED_CH)
 		.map { it -> 
-			[it[0], [cohort: it[1].cohort, filekey: it[1].filekey, build: "GRCh38", cluster: it[1].cluster], it[2]]
+			[it[0], [cohort: it[1].cohort, pheno: it[1].pheno, filekey: it[1].filekey, build: "GRCh38", cluster: it[1].cluster], it[2]]
 		}
 
 /*
@@ -140,53 +140,57 @@ workflow {
 
 // Reformat sumstats for GWASVCF input
 process FORMAT {
-	tag "${cohort}"
+	tag "${dataset}"
 
 	cpus = 1
 	memory = 1.GB
 	time = '10m'
 
 	input:
-	tuple val(cohort), val(dict), val(filekey), path(sumstats)
+	tuple val(dataset), val(dict), val(filekey), path(sumstats)
 
 	output:
-	tuple val(cohort), val(dict), path("${cohort}.txt")
+	tuple val(dataset), val(dict), path("${dataset}.txt")
 
 	shell:
 	"""
-	sh ${filekey}.sh ${filekey}.gz ${cohort}.txt
+	sh ${filekey}.sh ${filekey}.gz ${dataset}.txt
 	"""
 }
 
 // get rsIDs for GWAS variants from dbSNP
 process SELECT {
-	tag "${cohort} ${dbsnp}"
+	tag "${dataset} ${dbsnp}"
+	
+	scratch true
+	stageInMode 'copy'
+	stageOutMode 'copy'
 
 	cpus = 1
 	memory =32.GB
 	time = '4h'
 
 	input:
-	tuple val(cohort), val(dict), path(gwas), val(dbsnp), path(dbsnp_vcf)
+	tuple val(dataset), val(dict), path(gwas), val(dbsnp), path(dbsnp_vcf)
 
 	output:
-	tuple val(cohort), val(dict), path(gwas, includeInputs: true), path("${cohort}-rsids.tsv")
+	tuple val(dataset), val(dict), path(gwas, includeInputs: true), path("${dataset}-rsids.tsv")
 
 	script:
 	"""
 	# get list of SNPs from the GWAS
-	cat ${gwas} | awk '{if(NR > 1) {print \$10}}' > ${cohort}.list
+	cat ${gwas} | awk '{if(NR > 1) {print \$10}}' > ${dataset}.list
 
 	# extract variants from the dbSNP reference based on rsID
 	gatk SelectVariants \
 	-V ${dbsnp}.gz \
-	--keep-ids ${cohort}.list \
-	-O ${cohort}-select.vcf.gz
+	--keep-ids ${dataset}.list \
+	-O ${dataset}-select.vcf.gz
 
 	# get chrom, pos, and id for selected rsIDs
 	bcftools query \
 	-f "%CHROM\\t%POS\\t%ID\n" \
-	${cohort}-select.vcf.gz > ${cohort}-rsids.tsv
+	${dataset}-select.vcf.gz > ${dataset}-rsids.tsv
 	"""
 }
 
@@ -194,17 +198,17 @@ process SELECT {
 // split sumstats into parts that can/cannot be lifted by rsID
 // output a cpid list to be lifted in bed format
 process PRELIFT {
-	tag "${cohort}"
+	tag "${dataset}"
 
 	cpus = 1
 	memory =16.GB
 	time = '4h'
 
 	input:
-	tuple val(cohort), val(dict), path(gwas), path(rsid)
+	tuple val(dataset), val(dict), path(gwas), path(rsid)
 
 	output:
-	tuple val(cohort), val(dict), path(gwas, includeInputs: true), path(rsid, includeInputs: true), path("${cohort}-cpid.bed")
+	tuple val(dataset), val(dict), path(gwas, includeInputs: true), path(rsid, includeInputs: true), path("${dataset}-cpid.bed")
 
 	script:
 	"""
@@ -222,48 +226,48 @@ process PRELIFT {
 	bed_lift_by_cpid <- gwas_lift_by_cpid |>
 		transmute(chr, pos-1, pos, snp)
 
-	write_tsv(bed_lift_by_cpid, "${cohort}-cpid.bed", col_names=FALSE)
+	write_tsv(bed_lift_by_cpid, "${dataset}-cpid.bed", col_names=FALSE)
 	"""
 }
 
 // liftover cpids using chain file
 process LIFTOVER {
-	tag "${cohort} ${chain}"
+	tag "${dataset} ${chain}"
 
 	cpus = 1
 	memory =4.GB
 	time = '1h'
 
 	input:
-	tuple val(cohort), val(dict), path(gwas), path(rsid), path(cpid), path(chain)
+	tuple val(dataset), val(dict), path(gwas), path(rsid), path(cpid), path(chain)
 
 	output:
-	tuple val(cohort), val(dict), path(gwas), path(rsid), path("${cohort}-cpid-lifted.bed"), path("${cohort}-cpid-unlifted.bed")
+	tuple val(dataset), val(dict), path(gwas), path(rsid), path("${dataset}-cpid-lifted.bed"), path("${dataset}-cpid-unlifted.bed")
 
 	script:
 	"""
 	liftOver \
 	${cpid} \
 	${chain} \
-	${cohort}-cpid-lifted.bed \
-	${cohort}-cpid-unlifted.bed
+	${dataset}-cpid-lifted.bed \
+	${dataset}-cpid-unlifted.bed
 	"""
 }
 
 
 // update sumstats with liftover files
 process LIFT {
-	tag "${cohort}"
+	tag "${dataset}"
 
 	cpus = 1
 	memory =16.GB
 	time = '1h'
 
 	input:
-	tuple val(cohort), val(dict), path(gwas), path(rsid), path(lifted), path(unlifted)
+	tuple val(dataset), val(dict), path(gwas), path(rsid), path(lifted), path(unlifted)
 
 	output:
-	tuple val(cohort), val(dict), path("${gwas.simpleName}-lifted.txt")
+	tuple val(dataset), val(dict), path("${gwas.simpleName}-lifted.txt")
 
 	script:
 	"""
@@ -308,9 +312,12 @@ process LIFT {
 }
 
 process VCF {
-	tag "${cohort} ${assembly} ${dbsnp}"
+	tag "${dataset} ${assembly} ${dbsnp}"
 
 	container = "docker://mrcieu/gwas2vcf:latest"
+	scratch true
+	stageInMode 'copy'
+	stageOutMode 'copy'
 
 	publishDir "vcf", mode: "copy"
 
@@ -319,19 +326,19 @@ process VCF {
 	time = '24h'
 
 	input:
-	tuple val(cohort), val(dict), path(gwas), val(assembly), path(fasta), val(dbsnp), path(vcf), path(json), path(gwas2vcf)
+	tuple val(dataset), val(dict), path(gwas), val(assembly), path(fasta), val(dbsnp), path(vcf), path(json), path(gwas2vcf)
 
 	output:
-	tuple val(cohort), val(dict), path("${cohort}-${dict.cluster}.vcf.gz")
+	tuple val(dataset), val(dict), path("${dataset}.vcf.gz")
 
 	script:
 	"""
 	python ${gwas2vcf}/main.py \
 	--data ${gwas} \
 	--json ${json} \
-	--id ${cohort} \
+	--id ${dataset} \
 	--ref ${assembly}.fasta \
 	--dbsnp ${dbsnp}.gz \
-	--out ./${cohort}-${dict.cluster}.vcf.gz
+	--out ./${dataset}.vcf.gz
 	"""
 }
