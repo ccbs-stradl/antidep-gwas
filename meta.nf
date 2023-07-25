@@ -43,6 +43,8 @@ workflow {
         .combine(GENES_CH)
 
     CLUMP_CH = CLUMP(ASSOC_REF_CH)
+
+    MA_CH = MA(MEGA_ASSOC_CH)
 }
 
 /* Query VCF to create MR-MEGA GWA input file 
@@ -180,7 +182,7 @@ process MEGA_POST {
 
 }
 
-/* merge sumstats */
+/* manhattan plot */
 process MANHATTAN {
 	tag "Plotting ${mega}"
 	publishDir 'meta', mode: 'copy'
@@ -282,3 +284,24 @@ process CLUMP {
 	--memory ${task.memory.bytes.intdiv(1000000)}
     """
 }
+
+process MA {
+    tag "${assoc}"
+
+    cpus = 1
+    memory = 1.GB
+    time = '10m'
+
+    input: 
+    path(assoc)
+
+    output:
+    path("${assoc.baseName}.ma")
+
+    script:
+    """
+    cat ${assoc} | awk '{OFS = "\\t"; if(NR == 1) {print "SNP", "A1", "A2", "freq", "BETA", "SE", "P", "N"} else {print \$2, \$4, \$5, }}'
+    """
+}
+
+(CHR, SNP, BP, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_association`)
