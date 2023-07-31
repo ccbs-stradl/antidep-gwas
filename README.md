@@ -35,3 +35,4 @@ Convert sumstats to [GWAS VCF](https://github.com/MRCIEU/gwas-vcf-specification)
 nextflow run gwasvcf.nf --sumstats "sumstats/*.{gz,sh}" -resume
 ```
 
+

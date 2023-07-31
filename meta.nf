@@ -33,20 +33,22 @@ workflow {
     MEGA_POST_CH = MEGA_POST(MEGA_CH)
 
     MEGA_ASSOC_CH = MEGA_POST_CH
-        .map(it -> it[1])
+        .map { it -> it[1] }
         .flatten()
 
     MANHATTAN(MEGA_ASSOC_CH)
-    
-    REF_BED_CH = REF_BED(MEGA_POST_CH, REF_CH)
 
     ASSOC_REF_CH = MEGA_ASSOC_CH
-        .combine(REF_BED_CH)
+        .combine(REF_CH)
+    
+    ASSOC_BED_CH = REF_BED(ASSOC_REF_CH)
+
+    ASSOC_GENES_CH = ASSOC_BED_CH
         .combine(GENES_CH)
 
-    CLUMP_CH = CLUMP(ASSOC_REF_CH)
+    CLUMP_CH = CLUMP(ASSOC_GENES_CH)
 
-    MA_CH = MA(MEGA_ASSOC_CH)
+    //MA_CH = MA(MEGA_ASSOC_CH)
 	
 }
 
@@ -78,10 +80,12 @@ process MEGA_IN {
     script:
     """
     # bcf query to get required columns
-    # remove variants with missing markername
+    # remove variants with MAF < 0.5%, INFO < 0.4
+    # rename missing variants names to CPID
     bcftools query \
+    -i 'FORMAT/AF >= 0.005 & FORMAT/AF <= 0.995 & (FORMAT/SI >= 0.4 | FORMAT/SI = ".")' \
 	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%AF]\\t[%SS]\\t[%NC]\\t%CHROM\\t%POS\\n" \
-	${vcf} | awk '\$1 != "."' > ${vcf.simpleName}.query.txt
+	${vcf} | awk '{if(\$1 == ".") \$1 = \$9":"\$10; print \$0}' > ${vcf.simpleName}.query.txt
 
     # header
     echo "" | awk 'OFS = "\\t" {print "MARKERNAME", "EA", "NEA", "OR", "OR_95L", "OR_95U", "EAF", "N", "CHROMOSOME", "POSITION"}' > ${vcf.simpleName}.txt
@@ -117,7 +121,7 @@ process MEGA {
     publishDir "meta", pattern: "*.log", mode: "copy"
 
     cpus = 1
-    memory = 32.GB
+    memory = 16.GB
     time = '1h'
 
     input:
@@ -167,7 +171,7 @@ process MEGA_POST {
                `P-value_ancestry_het` = pchisq(chisq_ancestry_het, ndf_ancestry_het, lower.tail=FALSE),
                `P-value_residual_het` = pchisq(chisq_residual_het, ndf_residual_het, lower.tail=FALSE)
         ) |>
-        filter(`P-value_association` > 0, `P-value_ancestry_het` > 0, `P-value_residual_het` > 0)
+    arrange(Chromosome, Position)
 
     mega_assoc <- mega_p |>
         transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_association`)
@@ -223,32 +227,31 @@ process MANHATTAN {
 }
 
 process REF_BED {
-    tag "${ref}"
+    tag "${assoc.baseName}-${ref}"
 
     cpus = 1
     memory = 8.GB
     time = '10m'
 
     input:
-    tuple path(result), path(assoc)
-    tuple val(ref), path(pgen)
+    tuple path(assoc), val(ref), path(pgen)
 
     output:
-    tuple val(ref), path("${ref}.{bed,bim,fam}")
+    tuple path(assoc, includeInputs: true), val("ref"), path("ref.{bed,bim,fam}")
 
     script:
     """
     # chr/pos to extract
-    gunzip -c ${result} | awk 'NR > 1 {print \$2, \$3, \$3, \$1}' > ${result.baseName}.bed1
+    cat ${assoc} | awk 'NR > 1 {print \$1, \$3, \$3}' > ${assoc.baseName}.bed1
     # rename CPIDs to rsID
-    gunzip -c ${result} | awk 'NR > 1 {print \$2":"\$3":"\$5":"\$4, \$1}' > ${result.baseName}.names
+    cat ${assoc} | awk 'NR > 1 {print \$1":"\$3":"\$5":"\$4, \$2}' > ${assoc.baseName}.names
 
     plink2 \
     --make-bed \
     --pfile 'vzs' ${ref} \
-    --extract 'bed1' ${result.baseName}.bed1 \
-    --update-name ${result.baseName}.names \
-    --out ${ref} \
+    --extract 'bed1' ${assoc.baseName}.bed1 \
+    --update-name ${assoc.baseName}.names \
+    --out ref \
     --allow-extra-chr \
 	--threads ${task.cpus} \
 	--memory ${task.memory.bytes.intdiv(1000000)}
@@ -256,9 +259,11 @@ process REF_BED {
 }
 
 process CLUMP {
-    tag "${ref}"
+    tag "${assoc.baseName}"
 
     publishDir 'meta', mode: 'copy'
+
+    errorStrategy 'ignore'
 
     cpus = 8
     memory = 8.GB
@@ -278,7 +283,7 @@ process CLUMP {
     --clump ${assoc} \
     --clump-range ${genes.baseName}.bed1 \
     --clump-range-border 1000 \
-    --clump-p1 5e-7 \
+    --clump-p1 5e-8 \
     --clump-p2 5e-5 \
     --clump-r2 0.4 \
     --clump-kb 3000 \
