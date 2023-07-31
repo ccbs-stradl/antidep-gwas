@@ -11,6 +11,7 @@ params.genes = "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_
 workflow {
     VCF_CH = Channel
         .fromPath(params.vcf)
+		.map { it -> [it.baseName.split("-")[1], it] }
 
     REF_CH = Channel
         .fromFilePairs(params.ref, size: 3)
@@ -23,9 +24,10 @@ workflow {
         https://genomics.ut.ee/en/tools
     */
 
-    MEGA_IN_CH = MEGA_IN(VCF_CH)
-        .collect()
-
+   MEGA_IN_CH = MEGA_IN(VCF_CH)
+        .groupTuple()
+		.filter { it -> it[1].size() >= 4 }
+	
     MEGA_CH = MEGA(MEGA_IN_CH)
     
     MEGA_POST_CH = MEGA_POST(MEGA_CH)
@@ -35,7 +37,7 @@ workflow {
         .flatten()
 
     MANHATTAN(MEGA_ASSOC_CH)
-
+    
     REF_BED_CH = REF_BED(MEGA_POST_CH, REF_CH)
 
     ASSOC_REF_CH = MEGA_ASSOC_CH
@@ -45,6 +47,7 @@ workflow {
     CLUMP_CH = CLUMP(ASSOC_REF_CH)
 
     MA_CH = MA(MEGA_ASSOC_CH)
+	
 }
 
 /* Query VCF to create MR-MEGA GWA input file 
@@ -63,14 +66,14 @@ process MEGA_IN {
     tag "${vcf}"
 
     cpus = 1
-    memory = 4.GB
+    memory = 1.GB
     time = '10m'
 
     input:
-    path(vcf)
+    tuple val(pheno), path(vcf)
 
     output:
-    path("${vcf.simpleName}.txt.gz")
+    tuple val(pheno), path("${vcf.simpleName}.txt.gz")
 
     script:
     """
@@ -109,6 +112,7 @@ process MEGA_IN {
 }
 
 process MEGA {
+    tag "${pheno}"
 
     publishDir "meta", pattern: "*.log", mode: "copy"
 
@@ -117,7 +121,7 @@ process MEGA {
     time = '1h'
 
     input:
-    path(gwas)
+    tuple val(pheno), path(gwas)
 
     output:
     tuple path("*.result"), path("*.log")
@@ -127,8 +131,8 @@ process MEGA {
     ls *.txt.gz > mrmega.in
 
     MR-MEGA --filelist mrmega.in \
-    --pc ${gwas.size() - 3} \
-    --out mrmega
+    --pc ${[gwas.size() - 3, 3].min()} \
+    --out mrmega-${pheno}
     """
 }
 
@@ -304,4 +308,4 @@ process MA {
     """
 }
 
-(CHR, SNP, BP, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_association`)
+// (CHR, SNP, BP, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_association`)
