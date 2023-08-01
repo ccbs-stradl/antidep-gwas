@@ -10,8 +10,7 @@ params.genes = "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_
 
 workflow {
     VCF_CH = Channel
-        .fromPath(params.vcf)
-		.map { it -> [it.baseName.split("-")[1], it] }
+        .fromPath(params.vcf) 
 
     REF_CH = Channel
         .fromFilePairs(params.ref, size: 3)
@@ -24,7 +23,10 @@ workflow {
         https://genomics.ut.ee/en/tools
     */
 
-   MEGA_IN_CH = MEGA_IN(VCF_CH)
+    MEGA_VCF_CH = VCF_CH
+		.map { it -> [it.baseName.split("-")[1], it] }
+
+    MEGA_IN_CH = MEGA_IN(MEGA_VCF_CH)
         .groupTuple()
 		.filter { it -> it[1].size() >= 4 }
 	
@@ -36,7 +38,31 @@ workflow {
         .map { it -> it[1] }
         .flatten()
 
-    MANHATTAN(MEGA_ASSOC_CH)
+    /*
+        Fixed effects (PLINK)
+        https://www.cog-genomics.org/plink/1.9/postproc#meta_analysis
+    */
+
+    FIXED_VCF_CH = VCF_CH
+        .map { it -> [ it.simpleName.split("-"), it ] }
+        .map { it -> [ ["pheno": it[0][1], "cluster": it[0][2]], it[1] ] }
+
+    FIXED_IN_CH = FIXED_IN(FIXED_VCF_CH)
+        .groupTuple()
+        .filter { it -> it[1].size() >= 2 }
+    
+    FIXED_CH = FIXED(FIXED_IN_CH)
+    
+    FIXED_POST_CH = FIXED_POST(FIXED_CH)
+
+    FIXED_ASSOC_CH = FIXED_POST_CH
+        .map { it -> it[1] }
+        .flatten()
+
+    ASSOC_CH = MEGA_ASSOC_CH
+        .concat(FIXED_ASSOC_CH)
+
+    MANHATTAN(ASSOC_CH)
 
     ASSOC_REF_CH = MEGA_ASSOC_CH
         .combine(REF_CH)
@@ -188,6 +214,127 @@ process MEGA_POST {
     write_tsv(mega_residual, "${result}.residual.assoc")
     """
 
+}
+
+
+/* Query VCF to create PLINK .assoc input file 
+    1) SNP – snp name
+    2) A1 – effect allele
+    3) A2 – non effect allele
+    4) OR - odds ratio
+    5) SE - standard error of log(OR)
+    6) P - p-value
+    7) ESS - effective sample size
+    8) CHR  - chromosome of marker
+    9) BP - position of marker
+*/
+process FIXED_IN {
+    tag "${vcf}"
+
+    cpus = 1
+    memory = 1.GB
+    time = '10m'
+
+    input:
+    tuple val(dataset), path(vcf)
+
+    output:
+    tuple val(dataset), path("${vcf.simpleName}.assoc")
+
+    script:
+    """
+    # bcf query to get required columns
+    # remove variants with MAF < 0.5%, INFO < 0.4
+    # rename missing variants names to CPID
+    bcftools query \
+    -i 'FORMAT/AF >= 0.005 & FORMAT/AF <= 0.995 & (FORMAT/SI >= 0.4 | FORMAT/SI = ".")' \
+	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%LP]\\t[%AF]\\t[%SS]\\t[%NC]\\t%CHROM\\t%POS\\n" \
+	${vcf} | awk '{if(\$1 == ".") \$1 = \$10":"\$11; print \$0}' > ${vcf.simpleName}.query.txt
+
+    # header
+    echo "" | awk 'OFS = "\\t" {print "SNP", "A1", "A2", "OR", "SE", "P", "ESS", "CHR", "BP"}' > ${vcf.simpleName}.assoc
+
+    # reformat
+    # turn beta effect size back into OR
+    # turn -log10(p) back into p
+    # calculate N as effective sample size
+    cat ${vcf.simpleName}.query.txt | awk \
+    'OFS = "\\t" {print \$1, \$2, \$3, exp(\$4), \$5, 10^(-\$6), 4*\$9*(\$8-\$9)/(\$8), \$10, \$11}' >> ${vcf.simpleName}.assoc
+    """
+/*
+    column numbers of bcf query
+     1	%ID
+     2	%ALT
+     3	%REF
+     4	[%ES]
+     5	[%SE]
+     6  [%LP]
+     7	[%AF]
+     8	[%SS]
+     9	[%NC]
+    10	%CHROM
+    11	%POS
+*/
+}
+
+process FIXED {
+    tag "${dataset.pheno}-${dataset.cluster}"
+
+    publishDir "meta", pattern: "*.log", mode: "copy"
+
+    cpus = 4
+    memory = 8.GB
+    time = '1h'
+
+    input:
+    tuple val(dataset), path(gwas)
+
+    output:
+    tuple val(dataset), path("*.meta"), path("*.log")
+
+    script:
+    """
+    plink \
+    --meta-analysis ${gwas} \
+    --out fixed-${dataset.pheno}-${dataset.cluster} \
+	--threads ${task.cpus} \
+	--memory ${task.memory.bytes.intdiv(1000000)}
+    """
+}
+
+process FIXED_POST {
+    tag "${meta}"
+
+    publishDir "meta", pattern: "*.gz", mode: 'copy'
+
+    cpus = 1
+    memory = 16.GB
+    time = '10m'
+
+    input:
+    tuple val(dataset), path(meta), path(log)
+
+    output:
+    tuple path("${meta}.gz"), path("*.assoc")
+
+    script:
+    """
+    #!Rscript
+	library(dplyr)
+	library(readr)
+
+    meta <- read_table("${meta}")
+
+    assoc <- meta |>
+        select(CHR, BP, A1, A2, OR, P)
+    
+    het <- meta |>
+        select(CHR, BP, A1, A2, OR, P=Q)
+
+    write_tsv(meta, "${meta}.gz")
+    write_tsv(assoc, "${meta.baseName}.assoc")
+    write_tsv(het, "${meta.baseName}.het.assoc")
+    """
 }
 
 /* manhattan plot */
