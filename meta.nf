@@ -23,9 +23,11 @@ workflow {
         https://genomics.ut.ee/en/tools
     */
 
+    // key to phenotype
     MEGA_VCF_CH = VCF_CH
 		.map { it -> [it.baseName.split("-")[1], it] }
 
+    // conduct meta-analysis if there are at least 4 cohorts
     MEGA_IN_CH = MEGA_IN(MEGA_VCF_CH)
         .groupTuple()
 		.filter { it -> it[1].size() >= 4 }
@@ -43,10 +45,12 @@ workflow {
         https://www.cog-genomics.org/plink/1.9/postproc#meta_analysis
     */
 
+    // key to phenotype and cluster
     FIXED_VCF_CH = VCF_CH
         .map { it -> [ it.simpleName.split("-"), it ] }
         .map { it -> [ ["pheno": it[0][1], "cluster": it[0][2]], it[1] ] }
 
+    // conduct meta-analysis if there are at least 2 cohorts
     FIXED_IN_CH = FIXED_IN(FIXED_VCF_CH)
         .groupTuple()
         .filter { it -> it[1].size() >= 2 }
@@ -59,12 +63,23 @@ workflow {
         .map { it -> it[1] }
         .flatten()
 
+
+    /* 
+        Post analysis
+    */
+
     ASSOC_CH = MEGA_ASSOC_CH
         .concat(FIXED_ASSOC_CH)
 
-    MANHATTAN(ASSOC_CH)
+     MANHATTAN(ASSOC_CH)
 
-    ASSOC_REF_CH = MEGA_ASSOC_CH
+    // count number of GWsig variants
+    // further processing of results with 1 or more loci
+    ASSOC_GW_CH = GW(ASSOC_CH)
+        .filter { it -> it[1].toInteger() > 0 }
+        .map { it -> it[0] }
+
+    ASSOC_REF_CH = ASSOC_GW_CH
         .combine(REF_CH)
     
     ASSOC_BED_CH = REF_BED(ASSOC_REF_CH)
@@ -200,11 +215,14 @@ process MEGA_POST {
     arrange(Chromosome, Position)
 
     mega_assoc <- mega_p |>
-        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_association`)
+        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
+                  P=`P-value_association`, BETA=beta_0, SE=se_0, NMISS=Nsample)
     mega_ancestry <- mega_p |>
-        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_ancestry_het`)
+        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
+                   P=`P-value_ancestry_het`, BETA=beta_0, SE=se_0, NMISS=Nsample)
     mega_residual <- mega_p |>
-        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_residual_het`)
+        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
+                   P=`P-value_residual_het`, BETA=beta_0, SE=se_0, NMISS=Nsample)
 
 
     write_tsv(mega_p, "${result}.gz")
@@ -326,10 +344,11 @@ process FIXED_POST {
     meta <- read_table("${meta}")
 
     assoc <- meta |>
-        select(CHR, BP, A1, A2, OR, P)
+        select(CHR, SNP, BP, A1, A2, P, OR)
     
     het <- meta |>
-        select(CHR, BP, A1, A2, OR, P=Q)
+        filter(!is.na(Q)) |>
+        select(CHR, SNP, BP, A1, A2, P=Q, OR)
 
     write_tsv(meta, "${meta}.gz")
     write_tsv(assoc, "${meta.baseName}.assoc")
@@ -337,9 +356,30 @@ process FIXED_POST {
     """
 }
 
+/* gwsig variants */
+process GW {
+    tag "${assoc.baseName}"
+
+    cpus = 1
+    memory = 1.GB
+    time = '10m'
+
+    input:
+    path(assoc)
+
+    output:
+    tuple path(assoc, includeInputs: true), env(GW)
+
+    script:
+    """
+    GW=\$(cat ${assoc} | awk '\$6 <= 5e-8' | wc -l)
+    """
+
+}
+
 /* manhattan plot */
 process MANHATTAN {
-	tag "Plotting ${mega}"
+	tag "${assoc}"
 	publishDir 'meta', mode: 'copy'
 	
 	cpus = 1
@@ -347,7 +387,7 @@ process MANHATTAN {
 	time = '10m'
 	
 	input:
-	path(mega)
+	path(assoc)
 	
 	output:
 	path "*.png"
@@ -359,16 +399,16 @@ process MANHATTAN {
 	library(readr)
 	library(fastman)
 	
-	mega <- read_tsv("${mega}")
+	assoc <- read_tsv("${assoc}")
 
-    mega_p <- mega |> filter(P > 0)
+    assoc_p <- assoc |> filter(P > 0)
 	
-	png("${mega.baseName}.manhattan.png", width=10, height=6, units="in", res=300)
-	fastman(mega_p, chr = "CHR", bp = "BP", p = "P", maxP=NULL)
+	png("${assoc.baseName}.manhattan.png", width=10, height=6, units="in", res=300)
+	fastman(assoc_p, chr = "CHR", bp = "BP", p = "P", maxP=NULL)
 	dev.off()
 	
-	png("${mega.baseName}.qq.png", width=6, height=6, units="in", res=300)
-	fastqq(p1=pull(mega_p, P), maxP=NULL)
+	png("${assoc.baseName}.qq.png", width=6, height=6, units="in", res=300)
+	fastqq(p1=pull(assoc_p, P), maxP=NULL)
 	dev.off()
 	"""
 }
