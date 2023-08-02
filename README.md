@@ -35,4 +35,28 @@ Convert sumstats to [GWAS VCF](https://github.com/MRCIEU/gwas-vcf-specification)
 nextflow run gwasvcf.nf --sumstats "sumstats/*.{gz,sh}" -resume
 ```
 
+### 2. Multi-ancestry meta-analysis
 
+Meta-analyse multi-ancestry sumstats using [MR-MEGA](https://genomics.ut.ee/en/tools)
+
+```sh
+mkdir bin
+wget https://tools.gi.ut.ee/tools/MR-MEGA_v0.2.zip -d MR-MEGA
+cd MR-MEGA
+make
+cd ..
+mv MR-MEGA/MR-MEGA bin/
+```
+
+Run workflow
+```sh
+nextflow run meta.nf -resume
+```
+
+### 3. Hail
+
+Work with GWASVCF files in [Hail](https://hail.is). Merge VCFs and import to `MatrixTable`
+
+```sh
+nextflow run swath.nf -resume --name N06A
+```

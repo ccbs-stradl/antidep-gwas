@@ -1,5 +1,7 @@
 *.gz
 *.gz.tbi
+*.bgz
+*.zip
 reference/
 .nextflow*
 hail-*.log
@@ -8,3 +10,4 @@ vendor/
 bin/
 mt/
 meta/
+MR-MEGA
