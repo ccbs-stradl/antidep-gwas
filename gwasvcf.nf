@@ -1,4 +1,4 @@
-nextflow.preview.dsl=2
+nextflow.enable.dsl=2
 
 /* 
 	Convert sumstats to GWAS VCF format
@@ -125,16 +125,26 @@ workflow {
 */
 
 	// merge b38 sumstats with lifted-over b37 sumstats
-	// tack on reference fasta and dbsnp vcf
+	// tack on reference dbsnp vcf
 	// and gwas2vcf files
 	DATA_CH = BUILDS_CH.GRCh38
 		.concat(BUILDS_37_TO_38_CH)
+		.combine(DBSNP_CH)		
+	// subset sumstats and references file to each chromosome
+	CHR_CH = Channel.of(1..22, 'X')
+		.map { it -> "chr${it}" }
+	
+	DATA_CHR_CH = CHR(DATA_CH, CHR_CH)
 		.combine(ASSEMBLY_CH)
-		.combine(DBSNP_CH)
 		.combine(JSON_CH)
 		.combine(GWAS2VCF_CH)
 
-	VCF_CH = VCF(DATA_CH)
+	VCF_CHR_CH = VCF(DATA_CHR_CH)
+	VCF_TBI_CHR_CH = INDEX(VCF_CHR_CH)
+		.map { it -> [it[0], it[2], it[3]] }
+		.groupTuple()
+		
+	VCF_CH = CONCAT(VCF_TBI_CHR_CH)
 
 }
 
@@ -311,6 +321,34 @@ process LIFT {
 	"""
 }
 
+// subset to chromosome
+process CHR {
+	tag "${dataset} ${dbsnp} ${chr}"
+
+	cpus = 1
+	memory =4.GB
+	time = '3h'
+
+	input:
+	tuple val(dataset), val(dict), path(gwas), val(dbsnp), path(vcf)
+	each chr
+
+	output:
+	tuple val(dataset), val(dict), val(chr), path("${dataset}-${chr}.txt"), val("${vcf[0].simpleName}_${dataset}_${chr}"), path("${vcf[0].simpleName}_${dataset}_${chr}.vcf.{gz,gz.tbi}")
+
+	script:
+	"""
+	cat ${gwas} | awk 'NF == 1 || \$1 == "${chr}"' > ${dataset}-${chr}.txt
+	cat ${dataset}-${chr}.txt | awk '{OFS="\\t"; {print \$1, \$2-1, \$2}}' > ${dataset}_${chr}.bed
+	bgzip ${dataset}_${chr}.bed
+	tabix ${dataset}_${chr}.bed.gz
+	
+	bcftools view --targets-file ${dataset}_${chr}.bed.gz -o ${vcf[0].simpleName}_${dataset}_${chr}.vcf.gz ${dbsnp}.gz
+	tabix ${vcf[0].simpleName}_${dataset}_${chr}.vcf.gz
+	"""
+}
+
+// Convert to VCF
 process VCF {
 	tag "${dataset} ${assembly} ${dbsnp}"
 
@@ -319,17 +357,15 @@ process VCF {
 	stageInMode 'copy'
 	stageOutMode 'copy'
 
-	publishDir "vcf", mode: "copy"
-
 	cpus = 1
 	memory =16.GB
-	time = '24h'
+	time = '48h'
 
 	input:
-	tuple val(dataset), val(dict), path(gwas), val(assembly), path(fasta), val(dbsnp), path(vcf), path(json), path(gwas2vcf)
+	tuple val(dataset), val(dict), val(chr), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(json), path(gwas2vcf)
 
 	output:
-	tuple val(dataset), val(dict), path("${dataset}.vcf.gz")
+	tuple val(dataset), val(dict), path("${dataset}_${chr}.vcf.gz")
 
 	script:
 	"""
@@ -338,7 +374,48 @@ process VCF {
 	--json ${json} \
 	--id ${dataset} \
 	--ref ${assembly}.fasta \
-	--dbsnp ${dbsnp}.gz \
-	--out ./${dataset}.vcf.gz
+	--dbsnp ${dbsnp}.vcf.gz \
+	--out ./${dataset}_${chr}.vcf.gz
+	"""
+}
+
+// Index VCF
+process INDEX {
+	tag "${vcf.simpleName}"
+
+	cpus = 1
+	memory =4.GB
+	time = '30m'
+
+	input:
+	tuple val(dataset), val(dict), path(vcf)
+
+	output:
+	tuple val(dataset), val(dict), path(vcf, includeInputs: true), path("${vcf}.tbi")
+
+	script:
+	"""
+	tabix ${vcf}
+	"""
+}
+
+process CONCAT {
+	tag "${dataset}"
+	
+	publishDir "vcf", mode: "copy"
+
+	cpus = 1
+	memory = 4.GB
+	time = '1h'
+
+	input:
+	tuple val(dataset), path(vcf), path(tbi)
+
+	output:
+	path("${dataset}.vcf.gz")
+
+	script:
+	"""
+	bcftools concat --output ${dataset}.vcf.gz ${vcf}
 	"""
 }
