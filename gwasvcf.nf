@@ -146,6 +146,14 @@ workflow {
 		
 	VCF_CH = CONCAT(VCF_TBI_CHR_CH)
 
+	// additional annotations (AFCAS, AFCON, NE)
+	ANNOTATIONS_CH = ANNOTATIONS(DATA_CH)
+	
+	VCF_ANNOTATIONS_CH = VCF_CH
+		.join(ANNOTATIONS_CH)
+
+	VCF_ANNOTATED_CH = ANNOTATE(VCF_ANNOTATIONS_CH)
+
 }
 
 // Reformat sumstats for GWASVCF input
@@ -401,8 +409,6 @@ process INDEX {
 
 process CONCAT {
 	tag "${dataset}"
-	
-	publishDir "vcf", mode: "copy"
 
 	cpus = 1
 	memory = 4.GB
@@ -412,10 +418,58 @@ process CONCAT {
 	tuple val(dataset), path(vcf), path(tbi)
 
 	output:
-	path("${dataset}.vcf.gz")
+	tuple val(dataset), path("${dataset}-base.vcf.gz"), path("${dataset}-base.vcf.gz.tbi")
 
 	script:
 	"""
-	bcftools concat --output ${dataset}.vcf.gz ${vcf}
+	bcftools concat --output ${dataset}-base.vcf.gz ${vcf}
+	tabix ${dataset}-base.vcf.gz
+	"""
+}
+
+process ANNOTATIONS {
+	tag "${dataset}"
+
+	cpus = 1
+	memory = 1.GB
+	time = '10m'
+
+	input:
+	tuple val(dataset), val(dict), val(sumstats), val(dbsnp), path(vcf)
+
+	output:
+	tuple val(dataset), val("${dataset}-annot"), path("${dataset}-annot.{gz,gz.tbi}")
+
+	script:
+	"""
+	cat ${sumstats} | awk 'OFS="\\t" {if(NR == 1) {print "#CHROM", "POS", "AFCAS", "AFCON", "NE"} else {print \$1, \$2, \$13, \$14, (4*\$8*\$9)/(\$8+\$9)}}' | bgzip -c > ${dataset}-annot.gz
+	tabix -s1 -b2 -e2 ${dataset}-annot.gz
+	"""
+}
+
+process ANNOTATE {
+	tag "${dataset}"
+
+	publishDir "vcf", mode: "copy"
+
+	cpus = 1
+	memory = 4.GB
+	time = '1h'
+
+	input:
+	tuple val(dataset), path(vcf), path(tbi), val(annot), path(annotations)
+
+	output:
+	tuple val(dataset), path("${dataset}.vcf.gz"), path("${dataset}.vcf.gz.tbi")
+
+	script:
+	"""
+	echo -e '##FORMAT=<ID=AFCAS,Number=1,Type=Integer,Description="Alternate allele frequency in cases">' > hdr.txt
+	echo -e '##FORMAT=<ID=AFCON,Number=1,Type=Integer,Description="Alternate allele frequency in controls">' >> hdr.txt
+	echo -e '##FORMAT=<ID=NE,Number=1,Type=Integer,Description="Effective sample size used to estimate genetic effect">' >> hdr.txt
+	
+	bcftools annotate -s ${dataset} -a ${annot}.gz -h hdr.txt -c CHROM,POS,FORMAT/AFCAS,FORMAT/AFCON,FORMAT/NE -o ${dataset}.vcf.gz ${vcf}
+
+	tabix ${dataset}.vcf.gz
 	"""
 }
