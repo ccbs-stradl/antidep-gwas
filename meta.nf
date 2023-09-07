@@ -6,7 +6,7 @@ nextflow.enable.dsl=2
 
 params.vcf = "vcf/*.vcf.gz"
 params.ref = "reference/all_hg38.{pgen,psam,pvar.zst}"
-params.genes = "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg38_v40_symbol_gene_names.txt"
+params.genes = "reference/glist_ensgid_hg38_v40_symbol_gene_names.txt"
 
 workflow {
     VCF_CH = Channel
@@ -17,7 +17,6 @@ workflow {
 
     GENES_CH = Channel
         .fromPath(params.genes)
-
     /*
         MR-MEGA
         https://genomics.ut.ee/en/tools
@@ -62,12 +61,12 @@ workflow {
     FIXED_ASSOC_CH = FIXED_POST_CH
         .map { it -> it[1] }
         .flatten()
-
+    
 
     /* 
         Post analysis
     */
-
+    
     ASSOC_CH = MEGA_ASSOC_CH
         .concat(FIXED_ASSOC_CH)
 
@@ -83,9 +82,9 @@ workflow {
         .combine(REF_CH)
     
     ASSOC_BED_CH = REF_BED(ASSOC_REF_CH)
-
+    
     ASSOC_GENES_CH = ASSOC_BED_CH
-        .combine(GENES_CH)
+         .combine(GENES_CH)
 
     CLUMP_CH = CLUMP(ASSOC_GENES_CH)
 
@@ -110,7 +109,7 @@ process MEGA_IN {
 
     cpus = 1
     memory = 1.GB
-    time = '10m'
+    time = '30m'
 
     input:
     tuple val(pheno), path(vcf)
@@ -161,9 +160,9 @@ process MEGA {
 
     publishDir "meta", pattern: "*.log", mode: "copy"
 
-    cpus = 1
-    memory = 16.GB
-    time = '1h'
+    cpus = 2
+    memory = 32.GB
+    time = '3h'
 
     input:
     tuple val(pheno), path(gwas)
@@ -186,9 +185,9 @@ process MEGA_POST {
 
     publishDir "meta", pattern: "*.gz", mode: 'copy'
 
-    cpus = 1
-    memory = 16.GB
-    time = '10m'
+    cpus = 2
+    memory = 32.GB
+    time = '30m'
 
     input:
     tuple path(result), path(log)
@@ -212,7 +211,8 @@ process MEGA_POST {
                `P-value_ancestry_het` = pchisq(chisq_ancestry_het, ndf_ancestry_het, lower.tail=FALSE),
                `P-value_residual_het` = pchisq(chisq_residual_het, ndf_residual_het, lower.tail=FALSE)
         ) |>
-    arrange(Chromosome, Position)
+    arrange(Chromosome, Position) |>
+    mutate(Chromosome = if_else(Chromosome == 23, true = 'X', false = as.character(Chromosome)))
 
     mega_assoc <- mega_p |>
         transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
@@ -251,7 +251,7 @@ process FIXED_IN {
 
     cpus = 1
     memory = 1.GB
-    time = '10m'
+    time = '30m'
 
     input:
     tuple val(dataset), path(vcf)
@@ -314,6 +314,7 @@ process FIXED {
     """
     plink \
     --meta-analysis ${gwas} \
+    --output-chr 'M' \
     --out fixed-${dataset.pheno}-${dataset.cluster} \
 	--threads ${task.cpus} \
 	--memory ${task.memory.bytes.intdiv(1000000)}
@@ -341,7 +342,7 @@ process FIXED_POST {
 	library(dplyr)
 	library(readr)
 
-    meta <- read_table("${meta}")
+    meta <- read_table("${meta}", col_types=cols(CHR=col_character()))
 
     assoc <- meta |>
         select(CHR, SNP, BP, A1, A2, P, OR)
@@ -383,8 +384,8 @@ process MANHATTAN {
 	publishDir 'meta', mode: 'copy'
 	
 	cpus = 1
-	memory = 8.GB
-	time = '10m'
+	memory = 16.GB
+	time = '30m'
 	
 	input:
 	path(assoc)
@@ -399,7 +400,7 @@ process MANHATTAN {
 	library(readr)
 	library(fastman)
 	
-	assoc <- read_tsv("${assoc}")
+	assoc <- read_tsv("${assoc}", col_types=cols(CHR = col_character()))
 
     assoc_p <- assoc |> filter(P > 0)
 	
@@ -437,9 +438,18 @@ process REF_BED {
     --make-bed \
     --pfile 'vzs' ${ref} \
     --extract 'bed1' ${assoc.baseName}.bed1 \
+    --set-all-var-ids @:#:\\\$r:\\\$a \
+    --new-id-max-allele-len 500 error \
+    --out ref-cpid \
+    --allow-extra-chr \
+	--threads ${task.cpus} \
+	--memory ${task.memory.bytes.intdiv(1000000)}
+
+    plink2 \
+    --make-bed \
+    --bfile ref-cpid \
     --update-name ${assoc.baseName}.names \
     --out ref \
-    --allow-extra-chr \
 	--threads ${task.cpus} \
 	--memory ${task.memory.bytes.intdiv(1000000)}
     """
@@ -450,7 +460,7 @@ process CLUMP {
 
     publishDir 'meta', mode: 'copy'
 
-    errorStrategy 'ignore'
+    //errorStrategy 'ignore'
 
     cpus = 8
     memory = 8.GB
