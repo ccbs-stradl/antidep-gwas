@@ -1,7 +1,7 @@
 cohort,pheno,filekey,build,cluster
-GenScot,N06AA,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06AA-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie.tsv,GRCh38,EUR
-GenScot,N06AB,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06AB-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie.tsv,GRCh38,EUR
-GenScot,N06A,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06A-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie.tsv,GRCh38,EUR
+GenScot,N06AA,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06AA-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie,GRCh38,EUR
+GenScot,N06AB,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06AB-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie,GRCh38,EUR
+GenScot,N06A,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06A-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie,GRCh38,EUR
 BBJ,N06A,GWASsummary_ATC_N06A_Japanese_SakaueKanai2020.auto.txt,GRCh37,EAS
 FinnGen,N06A,summary_stats-finngen_R9_ANTIDEPRESSANTS,GRCh38,EUR
 UKB,N06AA,ukb21007_topmed-N06AA-AFR-bt-atc_antidep-rf_hgdp1kg_clusters-noPGC.regenie.tsv,GRCh38,AFR
