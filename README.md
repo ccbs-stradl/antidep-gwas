@@ -34,12 +34,13 @@ mkdir vendor
 git clone https://github.com/MRCIEU/gwas2vcf.git vendor/gwas2vcf
 ```
 
-
 Convert sumstats to [GWAS VCF](https://github.com/MRCIEU/gwas-vcf-specification) format. 
 
 ```sh
 nextflow run gwasvcf.nf --sumstats "sumstats/*.{gz,sh}" -resume
 ```
+
+The workflow also requires [bcftools](https://samtools.github.io/bcftools/bcftools.html), [gatk](https://gatk.broadinstitute.org), R, and [plyranges](https://sa-lee.github.io/plyranges/index.html).
 
 ### 2. Multi-ancestry meta-analysis
 

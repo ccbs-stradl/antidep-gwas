@@ -129,12 +129,16 @@ workflow {
 	// and gwas2vcf files
 	DATA_CH = BUILDS_CH.GRCh38
 		.concat(BUILDS_37_TO_38_CH)
-		.combine(DBSNP_CH)		
+		
 	// subset sumstats and references file to each chromosome
 	CHR_CH = Channel.of(1..22, 'X')
 		.map { it -> "chr${it}" }
+		
+	DATA_QC_CH = QC(DATA_CH)
+		.combine(DBSNP_CH)		
 	
-	DATA_CHR_CH = CHR(DATA_CH, CHR_CH)
+	
+	DATA_CHR_CH = CHR(DATA_QC_CH, CHR_CH)
 		.combine(ASSEMBLY_CH)
 		.combine(JSON_CH)
 		.combine(GWAS2VCF_CH)
@@ -142,17 +146,26 @@ workflow {
 	VCF_CHR_CH = VCF(DATA_CHR_CH)
 	VCF_TBI_CHR_CH = INDEX(VCF_CHR_CH)
 		.map { it -> [it[0], it[2], it[3]] }
-		.groupTuple()
+		.groupTuple(size: 23)
 		
 	VCF_CH = CONCAT(VCF_TBI_CHR_CH)
 
 	// additional annotations (AFCAS, AFCON, NE)
-	ANNOTATIONS_CH = ANNOTATIONS(DATA_CH)
+	ANNOTATIONS_CH = ANNOTATIONS(DATA_QC_CH)
+
+	// harmonised effect size and allele frequency
+	MAPPING_CH = MAPPING(VCF_CH)
+	
+	ANNOTATIONS_MAPPING_CH = ANNOTATIONS_CH
+		.join(MAPPING_CH)
+		
+	ANNOTATIONS_HARMONISED_CH = HARMONISE(ANNOTATIONS_MAPPING_CH)
 	
 	VCF_ANNOTATIONS_CH = VCF_CH
-		.join(ANNOTATIONS_CH)
+		.join(ANNOTATIONS_HARMONISED_CH)
 
 	VCF_ANNOTATED_CH = ANNOTATE(VCF_ANNOTATIONS_CH)
+	
 
 }
 
@@ -329,6 +342,54 @@ process LIFT {
 	"""
 }
 
+// QC sumstats for duplicate variants
+process QC {
+	tag "${dataset}"
+	
+	cpus = 4
+	memory = 32.GB
+	time = '1h'
+	
+	input:
+	tuple val(dataset), val(dict), path(gwas)
+	
+	output:
+	tuple val(dataset), val(dict), path("${dataset}-qc.txt")
+	
+	script:
+	"""
+	#! /bin/env Rscript
+	
+	library(readr)
+	library(dplyr)
+	library(plyranges)
+	
+	gwas <- read_tsv("${gwas}")
+	
+	# GRanges object for efficient position lookups
+	gwas_gr <- as_granges(gwas, seqnames = chr, start = pos, width = 1)
+	
+	# count overlaps
+	gwas_overlap_counts <- count_overlaps(gwas_gr, gwas_gr)
+	
+	# find variants with more than 1 overlap where chr+pos+ea/oa are duplicated
+	gwas_overlaps <- gwas |> slice(which(gwas_overlap_counts > 1)) |>
+		mutate(a1 = pmin(ea, oa), a2 = pmax(ea, oa)) |>
+		group_by(chr, pos, a1, a2) |>
+		mutate(n = dplyr::n()) |>
+		ungroup() |>
+		filter(n > 1) |> 
+		select(chr, pos, ea, oa)
+	
+	# remove duplicate positions with an anti-join
+	gwas_qc <- gwas |>
+		anti_join(gwas_overlaps)
+		
+	write_tsv(gwas_qc, "${dataset}-qc.txt")
+	"""
+	
+}
+
 // subset to chromosome
 process CHR {
 	tag "${dataset} ${dbsnp} ${chr}"
@@ -407,6 +468,7 @@ process INDEX {
 	"""
 }
 
+// Concatenate per-chromosome VCFs together
 process CONCAT {
 	tag "${dataset}"
 
@@ -427,6 +489,7 @@ process CONCAT {
 	"""
 }
 
+// make annotations file
 process ANNOTATIONS {
 	tag "${dataset}"
 
@@ -435,18 +498,92 @@ process ANNOTATIONS {
 	time = '10m'
 
 	input:
-	tuple val(dataset), val(dict), val(sumstats), val(dbsnp), path(vcf)
+	tuple val(dataset), val(dict), path(sumstats), val(dbsnp), path(vcf)
 
 	output:
-	tuple val(dataset), val("${dataset}-annot"), path("${dataset}-annot.{gz,gz.tbi}")
+	tuple val(dataset), path("${dataset}-annot.tsv")
 
 	script:
 	"""
-	cat ${sumstats} | awk 'OFS="\\t" {if(NR == 1) {print "#CHROM", "POS", "AFCAS", "AFCON", "NE"} else {print \$1, \$2, \$13, \$14, (4*\$8*\$9)/(\$8+\$9)}}' | bgzip -c > ${dataset}-annot.gz
-	tabix -s1 -b2 -e2 ${dataset}-annot.gz
+	cat ${sumstats} | awk 'OFS="\\t" {if(NR == 1) {print "#CHROM", "POS", "REF", "ALT", "BETA", "AFCAS", "AFCON", "NE"} else {print \$1, \$2, \$4, \$3, \$5, \$13, \$14, (4*\$8*\$9)/(\$8+\$9)}}' > ${dataset}-annot.tsv
 	"""
 }
 
+// get harmonised effect size and allele frequency
+process MAPPING {
+	tag "${dataset}"
+
+	cpus = 1
+	memory = 1.GB
+	time = '10m'
+
+	input:
+	tuple val(dataset), path(vcf), path(tbi)
+
+	output:
+	tuple val(dataset), path("${dataset}-mapping.tsv")
+
+	script:
+	"""
+	echo -e "#CHROM\\tPOS\\tREF\\tALT\\tES\\tAF" > ${dataset}-mapping.tsv
+	bcftools query -f "%CHROM\\t%POS\\t%REF\\t%ALT\\t[%ES]\\t[%AF]\\n" ${vcf} >> ${dataset}-mapping.tsv
+	"""
+}
+
+// annotations harmonised with what is in the VCF file
+// output tsv that can be tabix'd and a list of annotation column names
+process HARMONISE {
+	tag "${dataset}"
+	
+	cpus = 4
+	memory = 32.GB
+	time = '30m'
+	
+	input:
+	tuple val(dataset), path(annotations), path(mapping)
+	
+	output:
+	tuple val(dataset), path("${dataset}-annot-mapped.tsv"), path("${dataset}-annot-mapped.cols"), path("header.txt")
+	
+	script:
+	"""
+	#!/bin/env Rscript
+	
+	library(readr)
+	library(dplyr)
+	library(stringr)
+	
+	# effect size and allele frequency from the harmonised VCF file
+	mapping <- read_tsv("${mapping}")
+	# annotations to add
+	annot <- read_tsv("${annotations}")
+	
+	mapping_annot_ref_alt <- mapping |>
+		inner_join(annot, by = c("#CHROM" = "#CHROM", "POS"  = "POS", "REF" = "REF", "ALT" = "ALT"))
+		
+	mapping_annot_alt_ref <- mapping |>
+		inner_join(annot, by = c("#CHROM" = "#CHROM", "POS"  = "POS", "ALT" = "REF", "REF" = "ALT"))
+
+	# compare ES to BETA to check if the effect allele has been swapped
+	mapped_annot <- bind_rows(mapping_annot_ref_alt, mapping_annot_alt_ref) |>
+		mutate(flip = sign(ES) != sign(BETA)) |>
+		transmute(CHROM = `#CHROM`, POS, REF, ALT,
+		          `FORMAT/AFCAS` = if_else(flip, true = 1 - AFCAS, false = AFCAS),
+				  `FORMAT/AFCON` = if_else(flip, true = 1 - AFCON, false = AFCON),
+				  `FORMAT/NE` = NE) |>
+		arrange(CHROM, POS)
+
+	write_tsv(mapped_annot, "${dataset}-annot-mapped.tsv", col_names = FALSE)
+	write(names(mapped_annot), "${dataset}-annot-mapped.cols", ncolumns = 1)
+
+	headers = c('##FORMAT=<ID=AFCAS,Number=1,Type=Float,Description="Alternate allele frequency in cases">',
+			    '##FORMAT=<ID=AFCON,Number=1,Type=Float,Description="Alternate allele frequency in controls">',
+	            '##FORMAT=<ID=NE,Number=1,Type=Float,Description="Effective sample size used to estimate genetic effect">')
+	write(headers, "header.txt", ncolumns = 1)
+	"""
+}
+
+// add annotations to GWASVCF
 process ANNOTATE {
 	tag "${dataset}"
 
@@ -457,18 +594,25 @@ process ANNOTATE {
 	time = '1h'
 
 	input:
-	tuple val(dataset), path(vcf), path(tbi), val(annot), path(annotations)
+	tuple val(dataset), path(vcf), path(tbi), path(annotations), path(columns), path(headers)
 
 	output:
 	tuple val(dataset), path("${dataset}.vcf.gz"), path("${dataset}.vcf.gz.tbi")
 
 	script:
 	"""
-	echo -e '##FORMAT=<ID=AFCAS,Number=1,Type=Integer,Description="Alternate allele frequency in cases">' > hdr.txt
-	echo -e '##FORMAT=<ID=AFCON,Number=1,Type=Integer,Description="Alternate allele frequency in controls">' >> hdr.txt
-	echo -e '##FORMAT=<ID=NE,Number=1,Type=Integer,Description="Effective sample size used to estimate genetic effect">' >> hdr.txt
-	
-	bcftools annotate -s ${dataset} -a ${annot}.gz -h hdr.txt -c CHROM,POS,FORMAT/AFCAS,FORMAT/AFCON,FORMAT/NE -o ${dataset}.vcf.gz ${vcf}
+	# compress and index the annotations
+	bgzip -c ${annotations} > ${annotations}.gz
+	tabix -s 1 -b 2 -e 2 ${annotations}.gz
+
+	# add annotations to the VCF
+	bcftools annotate \
+	--samples ${dataset} \
+	--annotations ${annotations}.gz \
+	--columns-file ${columns} \
+	--header-lines ${headers} \
+	--output ${dataset}.vcf.gz \
+	${vcf}
 
 	tabix ${dataset}.vcf.gz
 	"""
