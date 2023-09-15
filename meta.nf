@@ -340,8 +340,8 @@ process FIXED {
 process FIXEDN {
     tag "${dataset.pheno}-${dataset.cluster}"
 
-    cpus = 2
-    memory = 28.GB
+    cpus = 4
+    memory = 16.GB
     time = '30m'
 
     input:
@@ -352,25 +352,44 @@ process FIXEDN {
 
     script:
     """
-    #!Rscript
-	library(dplyr)
-	library(readr)
-    library(stringr)
+    #!python3
+    import os
+    
+    os.environ["POLARS_MAX_THREADS"] = "${task.cpus}"
+    import polars as pl
 
-    freqn_paths <- str_split("${freqn}", pattern = " ")[[1]]
-    names(freqn_paths) <- basename(freqn_paths)
+    freqn_paths = "${freqn}"
 
-    freqn <- bind_rows(lapply(freqn_paths, read_tsv, na = c("", "NA", ".")), .id = "dataset")
+    freqn = pl.concat(
+        [pl.scan_csv(path, separator= "\\t", null_values = ".", dtypes = {"NEFF": pl.Float64, "INFO": pl.Float64}) for path in freqn_paths.split()],
+        how = "vertical"
+    )
 
-    meta <- freqn |>
-        mutate(NCON = N - NCAS) |>
-        group_by(CHR, BP, SNP, A1, A2) |>
-        summarize(NCAS = sum(NCAS), NCON = sum(NCON), NEFF = sum(NEFF), NTOT = sum(N),
-                  INFO = weighted.mean(INFO, weights = N, na.rm = TRUE),
-                  AFCAS = weighted.mean(AFCAS, weights = NCAS, na.rm = TRUE),
-                  AFCON = weighted.mean(AFCON, weights = NCON, na.rm = TRUE))
+    meta = (
+        freqn.select(
+            pl.col("*"),
+            (pl.col("N") - pl.col("NCAS")).alias("NCON")
+        )
+        .select(
+            pl.col("*"),
+            (pl.col("INFO") * pl.col("N")).alias("wINFO"),
+            (pl.col("AFCAS") * pl.col("NCAS")).alias("wAFCAS"),
+            (pl.col("AFCON") * pl.col("NCON")).alias("wAFCON")
+        )
+        .group_by("CHR", "BP", "SNP", "A1", "A2")
+        .agg(
+            (pl.sum("wINFO") / pl.sum("N")).alias("INFO"),
+            (pl.sum("wAFCAS") / pl.sum("NCAS")).alias("AFCAS"),
+            (pl.sum("wAFCON") / pl.sum("NCON")).alias("AFCON"),
+            pl.sum("NCAS"),
+            pl.sum("NCON"),
+            pl.sum("NEFF"),
+            pl.sum("N").alias("NTOT")
+        )
+        .collect()
+    )
 
-    write_tsv(meta, "${"freqn.tsv"}")
+    meta.write_csv("freqn.tsv", separator = "\\t")
     """
 }
 
