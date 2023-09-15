@@ -62,37 +62,35 @@ workflow {
     
     FIXED_POST_CH = FIXED_POST(FIXED_ANALYSIS_CH)
 
-    // FIXED_ASSOC_CH = FIXED_POST_CH
-    //     .map { it -> it[1] }
-    //     .flatten()
+    FIXED_ASSOC_CH = FIXED_POST_CH
+        .map { it -> it[1] }
+         .flatten()
     
 
     // /* 
     //     Post analysis
     // */
     
-    // ASSOC_CH = MEGA_ASSOC_CH
-    //     .concat(FIXED_ASSOC_CH)
+    ASSOC_CH = MEGA_ASSOC_CH
+         .concat(FIXED_ASSOC_CH)
 
-    //  MANHATTAN(ASSOC_CH)
+    MANHATTAN(ASSOC_CH)
 
     // // count number of GWsig variants
     // // further processing of results with 1 or more loci
-    // ASSOC_GW_CH = GW(ASSOC_CH)
-    //     .filter { it -> it[1].toInteger() > 0 }
-    //     .map { it -> it[0] }
+    ASSOC_GW_CH = GW(ASSOC_CH)
+	     .filter { it -> it[1].toInteger() > 0 }
+         .map { it -> it[0] }
 
-    // ASSOC_REF_CH = ASSOC_GW_CH
-    //     .combine(REF_CH)
+    ASSOC_REF_CH = ASSOC_GW_CH
+         .combine(REF_CH)
     
-    // ASSOC_BED_CH = REF_BED(ASSOC_REF_CH)
+    ASSOC_BED_CH = REF_BED(ASSOC_REF_CH)
     
-    // ASSOC_GENES_CH = ASSOC_BED_CH
-    //      .combine(GENES_CH)
+    ASSOC_GENES_CH = ASSOC_BED_CH
+          .combine(GENES_CH)
 
-    // CLUMP_CH = CLUMP(ASSOC_GENES_CH)
-
-    //MA_CH = MA(MEGA_ASSOC_CH)
+    CLUMP_CH = CLUMP(ASSOC_GENES_CH)
 	
 }
 
@@ -216,8 +214,7 @@ process MEGA_POST {
                `P-value_ancestry_het` = pchisq(chisq_ancestry_het, ndf_ancestry_het, lower.tail=FALSE),
                `P-value_residual_het` = pchisq(chisq_residual_het, ndf_residual_het, lower.tail=FALSE)
         ) |>
-    arrange(Chromosome, Position) |>
-    mutate(Chromosome = if_else(Chromosome == 23, true = 'X', false = as.character(Chromosome)))
+    arrange(Chromosome, Position)
 
     mega_assoc <- mega_p |>
         transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
@@ -329,7 +326,7 @@ process FIXED {
     """
     plink \
     --meta-analysis ${gwas} \
-    --output-chr 'M' \
+    --output-chr 'chrM' \
     --out fixed-${dataset.pheno}-${dataset.cluster} \
 	--threads ${task.cpus} \
 	--memory ${task.memory.bytes.intdiv(1000000)}
@@ -418,18 +415,19 @@ process FIXED_POST {
 
     meta_col_types <- cols(CHR = col_character(), BP = col_integer())
     meta <- read_table("${meta}", col_types=meta_col_types)
-    freqn <- read_table("${freqn}", col_types=meta_col_types) |>
-        mutate(CHR = str_remove(CHR, "chr"))
+    freqn <- read_table("${freqn}", col_types=meta_col_types)
 
     meta_freqn <- meta |>
         inner_join(freqn, by = c("CHR", "SNP", "BP", "A1", "A2"))
 
     assoc <- meta_freqn |>
-        select(CHR, SNP, BP, A1, A2, P, OR, ESS=NEFF)
+        select(CHR, SNP, BP, A1, A2, P, OR, ESS=NEFF) |>
+		mutate(CHR = if_else(CHR == 'chrX', true = 23, false = as.numeric(str_remove(CHR, 'chr'))))
     
     het <- meta_freqn |>
         filter(!is.na(Q)) |>
-        select(CHR, SNP, BP, A1, A2, P=Q, OR, ESS=NEFF)
+        select(CHR, SNP, BP, A1, A2, P=Q, OR, ESS=NEFF) |>
+		mutate(CHR = if_else(CHR == 'chrX', true = 23, false = as.numeric(str_remove(CHR, 'chr'))))
 
     write_tsv(meta_freqn, "${meta}.gz")
     write_tsv(assoc, "${meta.baseName}.assoc")
@@ -480,7 +478,7 @@ process MANHATTAN {
 	library(readr)
 	library(fastman)
 	
-	assoc <- read_tsv("${assoc}", col_types=cols(CHR = col_character()))
+	assoc <- read_tsv("${assoc}")
 
     assoc_p <- assoc |> filter(P > 0)
 	
@@ -571,23 +569,4 @@ process CLUMP {
     """
 }
 
-process MA {
-    tag "${assoc}"
 
-    cpus = 1
-    memory = 1.GB
-    time = '10m'
-
-    input: 
-    path(assoc)
-
-    output:
-    path("${assoc.baseName}.ma")
-
-    script:
-    """
-    cat ${assoc} | awk '{OFS = "\\t"; if(NR == 1) {print "SNP", "A1", "A2", "freq", "BETA", "SE", "P", "N"} else {print \$2, \$4, \$5, }}'
-    """
-}
-
-// (CHR, SNP, BP, A1=EA, A2=NEA, BETA=beta_0, SE=se_0, NMISS=Nsample, P=`P-value_association`)
