@@ -124,7 +124,7 @@ process MEGA_IN {
     # rename missing variants names to CPID
     bcftools query \
     -i 'FORMAT/AF >= 0.005 & FORMAT/AF <= 0.995 & (FORMAT/SI >= 0.4 | FORMAT/SI = ".")' \
-	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%AF]\\t[%SS]\\t[%NC]\\t%CHROM\\t%POS\\n" \
+	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%AF]\\t[%SS]\\t[%NC]\\t[%NE]\\t%CHROM\\t%POS\\n" \
 	${vcf} | awk '{if(\$1 == ".") \$1 = \$9":"\$10; print \$0}' > ${vcf.simpleName}.query.txt
 
     # header
@@ -135,7 +135,7 @@ process MEGA_IN {
     # turn beta effect size back into OR
     # calculate N as effective sample size
     cat ${vcf.simpleName}.query.txt | awk \
-    'OFS = "\\t" {gsub("chr", "", \$9); print \$1, \$2, \$3, exp(\$4), exp(\$4-1.96*\$5), exp(\$4+1.96*\$5), \$6, 4*\$8*(\$7-\$8)/(\$7), \$9, \$10}' >> ${vcf.simpleName}.txt
+    'OFS = "\\t" {gsub("chr", "", \$10); print \$1, \$2, \$3, exp(\$4), exp(\$4-1.96*\$5), exp(\$4+1.96*\$5), \$6, \$9, \$10, \$11}' >> ${vcf.simpleName}.txt
 
     # compress
     gzip ${vcf.simpleName}.txt
@@ -150,8 +150,9 @@ process MEGA_IN {
      6	[%AF]
      7	[%SS]
      8	[%NC]
-     9	%CHROM
-    10	%POS
+     9  [%NE]
+    10	%CHROM
+    11	%POS
 */
 }
 
@@ -266,7 +267,7 @@ process FIXED_IN {
     # rename missing variants names to CPID
     bcftools query \
     -i 'FORMAT/AF >= 0.005 & FORMAT/AF <= 0.995 & (FORMAT/SI >= 0.4 | FORMAT/SI = ".")' \
-	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%LP]\\t[%AF]\\t[%SS]\\t[%NC]\\t%CHROM\\t%POS\\n" \
+	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%LP]\\t[%AF]\\t[%SS]\\t[%NC]\\t[%NE]\\t%CHROM\\t%POS\\n" \
 	${vcf} | awk '{if(\$1 == ".") \$1 = \$10":"\$11; print \$0}' > ${vcf.simpleName}.query.txt
 
     # header
@@ -277,7 +278,7 @@ process FIXED_IN {
     # turn -log10(p) back into p
     # calculate N as effective sample size
     cat ${vcf.simpleName}.query.txt | awk \
-    'OFS = "\\t" {print \$1, \$2, \$3, exp(\$4), \$5, 10^(-\$6), 4*\$9*(\$8-\$9)/(\$8), \$10, \$11}' >> ${vcf.simpleName}.assoc
+    'OFS = "\\t" {print \$1, \$2, \$3, exp(\$4), \$5, 10^(-\$6), \$10, \$11, \$12}' >> ${vcf.simpleName}.assoc
     """
 /*
     column numbers of bcf query
@@ -290,8 +291,9 @@ process FIXED_IN {
      7	[%AF]
      8	[%SS]
      9	[%NC]
-    10	%CHROM
-    11	%POS
+    10  [%NE]
+    11	%CHROM
+    12	%POS
 */
 }
 
@@ -313,7 +315,7 @@ process FIXED {
     script:
     """
     plink \
-    --meta-analysis ${gwas} \
+    --meta-analysis ${gwas} + 'report-all' \
     --output-chr 'M' \
     --out fixed-${dataset.pheno}-${dataset.cluster} \
 	--threads ${task.cpus} \
