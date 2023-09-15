@@ -55,38 +55,42 @@ workflow {
         .filter { it -> it[1].size() >= 2 }
     
     FIXED_CH = FIXED(FIXED_IN_CH)
+    FIXED_N_CH = FIXEDN(FIXED_IN_CH)
+
+    FIXED_ANALYSIS_CH = FIXED_CH
+        .join(FIXED_N_CH)
     
-    FIXED_POST_CH = FIXED_POST(FIXED_CH)
+    FIXED_POST_CH = FIXED_POST(FIXED_ANALYSIS_CH)
 
-    FIXED_ASSOC_CH = FIXED_POST_CH
-        .map { it -> it[1] }
-        .flatten()
+    // FIXED_ASSOC_CH = FIXED_POST_CH
+    //     .map { it -> it[1] }
+    //     .flatten()
     
 
-    /* 
-        Post analysis
-    */
+    // /* 
+    //     Post analysis
+    // */
     
-    ASSOC_CH = MEGA_ASSOC_CH
-        .concat(FIXED_ASSOC_CH)
+    // ASSOC_CH = MEGA_ASSOC_CH
+    //     .concat(FIXED_ASSOC_CH)
 
-     MANHATTAN(ASSOC_CH)
+    //  MANHATTAN(ASSOC_CH)
 
-    // count number of GWsig variants
-    // further processing of results with 1 or more loci
-    ASSOC_GW_CH = GW(ASSOC_CH)
-        .filter { it -> it[1].toInteger() > 0 }
-        .map { it -> it[0] }
+    // // count number of GWsig variants
+    // // further processing of results with 1 or more loci
+    // ASSOC_GW_CH = GW(ASSOC_CH)
+    //     .filter { it -> it[1].toInteger() > 0 }
+    //     .map { it -> it[0] }
 
-    ASSOC_REF_CH = ASSOC_GW_CH
-        .combine(REF_CH)
+    // ASSOC_REF_CH = ASSOC_GW_CH
+    //     .combine(REF_CH)
     
-    ASSOC_BED_CH = REF_BED(ASSOC_REF_CH)
+    // ASSOC_BED_CH = REF_BED(ASSOC_REF_CH)
     
-    ASSOC_GENES_CH = ASSOC_BED_CH
-         .combine(GENES_CH)
+    // ASSOC_GENES_CH = ASSOC_BED_CH
+    //      .combine(GENES_CH)
 
-    CLUMP_CH = CLUMP(ASSOC_GENES_CH)
+    // CLUMP_CH = CLUMP(ASSOC_GENES_CH)
 
     //MA_CH = MA(MEGA_ASSOC_CH)
 	
@@ -258,7 +262,7 @@ process FIXED_IN {
     tuple val(dataset), path(vcf)
 
     output:
-    tuple val(dataset), path("${vcf.simpleName}.assoc")
+    tuple val(dataset), path("${vcf.simpleName}.assoc"), path("${vcf.simpleName}.freqn")
 
     script:
     """
@@ -267,8 +271,8 @@ process FIXED_IN {
     # rename missing variants names to CPID
     bcftools query \
     -i 'FORMAT/AF >= 0.005 & FORMAT/AF <= 0.995 & (FORMAT/SI >= 0.4 | FORMAT/SI = ".")' \
-	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%LP]\\t[%AF]\\t[%SS]\\t[%NC]\\t[%NE]\\t%CHROM\\t%POS\\n" \
-	${vcf} | awk '{if(\$1 == ".") \$1 = \$10":"\$11; print \$0}' > ${vcf.simpleName}.query.txt
+	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SI]\\t[%AFCAS]\\t[%AFCON]\\t[%SS]\\t[%NC]\\t[%NE]\\t%CHROM\\t%POS\\n" \
+	${vcf} | awk '{if(\$1 == ".") \$1 = \$13":"\$14; print \$0}' > ${vcf.simpleName}.query.txt
 
     # header
     echo "" | awk 'OFS = "\\t" {print "SNP", "A1", "A2", "OR", "SE", "P", "ESS", "CHR", "BP"}' > ${vcf.simpleName}.assoc
@@ -278,7 +282,12 @@ process FIXED_IN {
     # turn -log10(p) back into p
     # calculate N as effective sample size
     cat ${vcf.simpleName}.query.txt | awk \
-    'OFS = "\\t" {print \$1, \$2, \$3, exp(\$4), \$5, 10^(-\$6), \$10, \$11, \$12}' >> ${vcf.simpleName}.assoc
+    'OFS = "\\t" {print \$1, \$2, \$3, exp(\$4), \$5, 10^(-\$6), \$12, \$13, \$14}' >> ${vcf.simpleName}.assoc
+
+    # sample size and other information
+    echo "" | awk 'OFS = "\\t" {print "CHR", "BP", "SNP", "A1", "A2", "INFO", "AFCAS", "AFCON", "N", "NCAS", "NEFF"}' > ${vcf.simpleName}.freqn
+    cat ${vcf.simpleName}.query.txt | awk \
+    'OFS = "\\t" {print \$13, \$14, \$1, \$2, \$3, \$7, \$8, \$9, \$10, \$11, \$12}' >> ${vcf.simpleName}.freqn
     """
 /*
     column numbers of bcf query
@@ -288,15 +297,19 @@ process FIXED_IN {
      4	[%ES]
      5	[%SE]
      6  [%LP]
-     7	[%AF]
-     8	[%SS]
-     9	[%NC]
-    10  [%NE]
-    11	%CHROM
-    12	%POS
+     7	[%SI]
+     8  [%AFCAS]
+     9  [%AFCON]
+    10	[%SS]
+    11	[%NC]
+    12  [%NE]
+    13	%CHROM
+    14	%POS
 */
 }
 
+
+// Fixed effects meta analysis
 process FIXED {
     tag "${dataset.pheno}-${dataset.cluster}"
 
@@ -307,7 +320,7 @@ process FIXED {
     time = '1h'
 
     input:
-    tuple val(dataset), path(gwas)
+    tuple val(dataset), path(gwas), path(freqn)
 
     output:
     tuple val(dataset), path("*.meta"), path("*.log")
@@ -315,7 +328,7 @@ process FIXED {
     script:
     """
     plink \
-    --meta-analysis ${gwas} + 'report-all' \
+    --meta-analysis ${gwas} \
     --output-chr 'M' \
     --out fixed-${dataset.pheno}-${dataset.cluster} \
 	--threads ${task.cpus} \
@@ -323,6 +336,45 @@ process FIXED {
     """
 }
 
+// Fixed effects sample information
+process FIXEDN {
+    tag "${dataset.pheno}-${dataset.cluster}"
+
+    cpus = 2
+    memory = 28.GB
+    time = '30m'
+
+    input:
+    tuple val(dataset), path(gwas), path(freqn)
+
+    output:
+    tuple val(dataset), path("freqn.tsv")
+
+    script:
+    """
+    #!Rscript
+	library(dplyr)
+	library(readr)
+    library(stringr)
+
+    freqn_paths <- str_split("${freqn}", pattern = " ")[[1]]
+    names(freqn_paths) <- basename(freqn_paths)
+
+    freqn <- bind_rows(lapply(freqn_paths, read_tsv, na = c("", "NA", ".")), .id = "dataset")
+
+    meta <- freqn |>
+        mutate(NCON = N - NCAS) |>
+        group_by(CHR, BP, SNP, A1, A2) |>
+        summarize(NCAS = sum(NCAS), NCON = sum(NCON), NEFF = sum(NEFF), NTOT = sum(N),
+                  INFO = weighted.mean(INFO, weights = N, na.rm = TRUE),
+                  AFCAS = weighted.mean(AFCAS, weights = NCAS, na.rm = TRUE),
+                  AFCON = weighted.mean(AFCON, weights = NCON, na.rm = TRUE))
+
+    write_tsv(meta, "${"freqn.tsv"}")
+    """
+}
+
+// Fixed effects postprocessing
 process FIXED_POST {
     tag "${meta}"
 
@@ -333,7 +385,7 @@ process FIXED_POST {
     time = '10m'
 
     input:
-    tuple val(dataset), path(meta), path(log)
+    tuple val(dataset), path(meta), path(log), path(freqn)
 
     output:
     tuple path("${meta}.gz"), path("*.assoc")
@@ -343,17 +395,24 @@ process FIXED_POST {
     #!Rscript
 	library(dplyr)
 	library(readr)
+    library(stringr)
 
-    meta <- read_table("${meta}", col_types=cols(CHR=col_character()))
+    meta_col_types <- cols(CHR = col_character(), BP = col_integer())
+    meta <- read_table("${meta}", col_types=meta_col_types)
+    freqn <- read_table("${freqn}", col_types=meta_col_types) |>
+        mutate(CHR = str_remove(CHR, "chr"))
 
-    assoc <- meta |>
-        select(CHR, SNP, BP, A1, A2, P, OR)
+    meta_freqn <- meta |>
+        inner_join(freqn, by = c("CHR", "SNP", "BP", "A1", "A2"))
+
+    assoc <- meta_freqn |>
+        select(CHR, SNP, BP, A1, A2, P, OR, ESS=NEFF)
     
-    het <- meta |>
+    het <- meta_freqn |>
         filter(!is.na(Q)) |>
-        select(CHR, SNP, BP, A1, A2, P=Q, OR)
+        select(CHR, SNP, BP, A1, A2, P=Q, OR, ESS=NEFF)
 
-    write_tsv(meta, "${meta}.gz")
+    write_tsv(meta_freqn, "${meta}.gz")
     write_tsv(assoc, "${meta.baseName}.assoc")
     write_tsv(het, "${meta.baseName}.het.assoc")
     """
