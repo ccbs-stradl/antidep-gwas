@@ -414,11 +414,19 @@ process FIXED_POST {
     library(stringr)
 
     meta_col_types <- cols(CHR = col_character(), BP = col_integer())
-    meta <- read_table("${meta}", col_types=meta_col_types)
-    freqn <- read_table("${freqn}", col_types=meta_col_types)
+    meta <- read_table("${meta}", col_types = meta_col_types)
+    freqn <- read_table("${freqn}", col_types = meta_col_types)
 
     meta_freqn <- meta |>
-        inner_join(freqn, by = c("CHR", "SNP", "BP", "A1", "A2"))
+        inner_join(freqn, by = c("CHR", "SNP", "BP", "A1", "A2")) |>
+        mutate(chisq = qchisq(P, df = 1, lower.tail = FALSE),
+               chisq_r = qchisq(`P(R)`, df = 1, lower.tail = FALSE)) |>
+        mutate(SE = sqrt(log(OR)^2 / chisq),
+              `SE(R)` = sqrt(log(`OR(R)`)^2 / chisq_r)) |>
+        select(CHR, BP, SNP, A1, A2, studies=N,
+               OR, SE, P, OR_R=`OR(R)`, SE_R=`SE(R)`, P_R=`P(R)`,
+               Q, I, INFO, AFCAS, AFCON, NCAS, NCON, NEFF, NTOT)
+
 
     assoc <- meta_freqn |>
         select(CHR, SNP, BP, A1, A2, P, OR, ESS=NEFF) |>
