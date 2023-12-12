@@ -1,0 +1,95 @@
+---
+title: Antidepressant exposure GWAS meta-analysis manhattan plots
+output: github_document
+---
+
+```{r lib}
+library(dplyr)
+library(readr)
+library(stringr)
+library(topr)
+library(plyranges)
+```
+
+## Results
+
+### Sumstats
+
+```{r sumstats, cache = TRUE, cache.lazy = FALSE}
+metas <- c("N06A-EUR"  = "meta/fixed-N06A-EUR",
+           "N06A-EAS"  = "meta/fixed-N06A-EAS",
+           "N06AA-EUR" = "meta/fixed-N06AA-EUR",
+           "N06AB-EUR" = "meta/fixed-N06AB-EUR")
+           
+sumstats_paths <- lapply(metas, function(.x) str_c(.x, "meta.gz", sep = "."))
+
+sumstats <- lapply(sumstats_paths, function(path) {
+    read_tsv(path) |>
+        select(CHROM = CHR, POS = BP, ID = SNP,
+               REF = A2, ALT = A1, P, OR,
+               AF = starts_with("FRQ_U"))
+})
+```
+
+### Loci
+
+```{r loci}
+clumped_paths <- sumstats_paths <- lapply(metas, function(.x) str_c(.x, "clumped", sep = "."))
+
+clumped <- lapply(clumped_paths[sapply(clumped_paths, file.exists)], read_table)
+
+ranges_paths <- sumstats_paths <- lapply(metas, function(.x) str_c(.x, "clumped.ranges", sep = "."))
+
+clumped_ranges <- lapply(ranges_paths[sapply(ranges_paths, file.exists)], read_table)
+```
+
+## Manhattan plot
+
+```{r manhattan, fig.width=8, fig.height=4.5, dpi=218}
+sumstats2 <- lapply(sumstats, function(ss) filter(ss, P <= 1e-2))
+manhattan(sumstats2, legend_labels = names(sumstats), ntop = 2, sign_thresh = 5e-08, build = 38)
+```
+
+## Loci
+
+Construct genomic ranges.
+
+```{r ranges}
+
+clumped_ranges_grs <- lapply(clumped_ranges, function(cr) {
+    cr |>
+    mutate(range = str_match(POS, "chr[0-9]+:([0-9]+)\\.\\.([0-9]+)")) |>
+    transmute(seqnames = CHR, start = as.numeric(range[,2]), end = as.numeric(range[,3]), P, SNP) |>
+    as_granges()
+})
+
+loci_ranges_grs <- lapply(clumped_ranges_grs, function(gr) {
+    reduce_ranges(gr, SNPs = c(SNP), Ps = c(P))
+})
+
+```
+
+Count number of loci
+
+```{r nloci}
+sapply(loci_ranges_grs, length)
+```
+
+## Overlaps
+
+```{r overlaps}
+
+find_overlaps(loci_ranges_grs[['N06A-EUR']], loci_ranges_grs[['N06AA-EUR']])
+find_overlaps(loci_ranges_grs[['N06A-EUR']], loci_ranges_grs[['N06AB-EUR']])
+
+```
+
+## Regions
+
+```{r chr11_11, fig.width=8, fig.height=4.5, dpi=218}
+
+regionplot(sumstats, legend_labels = names(sumstats),
+    chr = 11, xmin = 112956144, xmax = 113125732,
+    build = 38, show_overview = FALSE)
+
+```
