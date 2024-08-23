@@ -1,5 +1,3 @@
-nextflow.enable.dsl=2
-
 /* 
 	Convert sumstats to GWAS VCF format
 	
@@ -106,9 +104,10 @@ workflow {
 
 	// get GRCh38 CHR/POS for GWAS SNPs based on rsID
 	BUILDS_37_SELECT_CH = SELECT(BUILDS_37_CH)
+  BUILDS_37_RSIDS_CH = QUERY(BUILDS_37_SELECT_CH)
 
 	// splits sumstats into that can/can't be lifted by rsID
-	BUILDS_37_PRELIFT_CH = PRELIFT(BUILDS_37_SELECT_CH)
+	BUILDS_37_PRELIFT_CH = PRELIFT(BUILDS_37_RSIDS_CH)
 		.combine(CHAIN_CH)
 
 	// perform liftover of cpid list
@@ -192,20 +191,21 @@ process FORMAT {
 // get rsIDs for GWAS variants from dbSNP
 process SELECT {
 	tag "${dataset} ${dbsnp}"
+  label 'gatk'
 	
 	scratch true
 	stageInMode 'copy'
 	stageOutMode 'copy'
 
 	cpus = 1
-	memory =32.GB
+	memory = 32.GB
 	time = '4h'
 
 	input:
 	tuple val(dataset), val(dict), path(gwas), val(dbsnp), path(dbsnp_vcf)
 
 	output:
-	tuple val(dataset), val(dict), path(gwas, includeInputs: true), path("${dataset}-rsids.tsv")
+	tuple val(dataset), val(dict), path(gwas, includeInputs: true), path("${dataset}-select.vcf.gz")
 
 	script:
 	"""
@@ -217,14 +217,35 @@ process SELECT {
 	-V ${dbsnp}.gz \
 	--keep-ids ${dataset}.list \
 	-O ${dataset}-select.vcf.gz
-
-	# get chrom, pos, and id for selected rsIDs
-	bcftools query \
-	-f "%CHROM\\t%POS\\t%ID\n" \
-	${dataset}-select.vcf.gz > ${dataset}-rsids.tsv
 	"""
 }
 
+// get rsIDs for GWAS variants from dbSNP
+process QUERY {
+  tag "${dataset} ${dbsnp}"
+  
+  scratch true
+  stageInMode 'copy'
+  stageOutMode 'copy'
+
+  cpus = 1
+  memory = 8.GB
+  time = '4h'
+
+  input:
+  tuple val(dataset), val(dict), path(gwas), path(vcf)
+
+  output:
+  tuple val(dataset), val(dict), path(gwas, includeInputs: true), path("${dataset}-rsids.tsv")
+
+  script:
+  """
+  # get chrom, pos, and id for selected rsIDs
+  bcftools query \
+  -f "%CHROM\\t%POS\\t%ID\n" \
+  ${vcf} > ${dataset}-rsids.tsv
+  """
+}
 
 // split sumstats into parts that can/cannot be lifted by rsID
 // output a cpid list to be lifted in bed format
