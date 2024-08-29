@@ -223,6 +223,7 @@ process SELECT {
 // get rsIDs for GWAS variants from dbSNP
 process QUERY {
   tag "${dataset} ${dbsnp}"
+  label 'tools'
   
   scratch true
   stageInMode 'copy'
@@ -251,6 +252,7 @@ process QUERY {
 // output a cpid list to be lifted in bed format
 process PRELIFT {
 	tag "${dataset}"
+  label 'rscript'
 
 	cpus = 1
 	memory =16.GB
@@ -366,6 +368,7 @@ process LIFT {
 // QC sumstats for duplicate variants
 process QC {
 	tag "${dataset}"
+  label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
@@ -414,6 +417,7 @@ process QC {
 // subset to chromosome
 process CHR {
 	tag "${dataset} ${dbsnp} ${chr}"
+  label 'tools'
 
 	cpus = 1
 	memory =4.GB
@@ -428,8 +432,8 @@ process CHR {
 
 	script:
 	"""
-	cat ${gwas} | awk 'NF == 1 || \$1 == "${chr}"' > ${dataset}-${chr}.txt
-	cat ${dataset}-${chr}.txt | awk '{OFS="\\t"; {print \$1, \$2-1, \$2}}' > ${dataset}_${chr}.bed
+	cat ${gwas} | awk 'NR == 1 || \$1 == "${chr}"' > ${dataset}-${chr}.txt
+	cat ${dataset}-${chr}.txt | tail -n +2 | awk '{OFS="\\t"; {print \$1, \$2-1, \$2}}' > ${dataset}_${chr}.bed
 	bgzip ${dataset}_${chr}.bed
 	tabix ${dataset}_${chr}.bed.gz
 	
@@ -441,15 +445,18 @@ process CHR {
 // Convert to VCF
 process VCF {
 	tag "${dataset} ${assembly} ${dbsnp}"
+  label 'gwas2vcf'
 
-	container = "docker://mrcieu/gwas2vcf:latest"
-	scratch true
-	stageInMode 'copy'
-	stageOutMode 'copy'
+	//scratch true
+	//stageInMode 'copy'
+	//stageOutMode 'copy'
+  errorStrategy 'finish'
+  
+  container = "docker://mrcieu/gwas2vcf:latest"
 
 	cpus = 1
-	memory =16.GB
-	time = '48h'
+	memory = 8.GB
+	time = '1h'
 
 	input:
 	tuple val(dataset), val(dict), val(chr), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(json), path(gwas2vcf)
@@ -459,7 +466,7 @@ process VCF {
 
 	script:
 	"""
-	python ${gwas2vcf}/main.py \
+	python /app/main.py \
 	--data ${gwas} \
 	--json ${json} \
 	--id ${dataset} \
@@ -472,6 +479,7 @@ process VCF {
 // Index VCF
 process INDEX {
 	tag "${vcf.simpleName}"
+  label 'tools'
 
 	cpus = 1
 	memory =4.GB
@@ -492,6 +500,7 @@ process INDEX {
 // Concatenate per-chromosome VCFs together
 process CONCAT {
 	tag "${dataset}"
+  label 'tools'
 
 	cpus = 1
 	memory = 4.GB
@@ -533,6 +542,7 @@ process ANNOTATIONS {
 // get harmonised effect size and allele frequency
 process MAPPING {
 	tag "${dataset}"
+  label 'tools'
 
 	cpus = 1
 	memory = 1.GB
@@ -555,6 +565,7 @@ process MAPPING {
 // output tsv that can be tabix'd and a list of annotation column names
 process HARMONISE {
 	tag "${dataset}"
+  label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
@@ -607,6 +618,7 @@ process HARMONISE {
 // add annotations to GWASVCF
 process ANNOTATE {
 	tag "${dataset}"
+  label 'tools'
 
 	publishDir "vcf", mode: "copy"
 
