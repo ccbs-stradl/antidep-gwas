@@ -28,6 +28,13 @@ curl -L "https://www.dropbox.com/s/2e87z6nc4qexjjm/hg38_corrected.psam?dl=1" -o 
 
 ## 1. GWAS VCF
 
+Install `gwas2vcf`(https://mrcieu.github.io/gwas2vcf/)
+
+```sh
+mkdir vendor
+git clone https://github.com/MRCIEU/gwas2vcf.git vendor/gwas2vcf
+```
+
 Convert sumstats to [GWAS VCF](https://github.com/MRCIEU/gwas-vcf-specification) format. 
 
 ```sh
