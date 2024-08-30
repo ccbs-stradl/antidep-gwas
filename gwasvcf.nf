@@ -35,7 +35,6 @@ params.chain = "reference/hg19ToHg38.over.chain.gz"
 
 // gwas2vcf files
 params.json = "sumstats/gwas.json"
-params.gwas2vcf = "vendor/gwas2vcf"
 
 workflow {
 
@@ -76,9 +75,6 @@ workflow {
 */
 	JSON_CH = Channel
 		.fromPath(params.json, checkIfExists: true)
-	
-	GWAS2VCF_CH = Channel
-		.fromPath(params.gwas2vcf, type: "dir", checkIfExists: true)
 
 /*
 	Process sumstats
@@ -140,7 +136,6 @@ workflow {
 	DATA_CHR_CH = CHR(DATA_QC_CH, CHR_CH)
 		.combine(ASSEMBLY_CH)
 		.combine(JSON_CH)
-		.combine(GWAS2VCF_CH)
 
 	VCF_CHR_CH = VCF(DATA_CHR_CH)
 	VCF_TBI_CHR_CH = INDEX(VCF_CHR_CH)
@@ -252,7 +247,7 @@ process QUERY {
 // output a cpid list to be lifted in bed format
 process PRELIFT {
 	tag "${dataset}"
-  label 'rscript'
+  	label 'rscript'
 
 	cpus = 1
 	memory =16.GB
@@ -312,6 +307,7 @@ process LIFTOVER {
 // update sumstats with liftover files
 process LIFT {
 	tag "${dataset}"
+	label 'rscript'
 
 	cpus = 1
 	memory =16.GB
@@ -447,7 +443,7 @@ process VCF {
 	tag "${dataset} ${assembly} ${dbsnp}"
   label 'gwas2vcf'
 
-	//scratch true
+	scratch true
 	//stageInMode 'copy'
 	//stageOutMode 'copy'
   errorStrategy 'finish'
@@ -459,7 +455,7 @@ process VCF {
 	time = '1h'
 
 	input:
-	tuple val(dataset), val(dict), val(chr), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(json), path(gwas2vcf)
+	tuple val(dataset), val(dict), val(chr), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(json)
 
 	output:
 	tuple val(dataset), val(dict), path("${dataset}_${chr}.vcf.gz")
