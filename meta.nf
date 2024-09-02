@@ -109,7 +109,7 @@ workflow {
 process MEGA_IN {
     tag "${vcf}"
 
-    cpus = 1
+    cpus = 2
     memory = 1.GB
     time = '30m'
 
@@ -251,7 +251,7 @@ process MEGA_POST {
 process FIXED_IN {
     tag "${vcf}"
 
-    cpus = 1
+    cpus = 2
     memory = 1.GB
     time = '30m'
 
@@ -505,7 +505,7 @@ process REF_BED {
 
     cpus = 1
     memory = 8.GB
-    time = '10m'
+    time = '1h'
 
     input:
     tuple path(assoc), val(ref), path(pgen)
@@ -535,6 +535,14 @@ process REF_BED {
     --make-bed \
     --bfile ref-cpid \
     --update-name ${assoc.baseName}.names \
+    --out ref-dup \
+	--threads ${task.cpus} \
+	--memory ${task.memory.bytes.intdiv(1000000)}
+
+    plink2 \
+    --make-bed \
+    --bfile ref-dup \
+    --rm-dup 'force-first' \
     --out ref \
 	--threads ${task.cpus} \
 	--memory ${task.memory.bytes.intdiv(1000000)}
@@ -568,8 +576,8 @@ process CLUMP {
     --clump-range-border 1000 \
     --clump-p1 5e-8 \
     --clump-p2 5e-5 \
-    --clump-r2 0.4 \
-    --clump-kb 3000 \
+    --clump-r2 0.1 \
+    --clump-kb 1000 \
     --bfile ${ref} \
     --out ${assoc.baseName} \
 	--threads ${task.cpus} \
