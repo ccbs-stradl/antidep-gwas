@@ -82,15 +82,14 @@ workflow {
 	     .filter { it -> it[1].toInteger() > 0 }
          .map { it -> it[0] }
 
-    ASSOC_REF_CH = ASSOC_GW_CH
-         .combine(REF_CH)
-    
-    ASSOC_BED_CH = REF_BED(ASSOC_REF_CH)
-    
-    ASSOC_GENES_CH = ASSOC_BED_CH
-          .combine(GENES_CH)
+    // match association and reference SNPs with CPID
+    REF_CPID_CH = REF_CPID(REF_CH)
 
-    CLUMP_CH = CLUMP(ASSOC_GENES_CH)
+    ASSOC_REF_CH = ASSOC_GW_CH
+         .combine(REF_CPID_CH)
+
+    // clumping
+    CLUMP_CH = CLUMP(ASSOC_REF_CH)
 	
 }
 
@@ -109,7 +108,7 @@ workflow {
 process MEGA_IN {
     tag "${vcf}"
 
-    cpus = 1
+    cpus = 2
     memory = 1.GB
     time = '30m'
 
@@ -203,7 +202,7 @@ process MEGA_POST {
     #!Rscript
 	library(dplyr)
 	library(readr)
-	library(fastman)
+	library(stringr)
 	
 	mega <- read_tsv("${result}")
 
@@ -218,13 +217,18 @@ process MEGA_POST {
 
     mega_assoc <- mega_p |>
         transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
-                  P=`P-value_association`, BETA=beta_0, SE=se_0, NMISS=Nsample)
+                  P=`P-value_association`, BETA=beta_0, SE=se_0, NMISS=Nsample,
+                  CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
+
     mega_ancestry <- mega_p |>
         transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
-                   P=`P-value_ancestry_het`, BETA=beta_0, SE=se_0, NMISS=Nsample)
+                   P=`P-value_ancestry_het`, BETA=beta_0, SE=se_0, NMISS=Nsample,
+                   CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
+
     mega_residual <- mega_p |>
         transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
-                   P=`P-value_residual_het`, BETA=beta_0, SE=se_0, NMISS=Nsample)
+                   P=`P-value_residual_het`, BETA=beta_0, SE=se_0, NMISS=Nsample,
+                   CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
 
     write_tsv(mega_p, "${result}.gz")
@@ -251,7 +255,7 @@ process MEGA_POST {
 process FIXED_IN {
     tag "${vcf}"
 
-    cpus = 1
+    cpus = 2
     memory = 1.GB
     time = '30m'
 
@@ -429,13 +433,15 @@ process FIXED_POST {
 
 
     assoc <- meta_freqn |>
-        select(CHR, SNP, BP, A1, A2, P, OR, ESS=NEFF) |>
-		mutate(CHR = if_else(CHR == 'chrX', true = 23, false = as.numeric(str_remove(CHR, 'chr'))))
+        mutate(CHR = str_remove(CHR, 'chr')) |>
+        transmute(CHR, SNP = SNP, BP, A1, A2, P, OR, ESS=NEFF,
+                  CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
     
     het <- meta_freqn |>
         filter(!is.na(Q)) |>
-        select(CHR, SNP, BP, A1, A2, P=Q, OR, ESS=NEFF) |>
-		mutate(CHR = if_else(CHR == 'chrX', true = 23, false = as.numeric(str_remove(CHR, 'chr'))))
+        mutate(CHR = str_remove(CHR, 'chr')) |>
+        transmute(CHR, SNP = SNP, BP, A1, A2, P, OR, ESS=NEFF,
+                  CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
     write_tsv(meta_freqn, "${meta}.gz")
     write_tsv(assoc, "${meta.baseName}.assoc")
@@ -486,7 +492,8 @@ process MANHATTAN {
 	library(readr)
 	library(fastman)
 	
-	assoc <- read_tsv("${assoc}")
+	assoc <- read_tsv("${assoc}", col_types = cols(CHR = col_character())) |> 
+        mutate(CHR = case_match(CHR, "X" ~ 23, .default = as.numeric(CHR)))
 
     assoc_p <- assoc |> filter(P > 0)
 	
@@ -500,42 +507,29 @@ process MANHATTAN {
 	"""
 }
 
-process REF_BED {
-    tag "${assoc.baseName}-${ref}"
+/* ref variants IDs as CPID */
+process REF_CPID {
+    tag "${ref}"
 
     cpus = 1
     memory = 8.GB
-    time = '10m'
+    time = '1h'
 
     input:
-    tuple path(assoc), val(ref), path(pgen)
+    tuple val(ref), path(pgen)
 
     output:
-    tuple path(assoc, includeInputs: true), val("ref"), path("ref.{bed,bim,fam}")
+    tuple path("${ref}.pgen", includeInputs: true), path("${ref}.psam", includeInputs: true), path("cpid.pvar.zst")
 
     script:
     """
-    # chr/pos to extract
-    cat ${assoc} | awk 'NR > 1 {print \$1, \$3, \$3}' > ${assoc.baseName}.bed1
-    # rename CPIDs to rsID
-    cat ${assoc} | awk 'NR > 1 {print \$1":"\$3":"\$5":"\$4, \$2}' > ${assoc.baseName}.names
-
     plink2 \
-    --make-bed \
+    --make-just-pvar 'zs' \
     --pfile 'vzs' ${ref} \
-    --extract 'bed1' ${assoc.baseName}.bed1 \
     --set-all-var-ids @:#:\\\$r:\\\$a \
     --new-id-max-allele-len 500 error \
-    --out ref-cpid \
     --allow-extra-chr \
-	--threads ${task.cpus} \
-	--memory ${task.memory.bytes.intdiv(1000000)}
-
-    plink2 \
-    --make-bed \
-    --bfile ref-cpid \
-    --update-name ${assoc.baseName}.names \
-    --out ref \
+    --out cpid \
 	--threads ${task.cpus} \
 	--memory ${task.memory.bytes.intdiv(1000000)}
     """
@@ -548,29 +542,29 @@ process CLUMP {
 
     //errorStrategy 'ignore'
 
-    cpus = 8
-    memory = 8.GB
+    cpus = 4
+    memory = 16.GB
     time = '1h'
 
     input:
-    tuple path(assoc), val(ref), path(bed), path(genes)
+    tuple path(assoc), path(pgen), path(psam), path(pvar)
 
     output:
-    tuple path("${assoc.baseName}.clumped"), path("${assoc.baseName}.clumped.ranges"), path("${assoc.baseName}.log")
+    tuple path("${assoc.baseName}.clumps"), path("${assoc.baseName}.log")
 
     script:
     """
-    tail -n +2 ${genes} > ${genes.baseName}.bed1
-
-    plink \
+    plink2 \
     --clump ${assoc} \
-    --clump-range ${genes.baseName}.bed1 \
-    --clump-range-border 1000 \
-    --clump-p1 5e-8 \
-    --clump-p2 5e-5 \
-    --clump-r2 0.4 \
-    --clump-kb 3000 \
-    --bfile ${ref} \
+    --clump-id-field CPID \
+    --clump-p1 0.0001 \
+    --clump-p2 1.0 \
+    --clump-r2 0.1 \
+    --clump-kb 1000 \
+    --clump-allow-overlap \
+    --pgen ${pgen} \
+    --psam ${psam} \
+    --pvar ${pvar} \
     --out ${assoc.baseName} \
 	--threads ${task.cpus} \
 	--memory ${task.memory.bytes.intdiv(1000000)}
