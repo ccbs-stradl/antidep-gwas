@@ -194,8 +194,8 @@ process SELECT {
   label 'gatk'
 	
 	scratch true
-	stageInMode 'copy'
-	stageOutMode 'copy'
+	//stageInMode 'copy'
+	//stageOutMode 'copy'
 
 	cpus = 1
 	memory = 32.GB
@@ -226,8 +226,8 @@ process QUERY {
   label 'tools'
   
   scratch true
-  stageInMode 'copy'
-  stageOutMode 'copy'
+  //stageInMode 'copy'
+  //stageOutMode 'copy'
 
   cpus = 1
   memory = 8.GB
@@ -252,7 +252,7 @@ process QUERY {
 // output a cpid list to be lifted in bed format
 process PRELIFT {
 	tag "${dataset}"
-  label 'rscript'
+  	label 'rscript'
 
 	cpus = 1
 	memory =16.GB
@@ -312,6 +312,7 @@ process LIFTOVER {
 // update sumstats with liftover files
 process LIFT {
 	tag "${dataset}"
+	label 'rscript'
 
 	cpus = 1
 	memory =16.GB
@@ -368,7 +369,7 @@ process LIFT {
 // QC sumstats for duplicate variants
 process QC {
 	tag "${dataset}"
-  label 'rscript'
+  	label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
@@ -445,14 +446,13 @@ process CHR {
 // Convert to VCF
 process VCF {
 	tag "${dataset} ${assembly} ${dbsnp}"
-  label 'gwas2vcf'
+  	label 'gwas2vcf'
 
-	//scratch true
+	scratch true
 	//stageInMode 'copy'
 	//stageOutMode 'copy'
-  errorStrategy 'finish'
+  	errorStrategy 'finish'
   
-  container = "docker://mrcieu/gwas2vcf:latest"
 
 	cpus = 1
 	memory = 8.GB
@@ -466,7 +466,7 @@ process VCF {
 
 	script:
 	"""
-	python /app/main.py \
+	python ${gwas2vcf}/main.py \
 	--data ${gwas} \
 	--json ${json} \
 	--id ${dataset} \
@@ -565,7 +565,7 @@ process MAPPING {
 // output tsv that can be tabix'd and a list of annotation column names
 process HARMONISE {
 	tag "${dataset}"
-  label 'rscript'
+  	label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
