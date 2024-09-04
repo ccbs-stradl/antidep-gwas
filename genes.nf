@@ -84,6 +84,7 @@ process POPS {
 */
 process MA {
 	tag "${sumstats}"
+	label "rscript"
 
 	cpus = 1
 	memory = 16.GB
@@ -168,7 +169,7 @@ process MBAT {
     tag "${ma.baseName}-${ref}"
 
     cpus = 8
-    memory = 16.GB
+    memory = 32.GB
     time = '3h'
 
     input:
@@ -198,6 +199,7 @@ process MBAT {
 */
 process MBATTED {
 	tag "${mbat.simpleName}"
+	label "rscript"
 
 	publishDir 'maps', mode: 'copy'
 
