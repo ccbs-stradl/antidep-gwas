@@ -35,6 +35,7 @@ params.chain = "reference/hg19ToHg38.over.chain.gz"
 
 // gwas2vcf files
 params.json = "sumstats/gwas.json"
+params.gwas2vcf = "vendor/gwas2vcf"
 
 workflow {
 
@@ -75,6 +76,9 @@ workflow {
 */
 	JSON_CH = Channel
 		.fromPath(params.json, checkIfExists: true)
+	
+	GWAS2VCF_CH = Channel
+		.fromPath(params.gwas2vcf, type: "dir", checkIfExists: true)
 
 /*
 	Process sumstats
@@ -136,6 +140,7 @@ workflow {
 	DATA_CHR_CH = CHR(DATA_QC_CH, CHR_CH)
 		.combine(ASSEMBLY_CH)
 		.combine(JSON_CH)
+		.combine(GWAS2VCF_CH)
 
 	VCF_CHR_CH = VCF(DATA_CHR_CH)
 	VCF_TBI_CHR_CH = INDEX(VCF_CHR_CH)
@@ -189,8 +194,8 @@ process SELECT {
   label 'gatk'
 	
 	scratch true
-	stageInMode 'copy'
-	stageOutMode 'copy'
+	//stageInMode 'copy'
+	//stageOutMode 'copy'
 
 	cpus = 1
 	memory = 32.GB
@@ -221,8 +226,8 @@ process QUERY {
   label 'tools'
   
   scratch true
-  stageInMode 'copy'
-  stageOutMode 'copy'
+  //stageInMode 'copy'
+  //stageOutMode 'copy'
 
   cpus = 1
   memory = 8.GB
@@ -364,7 +369,7 @@ process LIFT {
 // QC sumstats for duplicate variants
 process QC {
 	tag "${dataset}"
-  label 'rscript'
+  	label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
@@ -441,28 +446,27 @@ process CHR {
 // Convert to VCF
 process VCF {
 	tag "${dataset} ${assembly} ${dbsnp}"
-  label 'gwas2vcf'
+  	label 'gwas2vcf'
 
 	scratch true
 	//stageInMode 'copy'
 	//stageOutMode 'copy'
-  errorStrategy 'finish'
+  	errorStrategy 'finish'
   
-  container = "docker://mrcieu/gwas2vcf:latest"
 
 	cpus = 1
 	memory = 8.GB
 	time = '1h'
 
 	input:
-	tuple val(dataset), val(dict), val(chr), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(json)
+	tuple val(dataset), val(dict), val(chr), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(json), path(gwas2vcf)
 
 	output:
 	tuple val(dataset), val(dict), path("${dataset}_${chr}.vcf.gz")
 
 	script:
 	"""
-	python /app/main.py \
+	python ${gwas2vcf}/main.py \
 	--data ${gwas} \
 	--json ${json} \
 	--id ${dataset} \
@@ -561,7 +565,7 @@ process MAPPING {
 // output tsv that can be tabix'd and a list of annotation column names
 process HARMONISE {
 	tag "${dataset}"
-  label 'rscript'
+  	label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
