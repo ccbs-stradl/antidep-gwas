@@ -141,24 +141,24 @@ process REF_BED {
     plink2 \
     --make-bed \
     --pfile 'vzs' ${ref} \
-	--keep-cat-names ${pop} \
-	--keep-cat-pheno SuperPop \
-	--keep-founders \
+		--keep-cat-names ${pop} \
+		--keep-cat-pheno SuperPop \
+		--keep-founders \
     --extract 'bed1' ${ma.baseName}.bed1 \
     --set-all-var-ids @:#:\\\$r:\\\$a \
     --new-id-max-allele-len 500 error \
     --out ref-cpid \
     --allow-extra-chr \
-	--threads ${task.cpus} \
-	--memory ${task.memory.bytes.intdiv(1000000)}
+		--threads ${task.cpus} \
+		--memory ${task.memory.bytes.intdiv(1000000)}
 
     plink2 \
     --make-bed \
     --bfile ref-cpid \
     --update-name ${ma.baseName}.names \
     --out ref-${ref} \
-	--threads ${task.cpus} \
-	--memory ${task.memory.bytes.intdiv(1000000)}
+		--threads ${task.cpus} \
+		--memory ${task.memory.bytes.intdiv(1000000)}
     """
 }
 
@@ -181,17 +181,17 @@ process MBAT {
     script:
     """
     gcta64 \
-	--bfile ${ref} \
-	--mBAT-combo ${ma} \
-	--mBAT-gene-list ${genelist} \
-	--mBAT-print-all-p \
-	--mBAT-svd-gamma 0.9 \
-	--mBAT-wind 50 \
-	--diff-freq 0.2 \
-	--fastBAT-ld-cutoff 0.9 \
-	--mBAT-write-snpset \
-	--out ${ma.baseName}-${ref} \
-	--threads ${task.cpus}
+		--bfile ${ref} \
+		--mBAT-combo ${ma} \
+		--mBAT-gene-list ${genelist} \
+		--mBAT-print-all-p \
+		--mBAT-svd-gamma 0.9 \
+		--mBAT-wind 50 \
+		--diff-freq 0.2 \
+		--fastBAT-ld-cutoff 0.9 \
+		--mBAT-write-snpset \
+		--out ${ma.baseName}-${ref} \
+		--threads ${task.cpus}
     """
 }
 

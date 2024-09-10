@@ -440,7 +440,7 @@ process FIXED_POST {
     het <- meta_freqn |>
         filter(!is.na(Q)) |>
         mutate(CHR = str_remove(CHR, 'chr')) |>
-        transmute(CHR, SNP = SNP, BP, A1, A2, P, OR, ESS=NEFF,
+        transmute(CHR, SNP = SNP, BP, A1, A2, P = Q, I, ESS=NEFF,
                   CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
     write_tsv(meta_freqn, "${meta}.gz")
