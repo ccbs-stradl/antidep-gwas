@@ -7,7 +7,7 @@
 */
 
 // Input files: sumstats gz, shell scripts, and meta data csv
-params.sumstats = "meta/*.gz"
+params.sumstats = "meta/fixed-*.meta.gz"
 
 // reference files
 // assembly fasta, fai, and dict 
@@ -352,9 +352,9 @@ process HARMONISE {
 	write_tsv(mapped_annot, "${dataset}-annot-mapped.tsv", col_names = FALSE)
 	write(names(mapped_annot), "${dataset}-annot-mapped.cols", ncolumns = 1)
 
-	headers = c('##FORMAT=<ID=AFCAS,Number=1,Type=Float,Description="Alternate allele frequency in cases">',
-			        '##FORMAT=<ID=AFCON,Number=1,Type=Float,Description="Alternate allele frequency in controls">',
-	            '##FORMAT=<ID=NE,Number=1,Type=Float,Description="Effective sample size used to estimate genetic effect">')
+	headers = c('##FORMAT=<ID=AFCAS,Number=A,Type=Float,Description="Alternate allele frequency in cases">',
+			        '##FORMAT=<ID=AFCON,Number=A,Type=Float,Description="Alternate allele frequency in controls">',
+	            '##FORMAT=<ID=NE,Number=A,Type=Float,Description="Effective sample size used to estimate genetic effect">')
 	write(headers, "header.txt", ncolumns = 1)
 	"""
 }
@@ -388,9 +388,11 @@ process ANNOTATE {
 	--annotations ${annotations}.gz \
 	--columns-file ${columns} \
 	--header-lines ${headers} \
-	--output ${dataset}.vcf.gz \
-	${vcf}
-
+  --output-type z \
+  ${vcf} |\
+  bcftools sort --output-type z \
+	--output ${dataset}.vcf.gz
+	
 	tabix ${dataset}.vcf.gz
 	"""
 }
