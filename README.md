@@ -16,7 +16,10 @@ Cohorts
 mkdir reference
 curl "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}" -o "reference/Homo_sapiens_assembly38.#1"
 curl "http://fileserve.mrcieu.ac.uk/dbsnp/dbsnp.v153.hg38.vcf.{gz,gz.tbi}" -o "reference/dbsnp.v153.hg38.vcf.#1"
+curl "http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz" | gunzip -c > reference/human_g1k_v37.fasta
+curl "http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.fai" > reference/human_g1k_v37.fasta.fai
 curl "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/liftOver/hg19ToHg38.over.chain.gz" -o "reference/hg19ToHg38.over.chain.gz"
+curl "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz" -o "reference/hg38ToHg19.over.chain.gz"
 curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg38_v40.txt" -o "reference/glist_ensgid_hg38_v40.txt"
 curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg38_v40_symbol_gene_names.txt" -o "reference/glist_ensgid_hg38_v40_symbol_gene_names.txt"
 curl "https://www.dropbox.com/s/j72j6uciq5zuzii/all_hg38.pgen.zst?dl=1" -o reference/all_hg38.pgen.zst
@@ -33,6 +36,14 @@ Install `gwas2vcf`(https://mrcieu.github.io/gwas2vcf/)
 ```sh
 mkdir vendor
 git clone https://github.com/MRCIEU/gwas2vcf.git vendor/gwas2vcf
+```
+
+Install [bcftools score plugins](https://github.com/freeseek/score)
+
+```sh
+mkdir plugins
+curl -O https://software.broadinstitute.org/software/score/score_1.20-20240505.zip
+unzip -d plugins score_1.20-20240505.zip
 ```
 
 Convert sumstats to [GWAS VCF](https://github.com/MRCIEU/gwas-vcf-specification) format. 

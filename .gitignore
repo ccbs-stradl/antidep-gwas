@@ -8,6 +8,7 @@ hail-*.log
 work/
 vendor/
 bin/
+plugins/
 mt/
 meta/
 maps/
