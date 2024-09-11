@@ -5,6 +5,8 @@ Cohorts
 - Biobank Japan, [ATC_N06A: Antidepressants](https://pheweb.jp/pheno/ATC_N06A)
 - FINNGEN, [R9 Antidepressants](https://r9.finngen.fi/pheno/ANTIDEPRESSANTS)
 - Generation Scotland, PIS
+- UK Biobank, GP prescription records
+- All of Us, Drug exposure
 
 ### Requirements
 
