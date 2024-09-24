@@ -29,13 +29,14 @@ workflow {
     .combine(PLUGIN_CH)
     
   LIFTED_CH = LIFTOVER(DATA_CH)
-    .view()
   
 }
 
 process LIFTOVER {
   tag "${sumstats}"
   label 'tools'
+
+  publishDir 'liftover', mode: 'copy'
   
   cpus = 1
   memory = 8.GB
@@ -56,5 +57,7 @@ process LIFTOVER {
   --af-tags INFO/AF,FMT/AF,FMT/AFCAS,FMT/AFCON |\
   bcftools sort --output-type z \
   --output ${sumstats}.${dest}.vcf.gz
+
+  tabix ${sumstats}.${dest}.vcf.gz
   """
 }
