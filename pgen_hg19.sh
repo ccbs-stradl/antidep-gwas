@@ -14,5 +14,5 @@ cd /exports/eddie/scratch/$USER
 plink2 \
 	--pfile /exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc \
     --keep /exports/igmm/eddie/GenScotDepression/data/ukb/genetics/input_filters/similarity_clusters/ld_ref/ukb-ld-ref_${CLUSTER}.id \
-    --make-pgen \
+    --make-pgen 'vzs' \
     --out antidep-gwas/reference/ukb_imp_v3.qc_${CLUSTER}
