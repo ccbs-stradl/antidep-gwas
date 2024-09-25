@@ -1,5 +1,5 @@
 #$ -N pgen_hg19
-#$ -l h_vmem=64G
+#$ -l h_vmem=32G
 #$ -l rl9=true
 #$ -l h_rt=8:00:00
 #$ -e logs
