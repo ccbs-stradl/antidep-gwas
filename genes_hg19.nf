@@ -203,7 +203,7 @@ process MBATTED {
 	tag "${mbat.simpleName}"
 	label "rscript"
 
-	publishDir 'maps', mode: 'copy'
+	publishDir 'maps_hg19', mode: 'copy'
 
 	cpus = 1
 	memory = 4.GB
