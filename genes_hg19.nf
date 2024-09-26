@@ -8,7 +8,7 @@ nextflow.enable.dsl=2
 params.meta = "meta/fixed-*.meta.gz"
 
 // ld reference PGEN where first phenotype specifies reference population */
-params.ref = "reference/ukb_imp_v3.qc_EUR.{pgen,psam,pvar.zst}"
+params.ref = "reference/ukb_imp_v3.qc_ancestry.{pgen,psam,pvar.zst}"
 // gene position reference
 params.genes = "reference/glist_ensgid_hg19_v40.txt"
 params.names = "reference/glist_ensgid_hg19_v40_symbol_gene_names.txt"

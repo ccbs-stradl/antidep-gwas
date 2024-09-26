@@ -38,12 +38,8 @@ curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg1
 curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg19_v40_symbol_gene_names.txt" -o "reference/glist_ensgid_hg19_v40_symbol_gene_names.txt"
 
 # Use UKBiobank genetic data for creating LD references as these are in the hg19 format
-# Subset pgen files to specific ancestries
-cd /exports/eddie/scratch/$USER
-export PATH=$PATH:/exports/igmm/eddie/GenScotDepression/local/bin/plink2
-for cluster in EUR AFR SAS; do
-qsub antidep-gwas/pgen_hg19.sh -v CLUSTER=${cluster}
-done
+# Subset pgen file to specific ancestries, reformat .psam to same format as 1000 genomes Gr38 build
+qsub antidep-gwas/pgen_hg19.sh
 
 ```
 
