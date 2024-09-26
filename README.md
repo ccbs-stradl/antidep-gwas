@@ -39,7 +39,8 @@ curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg1
 
 # Use UKBiobank genetic data for creating LD references as these are in the hg19 format
 # Subset pgen file to specific ancestries, reformat .psam to same format as 1000 genomes Gr38 build
-qsub antidep-gwas/pgen_hg19.sh
+qsub pgen_hg19.sh
+mkdir maps_hg19
 
 ```
 
