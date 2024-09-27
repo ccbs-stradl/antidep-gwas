@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 */
 
 // input meta-analysis sumstats
-params.meta = "meta/fixed-*.meta.gz"
+params.meta = "liftover/fixed-*.vcf.gz"
 
 // ld reference PGEN where first phenotype specifies reference population */
 params.ref = "reference/ukb_imp_v3.qc_ancestry.{pgen,psam,pvar.zst}"
@@ -84,7 +84,7 @@ process POPS {
 */
 process MA {
 	tag "${sumstats}"
-	label "rscript"
+	label 'tools'
 
 	cpus = 1
 	memory = 16.GB
@@ -95,24 +95,15 @@ process MA {
 	each neff_pct
 
 	output:
-	tuple val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma")
+	tuple val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.txt")
 
-	script:
-	"""
-	#!Rscript
-	library(readr)
-	library(dplyr)
-	library(stringr)
-
-	sumstats <- read_tsv("${sumstats}")
-
-	ma <- sumstats |>
-		filter(NEFF >= ${neff_pct} * NEFF) |>
-		transmute(SNP, A1, A2, freq = AFCON, BETA = log(OR), SE, P, N = NEFF,
-		          str_remove(CHR, "chr"), BP)
-	
-	write_tsv(ma, "${sumstats.simpleName}.ma")
-	"""
+	shell:
+  	"""
+  	echo "SNP\tA1\tA2\tOR\tP\tINFO\tFRQ\tN" > !{sumstats.simpleName}.txt
+  	bcftools query \
+  	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%LP]\\t[%SI]\\t[%AFCON]\\t[%NE]\\n" \
+  	!{sumstats} | awk -v OFS='\t' '{print $1, $2, $3,  exp($4), 10^-($5), $6, $7, $8}' >> !{sumstats.simpleName}.txt
+  	"""
 }
 
 /* Get genotypes for reference population.
