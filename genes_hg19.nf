@@ -99,10 +99,10 @@ process MA {
 
 	shell:
   	"""
-  	echo "SNP\tA1\tA2\tOR\tP\tINFO\tFRQ\tN" > !{sumstats.simpleName}.txt
-  	bcftools query \
-  	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%LP]\\t[%SI]\\t[%AFCON]\\t[%NE]\\n" \
-  	!{sumstats} | awk -v OFS='\t' '{print $1, $2, $3,  exp($4), 10^-($5), $6, $7, $8}' >> !{sumstats.simpleName}.txt
+	echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP" > !{sumstats.simpleName}.txt
+	bcftools query \
+    -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS" \
+    !{sumstats} | awk -v OFS='\\t' '{print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10}' >> !{sumstats.simpleName}.txt
   	"""
 }
 
