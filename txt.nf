@@ -16,6 +16,7 @@ workflow {
 */
 process TXT {
   tag "${vcf}"
+  label 'tools'
   
   publishDir 'txt', mode: 'copy'
   
@@ -30,6 +31,6 @@ process TXT {
   echo "SNP\tA1\tA2\tOR\tP\tINFO\tFRQ\tN" > !{vcf}.txt
   bcftools query \
   -f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%LP]\\t[%SI]\\t[%AFCON]\\t[%NE]\\n" \
-  !{vcf}.gz | awk -v OFS='\t' '{print $1, $2, $3,  exp($4), 10^-($5), $6, $7, $8}' >> !{vcf}.txt
+  !{vcf}.vcf.gz | awk -v OFS='\t' '{print $1, $2, $3,  exp($4), 10^-($5), $6, $7, $8}' >> !{vcf}.txt
   '''
 }

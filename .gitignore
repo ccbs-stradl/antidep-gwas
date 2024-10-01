@@ -12,6 +12,14 @@ bin/
 plugins/
 mt/
 meta/
+meta
+vcf/
+vcf
+metavcf/
+metavcf
 maps/
 txt/
+txt
+liftover/
+liftover
 MR-MEGA
