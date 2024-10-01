@@ -1,0 +1,106 @@
+---
+title: Genome-wide models of antidepressant exposure classes
+---
+
+```{r}
+library(readr)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(ggplot2)
+library(GenomicSEM)
+library(vcmeta)
+```
+
+
+## Phenotypes
+
+```{r counts}
+
+allofus_counts <- read_tsv(here::here("gwas/AllOfUs/allofus_n06a_counts.tsv")) |>
+  mutate(cohort = "All of Us")
+gs_counts <- read_tsv(here::here("gwas/GenScot/gs_n06a_counts.tsv")) |>
+  mutate(cohort = "GenScot")
+ukb_counts <- read_tsv(here::here("gwas/UKB/ukb_n06a_counts.tsv")) |>
+  mutate(cohort = "UK Biobank")
+
+n06a_class_counts <- allofus_counts |>
+  mutate(cluster = str_to_upper(ancestry_pred)) |>
+  group_by(cohort, cluster, N06AA, N06AB) |>
+  summarise(n = sum(n)) |>
+  ungroup() |>
+  bind_rows(gs_counts) |>
+  bind_rows(ukb_counts)
+```
+
+Tetrachoric correlation
+
+```{r rtet, fig.width=6, fig.height=3, dpi=218}
+  
+n06a_r_tet <-
+n06a_class_counts |> 
+  pivot_wider(names_from = c(N06AA, N06AB), names_prefix = "f", values_from = n) |>
+  rowwise() |>
+  mutate(rtet = list(se.tetra(f0_0, f0_1, f1_0, f1_1))) |>
+  mutate(rtet_est = rtet[1], rtet_se = rtet[2]) |>
+  select(-rtet)
+
+ggplot(n06a_r_tet, aes(x = cluster, colour = cohort, y = rtet_est,
+                       ymin = rtet_est + qnorm(0.025, sd = rtet_se),
+                       ymax = rtet_est + qnorm(0.975, sd = rtet_se))) +
+geom_pointrange(position = position_dodge(width = 0.5)) +
+scale_x_discrete("") +
+scale_y_continuous(expression(r[tet]), limits = c(0, 1)) +
+scale_colour_discrete("") +
+coord_flip() +
+theme_minimal() +
+theme(legend.position = "top")
+```
+
+## Munge
+
+```{r munge_ad}
+# hm3 SNPs
+hm3 <- here::here("reference/w_hm3.snplist")
+
+for(cluster in c("AFR", "EUR", "SAS")) {
+  for(ad_class in c("N06A", "N06AA", "N06AB")) {
+    if(!file.exists(here::here("models", str_glue("AD_{ad_class}_{cluster}.sumstats.gz")))) {
+      munge(files = here::here("txt", str_glue("fixed-{ad_class}-{cluster}.human_g1k_v37.txt")),
+           trait.names = str_glue("AD_{ad_class}_{cluster}"), hm3 = hm3,
+           info.filter = 0.9, maf.filter = 0.01, N = NA)
+    }
+  }
+}
+```
+
+## LDSC
+
+```{r ldsc, cache = TRUE}
+afr_ldsc <- ldsc(traits = c("AD_N06A_AFR.sumstats.gz", "AD_N06AA_AFR.sumstats.gz", "AD_N06AB_AFR.sumstats.gz"),
+ trait.names = c("N06A", "N06AA", "N06AB"),
+ sample.prev = c(0.5, 0.5, 0.5),
+ population.prev = c(0.25, 0.1, 0.20),
+ ld = here::here("reference/UKBB.ALL.ldscore/UKBB.AFR"),
+ wld = here::here("reference/UKBB.ALL.ldscore/UKBB.AFR"),
+ chr = 1
+ )
+ 
+ eur_ldsc <- ldsc(traits = c("AD_N06A_EUR.sumstats.gz", "AD_N06AA_EUR.sumstats.gz", "AD_N06AB_EUR.sumstats.gz"),
+  trait.names = c("N06A", "N06AA", "N06AB"),
+  sample.prev = c(0.5, 0.5, 0.5),
+  population.prev = c(0.25, 0.15, 0.20),
+  ld = here::here("reference/UKBB.ALL.ldscore/UKBB.EUR"),
+  wld = here::here("reference/UKBB.ALL.ldscore/UKBB.EUR"),
+  chr = 1
+  )
+  
+  sas_ldsc <- ldsc(traits = c("AD_N06A_SAS.sumstats.gz", "AD_N06AA_SAS.sumstats.gz", "AD_N06AB_SAS.sumstats.gz"),
+  trait.names = c("N06A", "N06AA", "N06AB"),
+  sample.prev = c(0.5, 0.5, 0.5),
+  population.prev = c(0.15, 0.15, 0.1),
+  ld = here::here("reference/UKBB.ALL.ldscore/UKBB.CSA"),
+  wld = here::here("reference/UKBB.ALL.ldscore/UKBB.CSA"),
+  chr = 1
+  )
+```
