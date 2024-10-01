@@ -1,5 +1,5 @@
 ---
-title: Antidepressant exposure GWAS meta-analysis manhattan plots
+title: Antidepressant exposure GWAS fixed-effects meta-analysis
 output: github_document
 ---
 
@@ -7,19 +7,22 @@ output: github_document
 library(dplyr)
 library(readr)
 library(stringr)
+library(tidyr)
 library(topr)
+library(UpSetR)
 library(plyranges)
+library(ggplot2)
 ```
 
-## Results
+
+## GWAS results
 
 ### Sumstats
 
 ```{r sumstats, cache = TRUE, cache.lazy = FALSE}
-metas <- c("N06A-EUR"  = "meta/fixed-N06A-EUR",
-           "N06A-EAS"  = "meta/fixed-N06A-EAS",
-           "N06AA-EUR" = "meta/fixed-N06AA-EUR",
-           "N06AB-EUR" = "meta/fixed-N06AB-EUR")
+meta_gzs <- list.files("meta", "fixed-.+meta\\.gz", full.names = TRUE)
+metas <- str_remove(meta_gzs, ".meta.gz")
+names(metas) <- str_remove(basename(metas), "fixed-")
            
 sumstats_paths <- lapply(metas, function(.x) str_c(.x, "meta.gz", sep = "."))
 
@@ -27,7 +30,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     read_tsv(path) |>
         select(CHROM = CHR, POS = BP, ID = SNP,
                REF = A2, ALT = A1, P, OR,
-               AF = starts_with("FRQ_U"))
+               AF = AFCON, NCAS, NCON, NEFF)
 })
 ```
 
@@ -47,7 +50,7 @@ clumped_ranges <- lapply(ranges_paths[sapply(ranges_paths, file.exists)], read_t
 
 ```{r manhattan, fig.width=8, fig.height=4.5, dpi=218}
 sumstats2 <- lapply(sumstats, function(ss) filter(ss, P <= 1e-2))
-manhattan(sumstats2, legend_labels = names(sumstats), ntop = 2, sign_thresh = 5e-08, build = 38)
+manhattan(sumstats2, legend_labels = names(sumstats), ntop = 6, sign_thresh = 5e-08, build = 38)
 ```
 
 ## Loci
@@ -59,8 +62,12 @@ Construct genomic ranges.
 clumped_ranges_grs <- lapply(clumped_ranges, function(cr) {
     cr |>
     mutate(range = str_match(POS, "chr[0-9]+:([0-9]+)\\.\\.([0-9]+)")) |>
-    transmute(seqnames = CHR, start = as.numeric(range[,2]), end = as.numeric(range[,3]), P, SNP) |>
-    as_granges()
+    transmute(seqnames = str_c("chr", CHR),
+              start = as.numeric(range[,2]),
+              end = as.numeric(range[,3]), P, SNP) |>
+    filter(P <= 5e-8) |>
+    as_granges() |>
+    set_genome_info(genome = "hg38")
 })
 
 loci_ranges_grs <- lapply(clumped_ranges_grs, function(gr) {
@@ -79,8 +86,11 @@ sapply(loci_ranges_grs, length)
 
 ```{r overlaps}
 
-find_overlaps(loci_ranges_grs[['N06A-EUR']], loci_ranges_grs[['N06AA-EUR']])
-find_overlaps(loci_ranges_grs[['N06A-EUR']], loci_ranges_grs[['N06AB-EUR']])
+all_gr <- reduce_ranges(bind_ranges(loci_ranges_grs))
+
+hits_upset <- lapply(loci_ranges_grs, function(gr) findOverlaps(all_gr, gr)@from)
+
+upset(fromList(hits_upset), nsets = length(hits_upset), order.by='freq', text.scale=2)
 
 ```
 
@@ -88,8 +98,8 @@ find_overlaps(loci_ranges_grs[['N06A-EUR']], loci_ranges_grs[['N06AB-EUR']])
 
 ```{r chr11_11, fig.width=8, fig.height=4.5, dpi=218}
 
-regionplot(sumstats, legend_labels = names(sumstats),
-    chr = 11, xmin = 112956144, xmax = 113125732,
+regionplot(sumstats["N06A-EUR"], legend_labels = names(sumstats["N06A-EUR"]),
+    chr = 11, xmin = 112956144, xmax = 113578846,
     build = 38, show_overview = FALSE)
 
 ```
