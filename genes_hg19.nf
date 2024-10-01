@@ -116,6 +116,8 @@ process REF_BED {
     memory = 8.GB
     time = '10m'
 
+	publishDir 'maps_hg19_duplicates', mode: 'copy', pattern: '*.duplicates'
+
     input:
     tuple val(pop), val(meta), val(pheno), path(ma), val(ref), path(pgen)
 
@@ -126,8 +128,16 @@ process REF_BED {
     """
     # chr/pos to extract
     cat ${ma} | awk 'NR > 1 {print \$9, \$10, \$10}' > ${ma.baseName}.bed1
+    
     # rename CPIDs to rsID
     cat ${ma} | awk 'NR > 1 {print \$9":"\$10":"\$3":"\$2, \$1}' > ${ma.baseName}.names
+    
+    # Save duplicate CPIDs
+    awk '{print \$1}' ${ma.baseName}.names | sort |uniq -d > ${ma.baseName}.duplicates
+
+	# Remove duplicate CPIDs from *.names
+	awk 'NR==FNR {duplicates[\$1]; next} !(\$1 in duplicates)' ${ma.baseName}.duplicates ${ma.baseName}.names > ${ma.baseName}.noDups.names
+
 
     export PATH=$PATH:/exports/igmm/eddie/GenScotDepression/local/bin/plink2
 
@@ -148,7 +158,7 @@ process REF_BED {
     plink2 \
     --make-bed \
     --bfile ref-cpid \
-    --update-name ${ma.baseName}.names \
+    --update-name ${ma.baseName}.noDups.names \
     --out ref-${ref} \
 		--threads ${task.cpus} \
 		--memory ${task.memory.bytes.intdiv(1000000)}
