@@ -337,7 +337,7 @@ process FIXED {
     """
 }
 
-// Fixed effects sample information
+// Fixed effects sample information that is weighted by N
 process FIXEDN {
     tag "${dataset.pheno}-${dataset.cluster}"
 
@@ -362,26 +362,32 @@ process FIXEDN {
     freqn_paths = "${freqn}"
 
     freqn = pl.concat(
-        [pl.scan_csv(path, separator= "\\t", null_values = ".", dtypes = {"NEFF": pl.Float64, "INFO": pl.Float64}) for path in freqn_paths.split()],
+        [pl.scan_csv(path, separator= "\\t", null_values = ".", schema_overrides = {"NEFF": pl.Float64, "INFO": pl.Float64, "AFCAS": pl.Float64, "AFCON": pl.Float64}) for path in freqn_paths.split()],
         how = "vertical"
     )
 
     meta = (
         freqn.select(
             pl.col("*"),
+            # calculate number of controls
             (pl.col("N") - pl.col("NCAS")).alias("NCON")
         )
         .select(
             pl.col("*"),
+            # weight INFO by N, AF by cases and controls
             (pl.col("INFO") * pl.col("N")).alias("wINFO"),
             (pl.col("AFCAS") * pl.col("NCAS")).alias("wAFCAS"),
-            (pl.col("AFCON") * pl.col("NCON")).alias("wAFCON")
+            (pl.col("AFCON") * pl.col("NCON")).alias("wAFCON"),
+            # replicate missingness over to a new N column
+            pl.when(pl.col("INFO").is_null()).then(None).otherwise(pl.col("N")).alias("nINFO"),
+            pl.when(pl.col("AFCAS").is_null()).then(None).otherwise(pl.col("NCAS")).alias("nAFCAS"),
+            pl.when(pl.col("AFCON").is_null()).then(None).otherwise(pl.col("NCON")).alias("nAFCON")
         )
         .group_by("CHR", "BP", "SNP", "A1", "A2")
         .agg(
-            (pl.sum("wINFO") / pl.sum("N")).alias("INFO"),
-            (pl.sum("wAFCAS") / pl.sum("NCAS")).alias("AFCAS"),
-            (pl.sum("wAFCON") / pl.sum("NCON")).alias("AFCON"),
+            (pl.sum("wINFO") / pl.sum("nINFO")).alias("INFO"),
+            (pl.sum("wAFCAS") / pl.sum("nAFCAS")).alias("AFCAS"),
+            (pl.sum("wAFCON") / pl.sum("nAFCON")).alias("AFCON"),
             pl.sum("NCAS"),
             pl.sum("NCON"),
             pl.sum("NEFF"),
