@@ -107,6 +107,7 @@ workflow {
 */
 process MEGA_IN {
     tag "${vcf}"
+    label 'tools'
 
     cpus = 2
     memory = 1.GB
@@ -163,7 +164,7 @@ process MEGA {
     publishDir "meta", pattern: "*.log", mode: "copy"
 
     cpus = 2
-    memory = 32.GB
+    memory = 48.GB
     time = '3h'
 
     input:
@@ -184,6 +185,7 @@ process MEGA {
 
 process MEGA_POST {
     tag "${result}"
+    label 'analysis'
 
     publishDir "meta", pattern: "*.gz", mode: 'copy'
 
@@ -254,6 +256,7 @@ process MEGA_POST {
 */
 process FIXED_IN {
     tag "${vcf}"
+    label 'tools'
 
     cpus = 2
     memory = 1.GB
@@ -340,9 +343,10 @@ process FIXED {
 // Fixed effects sample information that is weighted by N
 process FIXEDN {
     tag "${dataset.pheno}-${dataset.cluster}"
+    label 'analysis'
 
     cpus = 4
-    memory = 16.GB
+    memory = 32.GB
     time = '30m'
 
     input:
@@ -403,12 +407,13 @@ process FIXEDN {
 // Fixed effects postprocessing
 process FIXED_POST {
     tag "${meta}"
+    label 'analysis'
 
     publishDir "meta", pattern: "*.gz", mode: 'copy'
 
-    cpus = 1
-    memory = 16.GB
-    time = '10m'
+    cpus = 2
+    memory = 24.GB
+    time = '30m'
 
     input:
     tuple val(dataset), path(meta), path(log), path(freqn)
@@ -479,6 +484,8 @@ process GW {
 /* manhattan plot */
 process MANHATTAN {
 	tag "${assoc}"
+        label 'analysis'
+
 	publishDir 'meta', mode: 'copy'
 	
 	cpus = 1
@@ -571,6 +578,7 @@ process CLUMP {
     --pgen ${pgen} \
     --psam ${psam} \
     --pvar ${pvar} \
+    --allow-extra-chr \
     --out ${assoc.baseName} \
 	--threads ${task.cpus} \
 	--memory ${task.memory.bytes.intdiv(1000000)}
