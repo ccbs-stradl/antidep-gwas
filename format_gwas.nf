@@ -22,6 +22,8 @@
     
 */
 
+import groovy.json.JsonOutput
+
 // Input files: sumstats gz, formatting scripts, and meta data csv
 params.sumstats = "sumstats/*.gz"
 params.scripts = "sumstats/*.sh"
@@ -52,7 +54,9 @@ workflow {
     .join(SUMSTATS_CH)
     .map { it -> ["${it[1].cohort}-${it[1].version}", it[1], it[2]]}
     .combine(SCRIPTS_CH, by: 0)
-    .map {it -> ["${it[1].cohort}-${it[1].pheno}-${it[1].cluster}-${it[1].version}-${it[1].build}", it[1], it[2], it[3]] }
+    .map { it -> ["${it[1].cohort}-${it[1].pheno}-${it[1].cluster}-${it[1].version}-${it[1].build}"].plus(it) }
+    .map { it -> it.plus(JsonOutput.toJson(it[2])) }
+    //.view()
     
   // run original sumstats through its reformatting script
   FORMAT_CH = FORMAT(SUMSTATS_META_CH)
@@ -61,19 +65,24 @@ workflow {
 // Reformat sumstats for GWASVCF input
 process FORMAT {
   tag "${dataset}"
+  
+  publishDir "format/gwas"
 
   cpus = 1
   memory = 1.GB
   time = '10m'
 
   input:
-  tuple val(dataset), val(meta), path(sumstats), path(script)
+  tuple val(dataset), val(cohortversion), val(meta), path(sumstats), path(script), val(metajson)
 
   output:
-  tuple val(dataset), val(meta), path("${dataset}.txt")
+  tuple val(dataset), val(meta), path("${dataset}.txt"), path("${dataset}.json")
 
   shell:
   """
   sh ${script} ${sumstats} ${dataset}.txt
+  cat <<EOF > ${dataset}.json
+  ${metajson}
+  EOF
   """
 }
