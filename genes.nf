@@ -141,8 +141,19 @@ process MA {
 		case 'hg38':
 			"""
 			#!Rscript
+			if( !require('readr') ){
+			install.packages('readr', repos = "https://cloud.r-project.org/")
+			}
 			library(readr)
+
+			if( !require('dplyr') ){
+			install.packages('dplyr', repos = "https://cloud.r-project.org/")
+			}
 			library(dplyr)
+
+			if( !require('stringr') ){
+			install.packages('stringr', repos = "https://cloud.r-project.org/")
+			}
 			library(stringr)
 
 			sumstats <- read_tsv("${sumstats}")
