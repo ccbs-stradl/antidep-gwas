@@ -4,14 +4,46 @@ nextflow.enable.dsl=2
 	Gene-mapping of GWAS meta
 */
 
-// input meta-analysis sumstats
-params.meta = "meta/fixed-*.meta.gz"
+// genotyype build parameters
+// first define which options are available
+def valid_builds = ['hg19', 'hg38']
 
-// ld reference PGEN where first phenotype specifies reference population */
-params.ref = "reference/all_hg38.{pgen,psam,pvar.zst}"
-// gene position reference
-params.genes = "reference/glist_ensgid_hg38_v40.txt"
-params.names = "reference/glist_ensgid_hg38_v40_symbol_gene_names.txt"
+// default to hg19 if not provided
+params.build = params.build ?: 'hg19'
+
+// validate that the provided build is one of the valid options
+if (!(params.build in valid_builds)) {
+    error "Invalid value for --build. Please specify one of: ${valid_builds.join(', ')}"
+}
+
+// assign labels for process MA based on build:
+def processMALabel = (params.build == 'hg19') ? 'tools' : (params.build == 'hg38') ? 'rscript' : null
+
+// input files dependent on genotype build type:
+if (params.build == 'hg19') {
+	// files for hg19 build
+	// input meta-analysis sumstats
+	params.meta = "liftover/fixed-*.vcf.gz"
+
+	// ld reference PGEN where first phenotype specifies reference population */
+	params.ref = "reference/ukb_imp_v3.qc_ancestry.{pgen,psam,pvar.zst}"
+
+	// gene position reference
+	params.genes = "reference/glist_ensgid_hg19_v40.txt"
+	params.names = "reference/glist_ensgid_hg19_v40_symbol_gene_names.txt"
+
+} else if (params.build == 'hg38') {
+	// files for hg38 build
+	// input meta-analysis sumstats
+	params.meta = "meta/fixed-*.meta.gz"
+
+	// ld reference PGEN where first phenotype specifies reference population */
+	params.ref = "reference/all_hg38.{pgen,psam,pvar.zst}"
+
+	// gene position reference
+	params.genes = "reference/glist_ensgid_hg38_v40.txt"
+	params.names = "reference/glist_ensgid_hg38_v40_symbol_gene_names.txt"
+}
 
 // effective sample size QC parameter
 params.neff_pct = 0.8
@@ -84,7 +116,7 @@ process POPS {
 */
 process MA {
 	tag "${sumstats}"
-	label "rscript"
+	label processMALabel
 
 	cpus = 1
 	memory = 16.GB
@@ -98,21 +130,31 @@ process MA {
 	tuple val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma")
 
 	script:
-	"""
-	#!Rscript
-	library(readr)
-	library(dplyr)
-	library(stringr)
+	switch(params.build) {
+		case 'hg19':
+			"""
+			echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > !{sumstats.simpleName}.txt
+			bcftools query \
+    		-f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
+    		!{sumstats} | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10}' >> !{sumstats.simpleName}.ma
+			"""
+		case 'hg38':
+			"""
+			#!Rscript
+			library(readr)
+			library(dplyr)
+			library(stringr)
 
-	sumstats <- read_tsv("${sumstats}")
+			sumstats <- read_tsv("${sumstats}")
 
-	ma <- sumstats |>
-		filter(NEFF >= ${neff_pct} * NEFF) |>
-		transmute(SNP, A1, A2, freq = AFCON, BETA = log(OR), SE, P, N = NEFF,
-		          str_remove(CHR, "chr"), BP)
-	
-	write_tsv(ma, "${sumstats.simpleName}.ma")
-	"""
+			ma <- sumstats |>
+				filter(NEFF >= ${neff_pct} * NEFF) |>
+				transmute(SNP, A1, A2, freq = AFCON, BETA = log(OR), SE, P, N = NEFF,
+						str_remove(CHR, "chr"), BP)
+			
+			write_tsv(ma, "${sumstats.simpleName}.ma")
+			"""
+	}
 }
 
 /* Get genotypes for reference population.
@@ -125,6 +167,8 @@ process REF_BED {
     memory = 8.GB
     time = '10m'
 
+	publishDir 'maps_${params.build}_duplicates', mode: 'copy', pattern: '*.duplicates'
+
     input:
     tuple val(pop), val(meta), val(pheno), path(ma), val(ref), path(pgen)
 
@@ -135,10 +179,17 @@ process REF_BED {
     """
     # chr/pos to extract
     cat ${ma} | awk 'NR > 1 {print \$9, \$10, \$10}' > ${ma.baseName}.bed1
+
     # rename CPIDs to rsID
     cat ${ma} | awk 'NR > 1 {print \$9":"\$10":"\$3":"\$2, \$1}' > ${ma.baseName}.names
 
-    plink2 \
+	# Save duplicate CPIDs
+    awk '{print \$1}' ${ma.baseName}.names | sort |uniq -d > ${ma.baseName}.duplicates
+
+	# Remove duplicate CPIDs from *.names
+	awk 'NR==FNR {duplicates[\$1]; next} !(\$1 in duplicates)' ${ma.baseName}.duplicates ${ma.baseName}.names > ${ma.baseName}.noDups.names
+
+	plink2 \
     --make-bed \
     --pfile 'vzs' ${ref} \
 		--keep-cat-names ${pop} \
@@ -155,7 +206,7 @@ process REF_BED {
     plink2 \
     --make-bed \
     --bfile ref-cpid \
-    --update-name ${ma.baseName}.names \
+    --update-name ${ma.baseName}.noDups.names \
     --out ref-${ref} \
 		--threads ${task.cpus} \
 		--memory ${task.memory.bytes.intdiv(1000000)}
@@ -180,7 +231,7 @@ process MBAT {
 
     script:
     """
-    gcta64 \
+     /gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/gcta-1.94.1-linux-kernel-3-x86_64/gcta64 \
 		--bfile ${ref} \
 		--mBAT-combo ${ma} \
 		--mBAT-gene-list ${genelist} \
@@ -201,7 +252,7 @@ process MBATTED {
 	tag "${mbat.simpleName}"
 	label "rscript"
 
-	publishDir 'maps', mode: 'copy'
+	publishDir 'maps_${params.build}', mode: 'copy'
 
 	cpus = 1
 	memory = 4.GB
