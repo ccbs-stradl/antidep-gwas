@@ -277,7 +277,14 @@ process MBATTED {
 	script:
 	"""
 	#!Rscript
+	if( !require('readr') ){
+	install.packages('readr', repos = "https://cloud.r-project.org/")
+	}
 	library(readr)
+
+	if( !require('dplyr') ){
+	install.packages('dplyr', repos = "https://cloud.r-project.org/")
+	}
 	library(dplyr)
 
 	mbat <- read_tsv("${mbat}")
