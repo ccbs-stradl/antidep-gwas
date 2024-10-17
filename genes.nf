@@ -207,7 +207,7 @@ process REF_BED {
 		--keep-founders \
     --extract 'bed1' ${ma.baseName}.bed1 \
     --set-all-var-ids @:#:\\\$r:\\\$a \
-    --new-id-max-allele-len 700 missing \
+    --new-id-max-allele-len 500 error \
     --out ref-cpid \
     --allow-extra-chr \
 		--threads ${task.cpus} \
