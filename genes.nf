@@ -202,8 +202,14 @@ process REF_BED {
 	# Save duplicate CPIDs
     awk '{print \$1}' ${ma.baseName}.names | sort |uniq -d > ${ma.baseName}.duplicates
 
-	# Remove duplicate CPIDs from *.names
-	awk 'NR==FNR {duplicates[\$1]; next} !(\$1 in duplicates)' ${ma.baseName}.duplicates ${ma.baseName}.names > ${ma.baseName}.noDups.names
+	# Remove duplicate CPIDs from *.names, if there are duplicates
+	if [ ! -s ${ma.baseName}.duplicates ]; then
+    	# If empty, just copy the original .names file to .noDups.names
+    	cp ${ma.baseName}.names ${ma.baseName}.noDups.names
+	else
+    	# Remove duplicate CPIDs from *.names
+    	awk 'NR==FNR {duplicates[\$1]; next} !(\$1 in duplicates)' ${ma.baseName}.duplicates ${ma.baseName}.names > ${ma.baseName}.noDups.names
+	fi
 
 	plink2 \
     --make-bed \
