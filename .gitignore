@@ -2,6 +2,7 @@
 *.gz.tbi
 *.bgz
 *.zip
+*.log
 reference/
 .nextflow*
 hail-*.log

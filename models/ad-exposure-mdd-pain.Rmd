@@ -1,0 +1,306 @@
+---
+title: Genome-wide models of antidepressant exposure, major depression, and pain
+---
+
+```{r}
+library(readr)
+library(dplyr)
+library(stringr)
+library(GenomicSEM)
+
+build_all <- FALSE
+```
+
+## Sumstats
+
+- pain: "Back pain", Sakaue et al doi:[10.1038/s41588-021-00931-x](https://doi.org/10.1038/s41588-021-00931-x), [hum0197-v3-220](https://humandbs.dbcls.jp/en/hum0197-v3-220).
+- depression: "Majore depression", Meng et al doi:[10.1038/s41588-023-01596-4](https://www.nature.com/articles/s41588-023-01596-4), [mdd2023diverse](https://figshare.com/articles/dataset/mdd2023diverse/24799299); Als et al doi:[10.1038/s41591-023-02352-1](https://www.nature.com/articles/s41591-023-02352-1), [Depression GWAS (2023)](https://ipsych.dk/en/research/downloads/).
+
+### Backpain
+
+Download
+```sh
+mkdir -p reference/sumstats
+
+curl https://humandbs.dbcls.jp/files/hum0197/hum0197.v3.BBJ.BP.v1.zip > reference/sumstats/hum0197.v3.BBJ.BP.v1.zip
+curl https://humandbs.dbcls.jp/files/hum0197/hum0197.v3.EUR.BP.v1.zip > reference/sumstats/hum0197.v3.EUR.BP.v1.zip
+
+unzip reference/sumstats/hum0197.v3.BBJ.BP.v1.zip -d reference/sumstats/
+unzip reference/sumstats/hum0197.v3.EUR.BP.v1.zip -d reference/sumstats/
+```
+
+Get RSIDs
+```sh
+gunzip -c reference/sumstats/hum0197.v3.BBJ.BP.v1/GWASsummary_Back_pain_Japanese_SakaueKanai2020.auto.txt.gz | awk 'OFS = "\t" {if(NR > 1) {print $2, $3}}' > reference/sumstats/back_pain_eas.tsv
+
+gunzip -c reference/sumstats/hum0197.v3.EUR.BP.v1/GWASsummary_Back_pain_EUR_SakaueKanai2020.auto.txt.gz | awk 'OFS = "\t" {if(NR > 1) {print $2, $3}}' > reference/sumstats/back_pain_eur.tsv
+
+cat reference/sumstats/back_pain_eas.tsv reference/sumstats/back_pain_eur.tsv | sort | uniq > reference/sumstats/back_pain_targets.tsv
+
+# extract targets from the dbSNP VCF file and print chromosome, position, SNP ID, and alleles
+bcftools view \
+--targets-file reference/sumstats/back_pain_targets.tsv \
+--output-type b \
+reference/dbsnp.v153.b37.vcf.gz |\
+bcftools query --print-header \
+--format '%CHROM\t%POS\t%ID\t%REF\t%ALT{0}\n' > reference/sumstats/back_pain_chr_pos_rsid.tsv
+```
+
+Read in sumstats and SNP list
+```{r hum0197, eval = build_all}
+hum0197_backpain_eas <- read_tsv(here::here("reference/sumstats/hum0197.v3.BBJ.BP.v1/GWASsummary_Back_pain_Japanese_SakaueKanai2020.auto.txt.gz"))
+
+hum0197_backpain_eur <- read_tsv(here::here("reference/sumstats/hum0197.v3.EUR.BP.v1/GWASsummary_Back_pain_EUR_SakaueKanai2020.auto.txt.gz"))
+
+back_pain_chr_pos_rsid <- read_tsv(here::here("reference/sumstats/back_pain_chr_pos_rsid.tsv"))
+```
+
+Update IDs and approximate effective sample size
+
+```{r hum0197_eas, eval = build_all}
+hum0197_backpain_eas_cases <- 1732
+hum0197_backpain_eas_controls <- 176994
+hum0197_backpain_eas_tot <- hum0197_backpain_eas_cases + hum0197_backpain_eas_controls
+hum0197_backpain_eas_neff <- 4 / (1/hum0197_backpain_eas_cases + 1/hum0197_backpain_eas_controls)
+
+hum0197_backpain_eas_sumstats <-
+hum0197_backpain_eas |>
+  mutate(n_count = AC_Allele2/2) |>
+  mutate(n_pct = n_count / hum0197_backpain_eas_tot) |>
+  mutate(N = n_pct * hum0197_backpain_eas_neff) |>
+  transmute(SNP = SNPID, A1 = Allele2, A2 = Allele1, INFO = imputationInfo, FRQ = AF_Allele2, OR = exp(BETA), P = p.value, N)
+```
+
+```{r hum0197_eur, eval = build_all}
+hum0197_backpain_eur_ukb_cases <- 14893
+hum0197_backpain_eur_ukb_controls <- 342765
+hum0197_backpain_eur_ukb_tot <- hum0197_backpain_eur_ukb_cases + hum0197_backpain_eur_ukb_controls
+hum0197_backpain_eur_ukb_neff <- 4 / (1/hum0197_backpain_eur_ukb_cases + 1/hum0197_backpain_eur_ukb_controls)
+
+hum0197_backpain_eur_finngen_cases <- 7520 	 
+hum0197_backpain_eur_finngen_controls <- 103091
+hum0197_backpain_eur_finngen_tot <- hum0197_backpain_eur_finngen_cases + hum0197_backpain_eur_finngen_controls
+hum0197_backpain_eur_finngen_neff <- 4 / (1/hum0197_backpain_eur_finngen_cases + 1/hum0197_backpain_eur_finngen_controls)
+
+hum0197_backpain_eur_sumstats <-
+hum0197_backpain_eur |>
+  mutate(CHR = as.character(CHR)) |>
+  left_join(back_pain_chr_pos_rsid, by = c("CHR" = "#[1]CHROM", "POS" = "[2]POS"),
+            relationship = "many-to-many") |>
+  filter((Allele1 == `[4]REF` & Allele2 ==  `[5]ALT`) |
+         (Allele2 == `[4]REF` & Allele1 ==  `[5]ALT`)) |>
+  filter(!duplicated(`[3]ID`)) |>
+  mutate(cohorts = case_when(!is.na(AF_Allele2_UKB) & !is.na(AF_Allele2_FG) ~ "both",
+                              is.na(AF_Allele2_UKB) & !is.na(AF_Allele2_FG) ~ "fg",
+                             !is.na(AF_Allele2_UKB) & is.na(AF_Allele2_FG) ~ "ukb",
+                             .default = NA_character_)) |>
+  mutate(N = case_match(cohorts,
+                         "both" ~ hum0197_backpain_eur_ukb_neff + hum0197_backpain_eur_finngen_neff,
+                         "fg" ~ hum0197_backpain_eur_finngen_neff,
+                         "ukb" ~ hum0197_backpain_eur_ukb_neff,
+                         .default = NA_real_
+                       ),
+        FRQ = case_match(cohorts,
+           "both" ~ (AF_Allele2_UKB * hum0197_backpain_eur_ukb_tot + AF_Allele2_FG * hum0197_backpain_eur_finngen_tot) / (hum0197_backpain_eur_ukb_tot + hum0197_backpain_eur_finngen_tot),
+           "fg" ~ AF_Allele2_FG,
+           "ukb" ~ AF_Allele2_UKB,
+           .default = NA_real_
+         )) |>
+  transmute(SNP = coalesce(`[3]ID`, v), A1 = Allele2, A2 = Allele1, FRQ = FRQ, OR = exp(BETA), P = p.value, N = N)
+```
+
+```{r backpain_txt, eval = build_all}
+write_tsv(hum0197_backpain_eas_sumstats, here::here("reference/sumstats/back_pain_SakaueKanai2020_eas.txt"))
+write_tsv(hum0197_backpain_eur_sumstats, here::here("reference/sumstats/back_pain_SakaueKanai2020_eur.txt"))
+```
+
+### Major depression
+
+```sh
+curl https://ipsych.dk/fileadmin/ipsych.dk/Downloads/daner_MDDwoBP_20201001_2015iR15iex_HRC_MDDwoBP_iPSYCH2015i_UKBtransformed_Wray_FinnGen_MVPaf_2_HRC_MAF01.gz > reference/sumstats/daner_MDDwoBP_20201001_2015iR15iex_HRC_MDDwoBP_iPSYCH2015i_UKBtransformed_Wray_FinnGen_MVPaf_2_HRC_MAF01.gz
+
+curl -L https://figshare.com/ndownloader/files/43621287 > reference/sumstats/mdd2023diverse_AFR_Neff.csv
+
+curl -L https://figshare.com/ndownloader/files/43621266 > reference/sumstats/mdd2023diverse_EAS_Neff.csv
+
+curl -L https://figshare.com/ndownloader/files/43621275 > reference/sumstats/mdd2023diverse_HIS_Neff.csv
+
+curl -L https://figshare.com/ndownloader/files/43621242 > reference/sumstats/mdd2023diverse_SAS_Neff.csv
+
+```
+
+```{r als, eval = build_all}
+als_md_eur <- read_table(here::here("reference/sumstats/daner_MDDwoBP_20201001_2015iR15iex_HRC_MDDwoBP_iPSYCH2015i_UKBtransformed_Wray_FinnGen_MVPaf_2_HRC_MAF01.gz"))
+
+als_md_eur_sumstats <- als_md_eur |>
+  transmute(SNP, A1, A2, FRQ = FRQ_U_741438, INFO, OR, P, N = Neff_half * 2)
+  
+write_tsv(als_md_eur_sumstats, here::here("reference/sumstats/md_als_eur.txt"))
+```
+
+```{r meng, eval = build_all}
+for(cluster in c("AFR", "EAS", "HIS", "SAS")) {
+  meng_md <- read_csv(here::here(str_glue("reference/sumstats/mdd2023diverse_{cluster}_Neff.csv")))
+
+  meng_md_sumstats <- meng_md |>
+    transmute(SNP = coalesce(SNP, str_glue("{Chromosome}:{Position}:{EA}:{NEA}")),
+              A1 = str_to_upper(EA), A2 = str_to_upper(NEA),
+              FRQ = EAF, OR = exp(logOR), P, N = Neff)
+              
+  write_tsv(meng_md_sumstats, here::here(str_glue("reference/sumstats/md_meng_{cluster}.txt")))
+}
+```
+
+
+## Munge
+
+```{r munge_ad, eval = build_all}
+# hm3 SNPs
+hm3 <- here::here("reference/w_hm3.snplist")
+
+for(cluster in c("AFR", "AMR", "EAS", "EUR", "SAS")) {
+  munge(files = here::here(str_glue("txt/fixed-N06A-{cluster}.human_g1k_v37.txt")),
+       trait.names = str_glue("AD_{cluster}"), hm3 = hm3,
+       info.filter = 0.9, maf.filter = 0.01, N = NA)
+}
+```
+
+```{r munge_pain, eval = build_all}
+for(cluster in c("eas", "eur")) {
+  munge(files = here::here(str_glue("reference/sumstats/back_pain_SakaueKanai2020_{cluster}.txt")),
+       trait.names = str_glue("Pain_{str_to_upper(cluster)}"), hm3 = hm3,
+       info.filter = 0.9, maf.filter = 0.01, N = NA)
+}
+```
+
+```{r munge_md, eval = build_all}
+for(cluster in c("AFR", "HIS", "EAS", "SAS")) {
+  munge(files = here::here(str_glue("reference/sumstats/md_meng_{cluster}.txt")),
+       trait.names = str_glue("MD_{cluster}"), hm3 = hm3,
+       info.filter = 0.9, maf.filter = 0.01, N = NA)
+}
+
+munge(files = c"reference/sumstats/md_als_eur.txt",
+  trait.names = "MD_EUR",
+  hm3 = hm3, info.filter = 0.9, maf.filter = 0.01, N = NA)
+```
+
+## LDSC
+
+### LDSC reference
+
+```sh
+curl -L https://pan-ukb-us-east-1.s3.amazonaws.com/ld_release/UKBB.ALL.ldscore.tar.gz > reference/UKBB.ALL.ldscore.tar.gz
+tar xzf reference/UKBB.ALL.ldscore.tar.gz
+for cluster in AFR AMR CSA EAS EUR; do
+  mkdir reference/UKBB.ALL.ldscore/UKBB.${cluster}
+  cp reference/UKBB.ALL.ldscore/UKBB.${cluster}.rsid.l2.ldscore.gz reference/UKBB.ALL.ldscore/UKBB.${cluster}/1.l2.ldscore.gz
+  cp reference/UKBB.ALL.ldscore/UKBB.${cluster}.l2.M reference/UKBB.ALL.ldscore/UKBB.${cluster}/1.l2.M
+  cp reference/UKBB.ALL.ldscore/UKBB.${cluster}.l2.M_5_50 reference/UKBB.ALL.ldscore/UKBB.${cluster}/1.l2.M_5_50
+done
+```
+
+```{r ldsc, cache = TRUE}
+afr_ldsc <- ldsc(traits = c("AD_AFR.sumstats.gz", "MD_AFR.sumstats.gz"),
+ trait.names = c("AD", "MD"),
+ sample.prev = c(0.5, 0.5, 0.5),
+ population.prev = c(0.25, 0.15),
+ ld = here::here("reference/UKBB.ALL.ldscore/UKBB.AFR"),
+ wld = here::here("reference/UKBB.ALL.ldscore/UKBB.AFR"),
+ chr = 1
+ )
+ 
+amr_ldsc <- ldsc(traits = c("AD_AMR.sumstats.gz", "MD_HIS.sumstats.gz"),
+  trait.names = c("AD", "MD"),
+  sample.prev = c(0.5, 0.5, 0.5),
+  population.prev = c(0.25, 0.15),
+  ld = here::here("reference/UKBB.ALL.ldscore/UKBB.AMR"),
+  wld = here::here("reference/UKBB.ALL.ldscore/UKBB.AMR"),
+  chr = 1
+  )
+
+eas_ldsc <- ldsc(traits = c("AD_EAS.sumstats.gz", "MD_EAS.sumstats.gz", "Pain_EAS.sumstats.gz"),
+                 trait.names = c("AD", "MD", "Pain"),
+                 sample.prev = c(0.5, 0.5, 0.5),
+                 population.prev = c(0.02, 0.15, 0.05),
+                 ld = here::here("reference/UKBB.ALL.ldscore/UKBB.EAS"),
+                 wld = here::here("reference/UKBB.ALL.ldscore/UKBB.EAS"),
+                 chr = 1
+                 )
+                 
+eur_ldsc <- ldsc(traits = c("AD_EUR.sumstats.gz", "MD_EUR.sumstats.gz", "Pain_EUR.sumstats.gz"),
+                  trait.names = c("AD", "MD", "Pain"),
+                  sample.prev = c(0.5, 0.5, 0.5),
+                  population.prev = c(0.25, 0.15, 0.05),
+                  ld = here::here("reference/UKBB.ALL.ldscore/UKBB.EUR"),
+                  wld = here::here("reference/UKBB.ALL.ldscore/UKBB.EUR"),
+                  chr = 1
+                  )
+
+sas_ldsc <- ldsc(traits = c("AD_SAS.sumstats.gz", "MD_SAS.sumstats.gz"),
+                  trait.names = c("AD", "MD"),
+                  sample.prev = c(0.5, 0.5, 0.5),
+                  population.prev = c(0.25, 0.15),
+                  ld = here::here("reference/UKBB.ALL.ldscore/UKBB.CSA"),
+                  wld = here::here("reference/UKBB.ALL.ldscore/UKBB.SAS"),
+                  chr = 1
+                  )
+
+```
+
+## Model
+
+
+Cholesky decomposition of  MD and AD in EAS cohorts.
+
+```{r model2, cache = TRUE}
+chol2_model <- "
+F1 =~ NA*MD + AD
+F2 =~ NA*AD
+
+F1 ~~ 1*F1
+F2 ~~ 1*F2
+F1 ~~ 0*F2
+
+MD ~~ 0*MD
+MD ~~ 0*AD
+AD ~~ 0*AD
+"
+
+chol2_amr_fit <- usermodel(amr_ldsc, estimation = "DWLS", model = chol2_model)
+chol2_amr_fit
+
+chol2_sas_fit <- usermodel(sas_ldsc, estimation = "DWLS", model = chol2_model)
+chol2_sas_fit
+```
+
+Cholesky decomposition of pain, MD, and AD in EUR cohorts.
+
+```{r model3, cache = TRUE}
+
+chol_model <- "
+F1 =~ NA*Pain + MD + AD
+F2 =~ NA*MD + AD
+F3 =~ NA*AD
+
+F1 ~~ 1*F1
+F2 ~~ 1*F2
+F3 ~~ 1*F3
+F1 ~~ 0*F2 + 0*F3
+F2 ~~ 0*F3
+
+Pain ~~ 0*Pain
+Pain ~~ 0*MD
+Pain ~~ 0*AD
+MD ~~ 0*MD
+MD ~~ 0*AD
+AD ~~ 0*AD
+"
+
+chol_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_model)
+chol_eas_fit
+
+chol_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_model)
+chol_eur_fit
+
+```
