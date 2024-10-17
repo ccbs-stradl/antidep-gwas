@@ -130,41 +130,40 @@ process MA {
 	tuple val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma")
 
 	script:
-	switch(params.build) {
-		case 'hg19':
-			"""
-			echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > !{sumstats.simpleName}.txt
-			bcftools query \
-    		-f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
-    		!{sumstats} | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10}' >> !{sumstats.simpleName}.ma
-			"""
-		case 'hg38':
-			"""
-			#!Rscript
-			if( !require('readr') ){
-			install.packages('readr', repos = "https://cloud.r-project.org/")
-			}
-			library(readr)
+	if (params.build == 'hg19') {
+	  	"""
+		echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > ${sumstats.simpleName}.ma
+		bcftools query \
+	    -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
+	    ${sumstats} | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10}' >> ${sumstats.simpleName}.ma
+	  	"""
+	} else if (params.build == 'hg19') {
+		"""
+		#!Rscript
+		if( !require('readr') ){
+		install.packages('readr', repos = "https://cloud.r-project.org/")
+		}
+		library(readr)
 
-			if( !require('dplyr') ){
-			install.packages('dplyr', repos = "https://cloud.r-project.org/")
-			}
-			library(dplyr)
+		if( !require('dplyr') ){
+		install.packages('dplyr', repos = "https://cloud.r-project.org/")
+		}
+		library(dplyr)
 
-			if( !require('stringr') ){
-			install.packages('stringr', repos = "https://cloud.r-project.org/")
-			}
-			library(stringr)
+		if( !require('stringr') ){
+		install.packages('stringr', repos = "https://cloud.r-project.org/")
+		}
+		library(stringr)
 
-			sumstats <- read_tsv("${sumstats}")
+		sumstats <- read_tsv("${sumstats}")
 
-			ma <- sumstats |>
-				filter(NEFF >= ${neff_pct} * NEFF) |>
-				transmute(SNP, A1, A2, freq = AFCON, BETA = log(OR), SE, P, N = NEFF,
-						str_remove(CHR, "chr"), BP)
-			
-			write_tsv(ma, "${sumstats.simpleName}.ma")
-			"""
+		ma <- sumstats |>
+			filter(NEFF >= ${neff_pct} * NEFF) |>
+			transmute(SNP, A1, A2, freq = AFCON, BETA = log(OR), SE, P, N = NEFF,
+					str_remove(CHR, "chr"), BP)
+		
+		write_tsv(ma, "${sumstats.simpleName}.ma")
+		"""
 	}
 }
 
@@ -208,7 +207,7 @@ process REF_BED {
 		--keep-founders \
     --extract 'bed1' ${ma.baseName}.bed1 \
     --set-all-var-ids @:#:\\\$r:\\\$a \
-    --new-id-max-allele-len 500 error \
+    --new-id-max-allele-len 700 missing \
     --out ref-cpid \
     --allow-extra-chr \
 		--threads ${task.cpus} \
