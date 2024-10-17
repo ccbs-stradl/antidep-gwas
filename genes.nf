@@ -131,6 +131,7 @@ process MA {
 
 	script:
 	if (params.build == 'hg19') {
+		shell:
 	  	"""
 		echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > ${sumstats.simpleName}.ma
 		bcftools query \
@@ -171,6 +172,7 @@ process MA {
 	Rename variants to match input sumstats
 */
 process REF_BED {
+	label "plink2"
     tag "${ma.baseName}-${ref}"
 
     cpus = 1
@@ -228,6 +230,7 @@ process REF_BED {
 */
 process MBAT {
     tag "${ma.baseName}-${ref}"
+    label "gcta64"
 
     cpus = 8
     memory = 32.GB
@@ -241,7 +244,7 @@ process MBAT {
 
     script:
     """
-     /gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/gcta-1.94.1-linux-kernel-3-x86_64/gcta64 \
+     gcta64_v1.94 \
 		--bfile ${ref} \
 		--mBAT-combo ${ma} \
 		--mBAT-gene-list ${genelist} \
