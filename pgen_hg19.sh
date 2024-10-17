@@ -10,7 +10,7 @@
 # Subset pgen files to specific ancestries
 
 cd /exports/eddie/scratch/$USER/antidep-gwas
-
+export PATH=$PATH:/gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2
 
 # Create a file with columns for UKB ID (FID and IID) and a column for ancestry
 rm reference/ukb-ld-ref_ancestry.id
@@ -25,7 +25,7 @@ cut -d ' ' -f 1-2 reference/ukb-ld-ref_ancestry.id > reference/ukb-ld-ref_keep.t
 
 
 # Create pfile containing the UKB IDs in reference/ukb-ld-ref_keep.txt
-/gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2 \
+plink2 \
     --pfile /exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc \
     --keep reference/ukb-ld-ref_keep.txt \
     --make-pgen 'vzs' \
