@@ -19,6 +19,10 @@ if (!(params.build in valid_builds)) {
 // assign labels for process MA based on build:
 def processMALabel = (params.build == 'hg19') ? 'tools' : (params.build == 'hg38') ? 'rscript' : null
 
+def mapsDuplicatesDir = (params.build == 'hg19') ? 'maps_hg19_duplicates' : (params.build == 'hg38') ? 'maps_hg38_duplicates' : null
+
+def mapsDir = (params.build == 'hg19') ? 'maps_hg19' : (params.build == 'hg38') ? 'maps_hg38' : null
+
 // input files dependent on genotype build type:
 if (params.build == 'hg19') {
 	// files for hg19 build
@@ -179,7 +183,7 @@ process REF_BED {
     memory = 8.GB
     time = '10m'
 
-	publishDir 'maps_${params.build}_duplicates', mode: 'copy', pattern: '*.duplicates'
+	publishDir mapsDuplicatesDir, mode: 'copy', pattern: '*.duplicates'
 
     input:
     tuple val(pop), val(meta), val(pheno), path(ma), val(ref), path(pgen)
@@ -265,7 +269,7 @@ process MBATTED {
 	tag "${mbat.simpleName}"
 	label "rscript"
 
-	publishDir 'maps_${params.build}', mode: 'copy'
+	publishDir mapsDir , mode: 'copy'
 
 	cpus = 1
 	memory = 4.GB
