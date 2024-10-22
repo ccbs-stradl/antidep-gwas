@@ -21,7 +21,7 @@ nextflow_process {
 
         then {
             assert process.success                                  
-            assert path(process.out.pops_txt).readLines().contains('EUR')
+            assert path(process.out[0]).readLines().contains('EUR')
         }
 
     }
