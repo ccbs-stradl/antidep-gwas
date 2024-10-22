@@ -106,7 +106,7 @@ process POPS {
 	tuple val(ref), path(pgensamvar)
 
 	output:
-	path("pops.txt")
+	path("pops.txt"), emit: pops_txt
 
 	script:
 	"""
