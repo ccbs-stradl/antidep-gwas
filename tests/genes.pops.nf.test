@@ -1,0 +1,36 @@
+nextflow_process {
+
+    name "Test Process POPS"
+    script "genes.nf"  // Point to your main pipeline script
+    process "POPS"     // The process we're testing
+
+    test("Should process hg19 reference file pairs (.pgen, .psam, .pvar.zst) successfully") {
+
+        when {
+            params {
+                build = "hg19"  // Set build to 'hg19'
+            }
+            process {
+                """
+                // Define the file tuple as input (prefix + the three files)
+                input[0] = 
+                    ["reference/ukb_imp_v3.qc_ancestry",  // Prefix from the reference files
+                    file("reference/ukb_imp_v3.qc_ancestry.pgen"),  // .pgen file
+                    file("reference/ukb_imp_v3.qc_ancestry.psam"),  // .psam file
+                    file("reference/ukb_imp_v3.qc_ancestry.pvar.zst")  // .pvar.zst file
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success                                  
+            assert snapshot(process.out).match()                    
+            path(process.out[0][0]).readLines().contains("EUR")  
+            path(process.out[0][0]).readLines().contains("SAS")  
+            path(process.out[0][0]).readLines().contains("AFR")          
+        }
+
+    }
+
+}

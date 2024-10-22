@@ -44,6 +44,20 @@ mkdir maps_hg19
 
 ```
 
+### Install nf-test
+
+We will use [`nf-test`](https://www.nf-test.com/docs/) to test the processes of the nextflow pipelines. This is in development, process tests are being added to `genes.nf`. These are found in the `tests/` directory. 
+
+```
+# Please see https://www.nf-test.com/installation/ for installation instructions
+
+# cd to where you want to install nf-test
+wget -qO- https://get.nf-test.com | bash
+# add the directory where nf-test is installed to your $PATH variable
+# test installation
+nf-test version
+```
+
 ## 1. GWAS VCF
 
 Install `gwas2vcf`(https://mrcieu.github.io/gwas2vcf/)
