@@ -44,6 +44,23 @@ mkdir maps_hg19
 
 ```
 
+### Download and prepare files for fine-mapping with [SuSiEx](https://github.com/getian107/SuSiEx)
+*For Eddie:*
+```
+qlogin -l h_vmem=4G
+cd /exports/eddie/scratch/$USER/
+git clone https://github.com/getian107/SuSiEx.git
+cd SuSiEx/src
+make all
+# Check installation worked:
+../bin/SuSiEx -h
+# add bin/SuSiEx to PATH
+```
+
+Prepare files:
+Unlike mBAT-combo set up the .bim, .bed, .fam files need to be separate for each ancestry.
+Edit pgen_hg19.sh to make separate files for each ancestry.
+
 ## 1. GWAS VCF
 
 Install `gwas2vcf`(https://mrcieu.github.io/gwas2vcf/)
