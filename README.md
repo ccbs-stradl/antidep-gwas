@@ -31,6 +31,19 @@ curl -L "https://www.dropbox.com/s/ngbo2xm5ojw9koy/all_hg38_noannot.pvar.zst?dl=
 curl -L "https://www.dropbox.com/s/2e87z6nc4qexjjm/hg38_corrected.psam?dl=1" -o reference/all_hg38.psam
 ```
 
+### Download and prepare files for mBAT-combo using GRCh37 (hg19) (`genes_hg19.nf`)
+```sh
+# Download gene position references for hg19
+curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg19_v40.txt" -o "reference/glist_ensgid_hg19_v40.txt"
+curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg19_v40_symbol_gene_names.txt" -o "reference/glist_ensgid_hg19_v40_symbol_gene_names.txt"
+
+# Use UKBiobank genetic data for creating LD references as these are in the hg19 format
+# Subset pgen file to specific ancestries, reformat .psam to same format as 1000 genomes Gr38 build
+qsub pgen_hg19.sh
+mkdir maps_hg19
+
+```
+
 ## 1. GWAS VCF
 
 Install `gwas2vcf`(https://mrcieu.github.io/gwas2vcf/)
