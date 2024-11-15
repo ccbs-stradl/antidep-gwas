@@ -39,7 +39,7 @@ curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg1
 
 # Use UKBiobank genetic data for creating LD references as these are in the hg19 format
 # Subset pgen file to specific ancestries, reformat .psam to same format as 1000 genomes Gr38 build
-qsub pgen_hg19.sh
+qsub make-pgen_hg19.sh
 mkdir maps_hg19
 
 ```
@@ -59,7 +59,7 @@ make all
 
 Prepare files:
 Unlike mBAT-combo set up the .bim, .bed, .fam files need to be separate for each ancestry.
-Edit pgen_hg19.sh to make separate files for each ancestry.
+Edit make-pgen_hg19.sh to make separate files for each ancestry.
 
 ## 1. GWAS VCF
 
