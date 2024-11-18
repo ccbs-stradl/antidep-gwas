@@ -12,6 +12,7 @@ for cluster in EUR AFR SAS; do
 echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > test/${cluster}.sumstats.txt
 bcftools query -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz >> test/${cluster}.sumstats.txt
 done
+# (in the nextflow script neff threshold is also applied)
 
 # Run SuSiEX (convert to nextflow process)
 ../SuSiEx/bin/SuSiEx \
