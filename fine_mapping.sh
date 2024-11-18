@@ -53,19 +53,65 @@ join -a1 -e "NA" fineMapping/GWS_SNPs_tmp.txt fineMapping/GWS_SNPs_tmp_EUR.txt \
 
 # Not convinced this has worked correctly, tempted to read it into R or Python and wrangle there
 head fineMapping/GWS_SNPs_PVals.txt
-rm fineMapping/GWS_SNPs_tmp.txt
+
 
 # We also need to save the chromosome and base position for each GWS SNP
 # then calculate the min and max base position value of the region for fine mapping
 # ie. define the region we want to fine map around lead SNPs
-# "1-Mb regions" used in SuSiEx paper simulations
+# "1-Mb regions" used in SuSiEx paper simulations, ie. BP ± 500,000 for min/max values
+# what if BP ±500,000 is outside the range of the chromosome?
+# Also there's a lot of SNPs that overlap...
+# Unsure how best to get the BP start and end values for each fine mapping region
+# Let's do this in R.
+R
+
+library(data.table)
+library(dplyr)
+library(purrr)
+
+# Read in GWS SNPs
+GWS_SNPs <- fread("fineMapping/GWS_SNPs_tmp.txt", header = FALSE) %>% pull(1)
+
+# Read in sumstats and subset to GWS SNPs
+sumstats <- lapply(c("EUR", "AFR", "SAS"), function(cluster){
+  fread(paste0("test/", cluster, ".sumstats.txt")) %>%
+  filter(SNP %in% GWS_SNPs) %>%
+  rename_with(~ paste0(cluster, "_", .), -SNP)  # Add cluster prefix to column names, except for SNP
+})
+
+# Check if they all contain those SNPs
+lapply(sumstats, nrow)
+# Some SNPs are missing in AFR and SAS
+
+# Join all the sumstats on SNP col into one table with the cluster prefix before each duplicated col name
+# Left join onto EUR, to keep all GWS SNPs
+sumstats <- reduce(sumstats, left_join, by = "SNP")
 
 
-# Calculate and save how many variants are in each region (for Supplementary Table)
+# Check that CHR and BP are the same across all ancestries for the same SNP (QC check of build)
+# ignore missing SNPs
+sum(!sumstats$EUR_CHR == sumstats$AFR_CHR, na.rm = T) # should all = 0
+sum(!sumstats$EUR_CHR == sumstats$SAS_CHR, na.rm = T)
+sum(!sumstats$EUR_BP == sumstats$AFR_BP, na.rm = T) # should all = 0
+sum(!sumstats$EUR_BP == sumstats$SAS_BP, na.rm = T)
+
+# Subset to keep SNP, CHR and BP, EUR_P, AFR_P, SAS_P
+sumstats <- sumstats %>%
+  mutate(BP_START = EUR_BP - 500000) %>%
+  mutate(BP_END = EUR_BP + 500000) %>%
+  select(SNP, CHR = EUR_CHR, BP = EUR_BP, BP_START, BP_END, EUR_P, AFR_P, SAS_P) 
+
+write.table(sumstats, "fineMapping/GWS_SNPs.txt", row.names = FALSE, sep = "\t", quote = FALSE)
+
+quit()
+
+rm fineMapping/*_tmp_*
 
 # ----------------------------------------------------
 # ----- Calculate LD matrices for each region that will be fine mapped
 # Use plink2 and use the SuSiEx script as a guide: https://github.com/getian107/SuSiEx/blob/master/utilities/SuSiEx_LD.py
+
+# Calculate and save how many variants are in each region (for Supplementary Table)
 
 
 # ----------------------------------------------------
