@@ -7,6 +7,7 @@ params.source = null
 params.destination = null
 params.chain = null
 params.plugins = "plugins"
+params.publish = "liftover"
 
 workflow {
   // VCF sumstats
@@ -36,7 +37,7 @@ process LIFTOVER {
   tag "${sumstats}"
   label 'tools'
 
-  publishDir 'liftover', mode: 'copy'
+  publishDir "${params.publish}", mode: 'copy'
   
   cpus = 1
   memory = 8.GB

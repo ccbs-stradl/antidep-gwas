@@ -54,9 +54,8 @@ workflow {
     .join(SUMSTATS_CH)
     .map { it -> ["${it[1].cohort}-${it[1].version}", it[1], it[2]]}
     .combine(SCRIPTS_CH, by: 0)
-    .map { it -> ["${it[1].cohort}-${it[1].pheno}-${it[1].cluster}-${it[1].version}-${it[1].build}"].plus(it) }
+    .map { it -> ["${it[1].cohort}-${it[1].pheno}-${it[1].cluster}-${it[1].version}"].plus(it) }
     .map { it -> it.plus(JsonOutput.toJson(it[2])) }
-    //.view()
     
   // run original sumstats through its reformatting script
   FORMAT_CH = FORMAT(SUMSTATS_META_CH)
@@ -66,7 +65,7 @@ workflow {
 process FORMAT {
   tag "${dataset}"
   
-  publishDir "format/gwas"
+  publishDir "format/gwas/${meta.build}"
 
   cpus = 1
   memory = 1.GB

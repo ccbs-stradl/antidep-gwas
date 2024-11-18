@@ -1,40 +1,45 @@
-/* 
+/**
 	Convert sumstats to GWAS VCF format
 	
 	Inputs:
-		- sumstats/cohort.gz: original GWAS sumstats
-		- sumstats/cohort.sh: shell script to reformat sumstats to the following columns:		
-			- chr
-			- pos
-			- ea
-			- oa
-			- beta
-			- se
-			- pval
-			- ncase
-			- ncontrol
-			- snp
-			- eaf
-			- imp_info
-			- eaf_case
-			- eaf_control
-		
-*/
+		- format/cohort.txt: formatted GWAS sumstats
+      - chr
+      - pos
+      - ea
+      - oa
+      - beta
+      - se
+      - pval
+      - ncase
+      - ncontrol
+      - snp
+      - eaf
+      - imp_info
+      - eaf_case
+      - eaf_control
+	  - format/cohort.json: sumstats meta data		
 
-// Input files: sumstats gz, shell scripts, and meta data csv
-params.sumstats = "sumstats/*.{gz,sh}"
-params.meta = "sumstats.csv"
+**/
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+
+
+// Input files: sumstats txt and meta json file
+params.sumstats = "format/gwas/*-GRCh38.{txt,json}"
+
+// Output location
+params.publish = "vcf"
 
 // reference files
 // assembly fasta, fai, and dict 
 params.assembly = "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}"
 // dbsnp rsID vcf
 params.dbsnp = "reference/dbsnp.v153.hg38.vcf.{gz,gz.tbi}"
-// hg19 to hg38 liftover chain
-params.chain = "reference/hg19ToHg38.over.chain.gz"
+// chromosome pattenr (if there is one)
+params.chr = "chr#"
 
 // gwas2vcf files
-params.json = "sumstats/gwas.json"
+params.json = "format/gwas.json"
 params.gwas2vcf = "vendor/gwas2vcf"
 
 workflow {
@@ -43,21 +48,12 @@ workflow {
 	Input sumstats
 */
 
-	// sumstats and reformating script, keyed to basename
+  def jsonSlurper = new JsonSlurper()
+	// sumstats and meta data, parse json
 	SUMSTATS_CH = Channel
-		.fromFilePairs(params.sumstats, size: 2, checkIfExists: true)
-
-	// sumstats meta data, keyed to filekey column
-	META_CH = Channel
-		.fromPath(params.meta)
-		.splitCsv(header: true)
-		.map { it -> [it.filekey, it] }
-
-	// merge sumstats and meta data information
-	SUMSTATS_META_CH = META_CH
-		.cross(SUMSTATS_CH)
-		.map {it -> ["${it[0][1].cohort}-${it[0][1].pheno}-${it[0][1].cluster}", it[0][1], it[0][0], it[1][1]] }
-
+		.fromFilePairs(params.sumstats, size: 2, checkIfExists: true) { it -> it.baseName }
+    	.map { it -> it.plus(jsonSlurper.parseText(it[1][0].text)) }
+  
 /*
 	Reference files
 */
@@ -68,89 +64,50 @@ workflow {
 	DBSNP_CH = Channel
 		.fromFilePairs(params.dbsnp, size: 2, checkIfExists: true)
 
-	CHAIN_CH = Channel
-		.fromPath(params.chain, checkIfExists: true)
-
 /*
 	gwas2vcf files
 */
 	JSON_CH = Channel
 		.fromPath(params.json, checkIfExists: true)
+		.map { it -> jsonSlurper.parseText(it.text) }
 	
 	GWAS2VCF_CH = Channel
 		.fromPath(params.gwas2vcf, type: "dir", checkIfExists: true)
 
 /*
-	Process sumstats
-*/
-	
-	// run original sumstats through its reformatting script
-	FORMAT_CH = FORMAT(SUMSTATS_META_CH)
-
-	// separate sumstats by build
-	BUILDS_CH = FORMAT_CH
-		.branch {
-			GRCh38: it[1].build == "GRCh38"
-			GRCh37: it[1].build == "GRCh37"
-		}
-
-
-/*
-	Liftover for GRCh37 
-*/
-	// merge GRCh37 with GRCh38 dbSNP reference
-	BUILDS_37_CH = BUILDS_CH.GRCh37
-		.combine(DBSNP_CH)
-
-	// get GRCh38 CHR/POS for GWAS SNPs based on rsID
-	BUILDS_37_SELECT_CH = SELECT(BUILDS_37_CH)
-  BUILDS_37_RSIDS_CH = QUERY(BUILDS_37_SELECT_CH)
-
-	// splits sumstats into that can/can't be lifted by rsID
-	BUILDS_37_PRELIFT_CH = PRELIFT(BUILDS_37_RSIDS_CH)
-		.combine(CHAIN_CH)
-
-	// perform liftover of cpid list
-	BUILDS_37_LIFTED_CH = LIFTOVER(BUILDS_37_PRELIFT_CH)
-	
-	// update sumstats to new build
-	BUILDS_37_TO_38_CH = LIFT(BUILDS_37_LIFTED_CH)
-		.map { it -> 
-			[it[0], [cohort: it[1].cohort, pheno: it[1].pheno, filekey: it[1].filekey, build: "GRCh38", cluster: it[1].cluster], it[2]]
-		}
-
-/*
 	GWASVCF
 */
 
-	// merge b38 sumstats with lifted-over b37 sumstats
-	// tack on reference dbsnp vcf
-	// and gwas2vcf files
-	DATA_CH = BUILDS_CH.GRCh38
-		.concat(BUILDS_37_TO_38_CH)
-		
-	// subset sumstats and references file to each chromosome
-	CHR_CH = Channel.of(1..22, 'X')
-		.map { it -> "chr${it}" }
-		
-	DATA_QC_CH = QC(DATA_CH)
-		.combine(DBSNP_CH)		
-	
-	
-	DATA_CHR_CH = CHR(DATA_QC_CH, CHR_CH)
-		.combine(ASSEMBLY_CH)
+	// add genome build to json parameter file
+	SUMSTATS_JSON_CH = SUMSTATS_CH
 		.combine(JSON_CH)
-		.combine(GWAS2VCF_CH)
+		.map { it -> it.plus(JsonOutput.toJson(it[3].plus([build: it[2].build]))) }
 
-	VCF_CHR_CH = VCF(DATA_CHR_CH)
+
+	// subset sumstats and references file to each chromosome
+	// using pattern to get sequence names (usually 'chr#' or '#')
+	CHR_CH = Channel.of(1..22, 'X')
+		.map { it -> params.chr.replaceFirst('#', it.toString()) }
+	
+  // qc sumstats
+	QC_CH = QC(SUMSTATS_JSON_CH)
+  	
+	// subset sumstats to chromosome
+	QC_CHR_CH = CHR(QC_CH, CHR_CH)
+    	.combine(DBSNP_CH)		
+		.combine(ASSEMBLY_CH)
+		.combine(GWAS2VCF_CH)
+    
+  
+	VCF_CHR_CH = VCF(QC_CHR_CH)
 	VCF_TBI_CHR_CH = INDEX(VCF_CHR_CH)
 		.map { it -> [it[0], it[2], it[3]] }
 		.groupTuple(size: 23)
-		
+	
 	VCF_CH = CONCAT(VCF_TBI_CHR_CH)
 
 	// additional annotations (AFCAS, AFCON, NE)
-	ANNOTATIONS_CH = ANNOTATIONS(DATA_QC_CH)
+	ANNOTATIONS_CH = ANNOTATIONS(QC_CH)
 
 	// harmonised effect size and allele frequency
 	MAPPING_CH = MAPPING(VCF_CH)
@@ -164,222 +121,24 @@ workflow {
 		.join(ANNOTATIONS_HARMONISED_CH)
 
 	VCF_ANNOTATED_CH = ANNOTATE(VCF_ANNOTATIONS_CH)
-	
-
-}
-
-// Reformat sumstats for GWASVCF input
-process FORMAT {
-	tag "${dataset}"
-
-	cpus = 1
-	memory = 1.GB
-	time = '10m'
-
-	input:
-	tuple val(dataset), val(dict), val(filekey), path(sumstats)
-
-	output:
-	tuple val(dataset), val(dict), path("${dataset}.txt")
-
-	shell:
-	"""
-	sh ${filekey}.sh ${filekey}.gz ${dataset}.txt
-	"""
-}
-
-// get rsIDs for GWAS variants from dbSNP
-process SELECT {
-	tag "${dataset} ${dbsnp}"
-  label 'gatk'
-	
-	scratch true
-	//stageInMode 'copy'
-	//stageOutMode 'copy'
-
-	cpus = 1
-	memory = 32.GB
-	time = '4h'
-
-	input:
-	tuple val(dataset), val(dict), path(gwas), val(dbsnp), path(dbsnp_vcf)
-
-	output:
-	tuple val(dataset), val(dict), path(gwas, includeInputs: true), path("${dataset}-select.vcf.gz")
-
-	script:
-	"""
-	# get list of SNPs from the GWAS
-	cat ${gwas} | awk '{if(NR > 1) {print \$10}}' > ${dataset}.list
-
-	# extract variants from the dbSNP reference based on rsID
-	gatk SelectVariants \
-	-V ${dbsnp}.gz \
-	--keep-ids ${dataset}.list \
-	-O ${dataset}-select.vcf.gz
-	"""
-}
-
-// get rsIDs for GWAS variants from dbSNP
-process QUERY {
-  tag "${dataset} ${dbsnp}"
-  label 'tools'
-  
-  scratch true
-  //stageInMode 'copy'
-  //stageOutMode 'copy'
-
-  cpus = 1
-  memory = 8.GB
-  time = '4h'
-
-  input:
-  tuple val(dataset), val(dict), path(gwas), path(vcf)
-
-  output:
-  tuple val(dataset), val(dict), path(gwas, includeInputs: true), path("${dataset}-rsids.tsv")
-
-  script:
-  """
-  # get chrom, pos, and id for selected rsIDs
-  bcftools query \
-  -f "%CHROM\\t%POS\\t%ID\n" \
-  ${vcf} > ${dataset}-rsids.tsv
-  """
-}
-
-// split sumstats into parts that can/cannot be lifted by rsID
-// output a cpid list to be lifted in bed format
-process PRELIFT {
-	tag "${dataset}"
-  	label 'rscript'
-
-	cpus = 1
-	memory =16.GB
-	time = '4h'
-
-	input:
-	tuple val(dataset), val(dict), path(gwas), path(rsid)
-
-	output:
-	tuple val(dataset), val(dict), path(gwas, includeInputs: true), path(rsid, includeInputs: true), path("${dataset}-cpid.bed")
-
-	script:
-	"""
-	#! /bin/env Rscript
-
-	library(readr)
-	library(dplyr)
-
-	gwas <- read_tsv("${gwas}")
-	rsids <- read_tsv("${rsid}", col_names=c('chr', 'pos', 'snp'))
-
-	gwas_lift_by_rsid <- gwas |> filter(snp %in% pull(rsids, snp))
-	gwas_lift_by_cpid <- gwas |> filter(!snp %in% pull(rsids, snp))
-
-	bed_lift_by_cpid <- gwas_lift_by_cpid |>
-		transmute(chr, pos-1, pos, snp)
-
-	write_tsv(bed_lift_by_cpid, "${dataset}-cpid.bed", col_names=FALSE)
-	"""
-}
-
-// liftover cpids using chain file
-process LIFTOVER {
-	tag "${dataset} ${chain}"
-
-	cpus = 1
-	memory =4.GB
-	time = '1h'
-
-	input:
-	tuple val(dataset), val(dict), path(gwas), path(rsid), path(cpid), path(chain)
-
-	output:
-	tuple val(dataset), val(dict), path(gwas), path(rsid), path("${dataset}-cpid-lifted.bed"), path("${dataset}-cpid-unlifted.bed")
-
-	script:
-	"""
-	liftOver \
-	${cpid} \
-	${chain} \
-	${dataset}-cpid-lifted.bed \
-	${dataset}-cpid-unlifted.bed
-	"""
-}
 
 
-// update sumstats with liftover files
-process LIFT {
-	tag "${dataset}"
-	label 'rscript'
-
-	cpus = 1
-	memory =16.GB
-	time = '1h'
-
-	input:
-	tuple val(dataset), val(dict), path(gwas), path(rsid), path(lifted), path(unlifted)
-
-	output:
-	tuple val(dataset), val(dict), path("${gwas.simpleName}-lifted.txt")
-
-	script:
-	"""
-	#!/bin/env Rscript
-
-	library(readr)
-	library(dplyr)
-	library(stringr)
-
-	gwas <- read_tsv("${gwas}")
-	rsid_liftover <- read_tsv("${rsid}", col_names = c("chr", "pos", "snp"))
-	cpid_liftover <- read_tsv("${lifted}", col_names = c("chr", "start", "end", "snp"))
-
-	# merge by snp and replace chr/pos with liftover positions
-	gwas_lift_with_rsid <- gwas |>
-		inner_join(rsid_liftover, by = "snp", suffix = c(".b37", ".b38"))
-		
-	gwas_lifted_with_rsid <- gwas_lift_with_rsid |>
-		select(chr = chr.b38, pos = pos.b38, everything(), -chr.b37, -pos.b37)
-
-	# merge by snp, replace chr/pos with liftover, positions, keep rsid names and
-	# update cpid names (chr.b38:pos.b38:oa:ea)
-	gwas_lift_with_cpid <- gwas |>
-		inner_join(cpid_liftover, by = "snp", suffix = c(".b37", ".b38"))
-		
-	gwas_lifted_with_cpid <- gwas_lift_with_cpid |>
-		select(chr = chr.b38, pos = end, everything(), -chr.b37, -pos, -start) |>
-		mutate(snp = if_else(str_detect(snp, "rs"), 
-							 true = snp,
-							 false = paste(chr, pos, oa, ea, sep=":")))
-
-	gwas_lifted <- bind_rows(gwas_lifted_with_rsid, gwas_lifted_with_cpid) |>
-		mutate(chrom=if_else(chr == "chrX",
-					 true = 23,
-					 false = as.numeric(str_replace(chr, "chr", "")))) |>
-		filter(!is.na(chrom)) |>
-		arrange(chrom, pos) |>
-		select(-chrom)
-
-	write_tsv(gwas_lifted, "${gwas.simpleName}-lifted.txt")
-	"""
 }
 
 // QC sumstats for duplicate variants
 process QC {
 	tag "${dataset}"
-  	label 'rscript'
+  label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
 	time = '1h'
 	
 	input:
-	tuple val(dataset), val(dict), path(gwas)
+	tuple val(dataset), path(gwas), val(meta), val(json), val(params)
 	
 	output:
-	tuple val(dataset), val(dict), path("${dataset}-qc.txt")
+	tuple val(dataset), val(meta), val(params), path("${dataset}-qc.txt")
 	
 	script:
 	"""
@@ -389,7 +148,7 @@ process QC {
 	library(dplyr)
 	library(plyranges)
 	
-	gwas <- read_tsv("${gwas}")
+	gwas <- read_tsv("${dataset}.txt")
 	
 	# GRanges object for efficient position lookups
 	gwas_gr <- as_granges(gwas, seqnames = chr, start = pos, width = 1)
@@ -417,33 +176,29 @@ process QC {
 
 // subset to chromosome
 process CHR {
-	tag "${dataset} ${dbsnp} ${chr}"
+	tag "${dataset} ${chr}"
   label 'tools'
 
 	cpus = 1
-	memory =4.GB
-	time = '3h'
+	memory = 1.GB
+	time = '10m'
 
 	input:
-	tuple val(dataset), val(dict), path(gwas), val(dbsnp), path(vcf)
+	tuple val(dataset), val(meta), val(params), path(gwas)
 	each chr
 
 	output:
-	tuple val(dataset), val(dict), val(chr), path("${dataset}-${chr}.txt"), val("${vcf[0].simpleName}_${dataset}_${chr}"), path("${vcf[0].simpleName}_${dataset}_${chr}.vcf.{gz,gz.tbi}")
+	tuple val(dataset), val(chr), val(meta), val(params), path("${dataset}-${chr}.txt")
 
 	script:
 	"""
 	cat ${gwas} | awk 'NR == 1 || \$1 == "${chr}"' > ${dataset}-${chr}.txt
-	cat ${dataset}-${chr}.txt | tail -n +2 | awk '{OFS="\\t"; {print \$1, \$2-1, \$2}}' > ${dataset}_${chr}.bed
-	bgzip ${dataset}_${chr}.bed
-	tabix ${dataset}_${chr}.bed.gz
-	
-	bcftools view --targets-file ${dataset}_${chr}.bed.gz -o ${vcf[0].simpleName}_${dataset}_${chr}.vcf.gz ${dbsnp}.gz
-	tabix ${vcf[0].simpleName}_${dataset}_${chr}.vcf.gz
 	"""
 }
 
 // Convert to VCF
+// turn json param string into a file
+// run gwas2vcf
 process VCF {
 	tag "${dataset} ${assembly} ${dbsnp}"
   	label 'gwas2vcf'
@@ -456,22 +211,25 @@ process VCF {
 
 	cpus = 1
 	memory = 8.GB
-	time = '1h'
+	time = '3h'
 
 	input:
-	tuple val(dataset), val(dict), val(chr), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(json), path(gwas2vcf)
+	tuple val(dataset), val(chr), val(meta), val(params), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(gwas2vcf)
 
 	output:
-	tuple val(dataset), val(dict), path("${dataset}_${chr}.vcf.gz")
+	tuple val(dataset), val(meta), path("${dataset}_${chr}.vcf.gz")
 
 	script:
 	"""
+	cat <<EOF > params.json
+	${params}
+	EOF
 	python ${gwas2vcf}/main.py \
 	--data ${gwas} \
-	--json ${json} \
+	--json params.json \
 	--id ${dataset} \
 	--ref ${assembly}.fasta \
-	--dbsnp ${dbsnp}.vcf.gz \
+	--dbsnp ${dbsnp}.gz \
 	--out ./${dataset}_${chr}.vcf.gz
 	"""
 }
@@ -528,7 +286,7 @@ process ANNOTATIONS {
 	time = '10m'
 
 	input:
-	tuple val(dataset), val(dict), path(sumstats), val(dbsnp), path(vcf)
+	tuple val(dataset), val(dict), val(params), path(sumstats)
 
 	output:
 	tuple val(dataset), path("${dataset}-annot.tsv")
@@ -601,15 +359,15 @@ process HARMONISE {
 		mutate(flip = sign(ES) != sign(BETA)) |>
 		transmute(CHROM = `#CHROM`, POS, REF, ALT,
 		          `FORMAT/AFCAS` = if_else(flip, true = 1 - AFCAS, false = AFCAS),
-				  `FORMAT/AFCON` = if_else(flip, true = 1 - AFCON, false = AFCON),
-				  `FORMAT/NE` = NE) |>
+				      `FORMAT/AFCON` = if_else(flip, true = 1 - AFCON, false = AFCON),
+				      `FORMAT/NE` = NE) |>
 		arrange(CHROM, POS)
 
 	write_tsv(mapped_annot, "${dataset}-annot-mapped.tsv", col_names = FALSE)
 	write(names(mapped_annot), "${dataset}-annot-mapped.cols", ncolumns = 1)
 
 	headers = c('##FORMAT=<ID=AFCAS,Number=A,Type=Float,Description="Alternate allele frequency in cases">',
-			        '##FORMAT=<ID=AFCON,Number=A,Type=Float,Description="Alternate allele frequency in controls">',
+			    '##FORMAT=<ID=AFCON,Number=A,Type=Float,Description="Alternate allele frequency in controls">',
 	            '##FORMAT=<ID=NE,Number=A,Type=Float,Description="Effective sample size used to estimate genetic effect">')
 	write(headers, "header.txt", ncolumns = 1)
 	"""
@@ -620,7 +378,7 @@ process ANNOTATE {
 	tag "${dataset}"
   label 'tools'
 
-	publishDir "vcf", mode: "copy"
+	publishDir params.publish, mode: "copy"
 
 	cpus = 1
 	memory = 4.GB

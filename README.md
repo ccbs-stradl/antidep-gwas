@@ -18,8 +18,9 @@ Cohorts
 mkdir reference
 curl "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}" -o "reference/Homo_sapiens_assembly38.#1"
 curl "http://fileserve.mrcieu.ac.uk/dbsnp/dbsnp.v153.hg38.vcf.{gz,gz.tbi}" -o "reference/dbsnp.v153.hg38.vcf.#1"
-curl "http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz" | gunzip -c > reference/human_g1k_v37.fasta
-curl "http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.fai" > reference/human_g1k_v37.fasta.fai
+curl "http://fileserve.mrcieu.ac.uk/dbsnp/dbsnp.v153.b37.vcf.{gz,gz.tbi}" -o "reference/dbsnp.v153.b378.vcf.#1"
+curl "http://fileserve.mrcieu.ac.uk/ref/2.8/b37/human_g1k_v37.fasta.gz" | gunzip -c > reference/human_g1k_v37.fasta
+curl "http://fileserve.mrcieu.ac.uk/ref/2.8/b37/human_g1k_v37.{fasta.fai,dict}" -o "reference/human_g1k_v37.#1"
 curl "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/liftOver/hg19ToHg38.over.chain.gz" -o "reference/hg19ToHg38.over.chain.gz"
 curl "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz" -o "reference/hg38ToHg19.over.chain.gz"
 curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg38_v40.txt" -o "reference/glist_ensgid_hg38_v40.txt"
@@ -31,7 +32,15 @@ curl -L "https://www.dropbox.com/s/ngbo2xm5ojw9koy/all_hg38_noannot.pvar.zst?dl=
 curl -L "https://www.dropbox.com/s/2e87z6nc4qexjjm/hg38_corrected.psam?dl=1" -o reference/all_hg38.psam
 ```
 
-## 1. GWAS VCF
+## 1. Format GWAS
+
+Harmonise input sumstats formatting.
+
+```sh
+nextflow run format_gwas.nf -resume
+```
+
+## 2. GWAS VCF
 
 Install `gwas2vcf`(https://mrcieu.github.io/gwas2vcf/)
 
@@ -50,8 +59,13 @@ unzip -d plugins score_1.20-20240505.zip
 
 Convert sumstats to [GWAS VCF](https://github.com/MRCIEU/gwas-vcf-specification) format. 
 
+Genome build 38:
 ```sh
-nextflow run gwasvcf.nf -resume
+nextflow run vcf.nf \
+--sumstats "format/gwas/*-GRCh38.{txt,json}" \
+--assembly "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}" \
+--dbsnp "reference/dbsnp.v153.hg38.vcf.{gz,gz.tbi}" \
+-resume
 ```
 
 The workflow also requires [bcftools](https://samtools.github.io/bcftools/bcftools.html), [gatk](https://gatk.broadinstitute.org), R, and [plyranges](https://sa-lee.github.io/plyranges/index.html).
