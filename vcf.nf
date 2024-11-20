@@ -2,7 +2,7 @@
 	Convert sumstats to GWAS VCF format
 	
 	Inputs:
-		- format/cohort.txt: formatted GWAS sumstats
+	  - format/cohort.txt: formatted GWAS sumstats
       - chr
       - pos
       - ea
