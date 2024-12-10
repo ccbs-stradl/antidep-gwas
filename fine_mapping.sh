@@ -111,7 +111,42 @@ rm fineMapping/*_tmp_*
 # ----- Calculate LD matrices for each region that will be fine mapped
 # Use plink2 and use the SuSiEx script as a guide: https://github.com/getian107/SuSiEx/blob/master/utilities/SuSiEx_LD.py
 
+# Extract list of SNPs for region of interest, using CHR and BP parameters in the .bim file of reference/ukb_imp_v3.qc_EUR. Refered to below as $CHR and reference/ukb_imp_v3.qc_EUR.snp
+# or we could use  and --to-bp below instead
+
+# Create bed files for that region
+../SuSiEx/utilities/plink \
+--bfile reference/ukb_imp_v3.qc_EUR \
+--keep-allele-order \
+--chr $CHR \
+--from-bp $BP_START \
+--to-bp $BP_END \
+--make-bed \
+--out reference/ukb_imp_v3.qc_EUR_ref
+
+# Create LD matrix (if changing to PLINK2 change to "--r-unphased" instead of "--r")
+../SuSiEx/utilities/plink \
+--bfile reference/ukb_imp_v3.qc_EUR_ref \
+ --keep-allele-order \
+ --r square bin4 \
+ --out reference/ukb_imp_v3.qc_EUR
+
+# Calculate allele frequencies:
+../SuSiEx/utilities/plink \
+--bfile reference/ukb_imp_v3.qc_EUR_ref \
+--keep-allele-order \
+--freq \
+--out reference/ukb_imp_v3.qc_EUR
+
+
+# Loop over all ancestries:
+#reference/ukb_imp_v3.qc_EUR, reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS
+
+
 # Calculate and save how many variants are in each region (for Supplementary Table)
+
+
+
 
 
 # ----------------------------------------------------
@@ -119,8 +154,7 @@ rm fineMapping/*_tmp_*
 ../SuSiEx/bin/SuSiEx \
   --sst_file=test/EUR.sumstats.txt,test/AFR.sumstats.txt,test/SAS.sumstats.txt \
   --n_gwas=5800000,48000,7300 \
-  --ref_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS \
-  --ld_file=fineMapping/EUR,fineMapping/AFR,fineMapping/SAS \
+  --ld_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS \
   --out_dir=./fineMapping \
   --out_name=SuSiEx.EUR.AFR.SAS.output.cs95 \
   --level=0.95 \
@@ -136,7 +170,6 @@ rm fineMapping/*_tmp_*
   --eff_col=5,5,5 \
   --se_col=6,6,6 \
   --pval_col=7,7,7 \
-  --plink=../SuSiEx/utilities/plink \
   --mult-step=True \
   --keep-ambig=True |& tee fineMapping/SuSiEx.EUR.AFR.SAS.output.cs95.log
 
