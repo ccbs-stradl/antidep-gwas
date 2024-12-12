@@ -1,5 +1,27 @@
 # Test SuSiEx script before adding to nextflow pipeline:
 # ----------------------------------------------------
+# Make reference files:
+for cluster in EUR AFR SAS; do
+  qsub -v cluster=$cluster make-bed_hg19.sh
+done
+
+# ----------------------------------------------------
+# Calculate effective sample size for each meta-analysis sumstats
+# Edit the meta.nf to include this as a process:
+R
+library(dplyr)
+sumstats <- read.csv("sumstats.csv")
+sumstats %>% 
+  mutate(neff = 4/(1/cases + 1/controls)) %>%
+  group_by(pheno, cluster) %>%
+  summarise(neff = sum(neff))
+
+mutate(neff = 1/ (1/cases + 1/controls)) |> group_by(pheno, cluster) |> summarize(neff = sum(neff))
+
+write.csv(sumstats, "sumstats.Neff.csv", quote = F, row.names = F)
+quit()
+
+# ----------------------------------------------------
 qlogin -l h_vmem=32G
 
 cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
