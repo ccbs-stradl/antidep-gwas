@@ -1,38 +1,24 @@
-PLINK v2.00a3LM AVX2 Intel (6 Mar 2021)
+PLINK v1.90b7 64-bit (16 Jan 2023)
 Options in effect:
-  --geno 0.02
-  --keep-col-match reference/ukb-ld-ref_ancestry.id EUR
-  --make-bed
-  --mind 0.02
+  --bfile reference/ukb_imp_v3.qc_EUR_ref
+  --freq
+  --keep-allele-order
   --out reference/ukb_imp_v3.qc_EUR
-  --pfile /exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc
-  --threads 4
 
-Hostname: node3d08.ecdf.ed.ac.uk
+Hostname: node2b32.ecdf.ed.ac.uk
 Working directory: /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
-Start time: Wed Dec 11 16:48:43 2024
+Start time: Thu Dec 12 11:52:35 2024
 
-Random number seed: 1733935723
-514087 MiB RAM detected; reserving 257043 MiB for main workspace.
-Allocated 108439 MiB successfully, after larger attempt(s) failed.
-Using up to 4 compute threads.
-487409 samples (264362 females, 223033 males, 14 ambiguous; 487409 founders)
-loaded from
-/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.psam.
-19435808 variants loaded from
-/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.pvar.
-Note: No phenotype data present.
---keep-col-match: 7500 samples remaining.
-Calculating sample missingness rates... done.
-30 samples removed due to missing genotype data (--mind).
-IDs written to reference/ukb_imp_v3.qc_EUR.mindrem.id .
-7470 samples (3974 females, 3496 males; 7470 founders) remaining after main
-filters.
+Random number seed: 1734004355
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 29025 MB successfully, after larger attempt(s) failed.
+7084 variants loaded from .bim file.
+7500 people (3513 males, 3987 females) loaded from .fam.
+Using 1 thread.
+Before main variant filters, 7500 founders and 0 nonfounders present.
 Calculating allele frequencies... done.
---geno: 1936350 variants removed due to missing genotype data.
-17499458 variants remaining after main filters.
-Writing reference/ukb_imp_v3.qc_EUR.fam ... done.
-Writing reference/ukb_imp_v3.qc_EUR.bim ... done.
-Writing reference/ukb_imp_v3.qc_EUR.bed ... done.
+Total genotyping rate is 0.993187.
+--freq: Allele frequencies (founders only) written to
+reference/ukb_imp_v3.qc_EUR.frq .
 
-End time: Wed Dec 11 18:41:35 2024
+End time: Thu Dec 12 11:52:35 2024
