@@ -9,8 +9,10 @@
 #$ -m beas
 #$ -M aedmond3@ed.ac.uk
 
-# Use UKBiobank genetic data for creating LD references as these are in the hg19 format
-# Subset pgen files to specific ancestries
+# Creates separate bim, bed, fam files for each ancestry from the UK Biobank pgen files (hg19)
+# geno 0.02 = filters out variants with missing genotype data
+# mind 0.02 = filters out individuals with missing genotype data
+# keep-col-match keeps IDs where the string matches the ancestry cluster (ie. EUR, AFR or SAS)
 
 cd /exports/eddie/scratch/$USER/GitRepos/antidep-gwas
 
@@ -22,7 +24,7 @@ for cluster in EUR AFR SAS; do
 --geno 0.02 \
 --mind 0.02 \
 --make-bed \
---out reference/ukb_imp_v3.qc_ \
+--out reference/ukb_imp_v3.qc_${cluster} \
 --threads 4
 done
 

@@ -1,0 +1,31 @@
+PLINK v2.00a3LM AVX2 Intel (6 Mar 2021)
+Options in effect:
+  --geno 0.02
+  --keep-col-match reference/ukb-ld-ref_ancestry.id AFR
+  --make-bed
+  --mind 0.02
+  --out reference/ukb_imp_v3.qc_AFR
+  --pfile /exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc
+  --threads 4
+
+Hostname: node3d08.ecdf.ed.ac.uk
+Working directory: /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
+Start time: Wed Dec 11 18:41:35 2024
+
+Random number seed: 1733942495
+514087 MiB RAM detected; reserving 257043 MiB for main workspace.
+Allocated 108439 MiB successfully, after larger attempt(s) failed.
+Using up to 4 compute threads.
+487409 samples (264362 females, 223033 males, 14 ambiguous; 487409 founders)
+loaded from
+/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.psam.
+19435808 variants loaded from
+/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.pvar.
+Note: No phenotype data present.
+--keep-col-match: 7500 samples remaining.
+Calculating sample missingness rates... done.
+7500 samples removed due to missing genotype data (--mind).
+IDs written to reference/ukb_imp_v3.qc_AFR.mindrem.id .
+Error: No samples remaining after main filters.
+
+End time: Wed Dec 11 18:53:57 2024
