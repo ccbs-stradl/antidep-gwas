@@ -142,9 +142,7 @@ BP_END=8314677
 # sample sizes are taken from sumstats.Neff.csv
 
 ../SuSiEx/bin/SuSiEx \
-  --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,\
-             test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,\
-             test/fixed-N06A-SAS.human_g1k_v37.neff08.txt \
+  --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt \
   --n_gwas=667771,39866,5814 \
   --ref_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS \
   --ld_file=fineMapping/EUR,fineMapping/AFR,fineMapping/SAS \
