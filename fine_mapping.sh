@@ -12,7 +12,7 @@ module load roslin/samtools/1.9
 # Convert sustats into correct format (convert to nextflow process)
 for cluster in EUR AFR SAS; do
 echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > test/${cluster}.sumstats.txt
-bcftools query -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz | awk -v OFS='\t' -v neff_threshold=0.8 '$11 >= neff_threshold * $11 {print $1, $2, $3, $4, $5, $6, 10^-($7), $8, $9, $10}' >> test/${cluster}.sumstats.txt
+bcftools query -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz | awk -v OFS='\t' -v neff_threshold=0.8 '$11 >= neff_threshold * $11 {print $1, $2, $3, $4, $5, $6, 10^-($7), $8, $9, $10, $11}' >> test/${cluster}.sumstats.txt
 done
 
 # ----------------------------------------------------
@@ -115,28 +115,33 @@ rm fineMapping/*_tmp_*
 # or we could use  and --to-bp below instead
 
 # Create bed files for that region
+CHR=1
+BP_START=7314654
+BP_END=8314677
+cluster=EUR
+
 ../SuSiEx/utilities/plink \
---bfile reference/ukb_imp_v3.qc_EUR \
+--bfile reference/ukb_imp_v3.qc_${cluster} \
 --keep-allele-order \
 --chr $CHR \
 --from-bp $BP_START \
 --to-bp $BP_END \
 --make-bed \
---out reference/ukb_imp_v3.qc_EUR_ref
+--out reference/ukb_imp_v3.qc_${cluster}_ref
 
 # Create LD matrix (if changing to PLINK2 change to "--r-unphased" instead of "--r")
 ../SuSiEx/utilities/plink \
---bfile reference/ukb_imp_v3.qc_EUR_ref \
+--bfile reference/ukb_imp_v3.qc_${cluster}_ref \
  --keep-allele-order \
  --r square bin4 \
- --out reference/ukb_imp_v3.qc_EUR
+ --out reference/ukb_imp_v3.qc_${cluster}
 
 # Calculate allele frequencies:
 ../SuSiEx/utilities/plink \
---bfile reference/ukb_imp_v3.qc_EUR_ref \
+--bfile reference/ukb_imp_v3.qc_${cluster}_ref \
 --keep-allele-order \
 --freq \
---out reference/ukb_imp_v3.qc_EUR
+--out reference/ukb_imp_v3.qc_${cluster}
 
 
 # Loop over all ancestries:
@@ -154,13 +159,13 @@ rm fineMapping/*_tmp_*
 ../SuSiEx/bin/SuSiEx \
   --sst_file=test/EUR.sumstats.txt,test/AFR.sumstats.txt,test/SAS.sumstats.txt \
   --n_gwas=5800000,48000,7300 \
-  --ld_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS \
+  --ld_file=reference/ukb_imp_v3.qc_EUR_LD,reference/ukb_imp_v3.qc_AFR_LD,reference/ukb_imp_v3.qc_SAS_LD \
   --out_dir=./fineMapping \
   --out_name=SuSiEx.EUR.AFR.SAS.output.cs95 \
   --level=0.95 \
   --pval_thresh=1e-5 \
-  --chr=1 \
-  --bp=7314654,8314677 \
+  --chr=$CHR \
+  --bp=$BP_START,$BP_END \
   --maf=0.005 \
   --snp_col=1,1,1 \
   --chr_col=9,9,9 \
@@ -172,6 +177,30 @@ rm fineMapping/*_tmp_*
   --pval_col=7,7,7 \
   --mult-step=True \
   --keep-ambig=True |& tee fineMapping/SuSiEx.EUR.AFR.SAS.output.cs95.log
+
+../SuSiEx/bin/SuSiEx \
+  --sst_file=test/EUR.sumstats.txt,test/SAS.sumstats.txt \
+  --n_gwas=5800000,7300 \
+  --ref_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_SAS \
+  --ld_file=fineMapping/EUR,fineMapping/SAS \
+  --out_dir=./fineMapping \
+  --out_name=SuSiEx.EUR.SAS.output.cs95 \
+  --level=0.95 \
+  --pval_thresh=1e-5 \
+  --chr=$CHR \
+  --bp=$BP_START,$BP_END \
+  --maf=0.005 \
+  --snp_col=1,1 \
+  --chr_col=9,9 \
+  --bp_col=10,10 \
+  --a1_col=2,2 \
+  --a2_col=3,3 \
+  --eff_col=5,5 \
+  --se_col=6,6 \
+  --pval_col=7,7 \
+  --plink=../SuSiEx/utilities/plink \
+  --mult-step=True \
+  --keep-ambig=True |& tee fineMapping/SuSiEx.EUR.SAS.output.cs95.log
 
 
 # Error when using plink2 rather than plink
