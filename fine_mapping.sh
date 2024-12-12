@@ -33,8 +33,8 @@ module load roslin/samtools/1.9
 # ----- Process sumstats -----------------------------
 # Convert sustats into correct format (convert to nextflow process)
 for cluster in EUR AFR SAS; do
-echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > test/${cluster}.sumstats.txt
-bcftools query -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz | awk -v OFS='\t' -v neff_threshold=0.8 '$11 >= neff_threshold * $11 {print $1, $2, $3, $4, $5, $6, 10^-($7), $8, $9, $10, $11}' >> test/${cluster}.sumstats.txt
+echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > test/fixed-N06A-${cluster}.human_g1k_v37.neff08.txt
+bcftools query -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz | awk -v OFS='\t' -v neff_threshold=0.8 '$11 >= neff_threshold * $11 {print $1, $2, $3, $4, $5, $6, 10^-($7), $8, $9, $10, $11}' >> test/fixed-N06A-${cluster}.human_g1k_v37.neff08.txt
 done
 
 # ----------------------------------------------------
@@ -96,7 +96,7 @@ GWS_SNPs <- fread("fineMapping/GWS_SNPs_tmp.txt", header = FALSE) %>% pull(1)
 
 # Read in sumstats and subset to GWS SNPs
 sumstats <- lapply(c("EUR", "AFR", "SAS"), function(cluster){
-  fread(paste0("test/", cluster, ".sumstats.txt")) %>%
+  fread(paste0("test/fixed-N06A-", cluster, "human_g1k_v37.neff08.txt")) %>%
   filter(SNP %in% GWS_SNPs) %>%
   rename_with(~ paste0(cluster, "_", .), -SNP)  # Add cluster prefix to column names, except for SNP
 })
@@ -129,59 +129,25 @@ quit()
 
 rm fineMapping/*_tmp_*
 
-# ----------------------------------------------------
-# ----- Calculate LD matrices for each region that will be fine mapped
-# Use plink2 and use the SuSiEx script as a guide: https://github.com/getian107/SuSiEx/blob/master/utilities/SuSiEx_LD.py
-
-# Extract list of SNPs for region of interest, using CHR and BP parameters in the .bim file of reference/ukb_imp_v3.qc_EUR. Refered to below as $CHR and reference/ukb_imp_v3.qc_EUR.snp
-# or we could use  and --to-bp below instead
-
-# Create bed files for that region
-CHR=1
-BP_START=7314654
-BP_END=8314677
-cluster=EUR
-
-../SuSiEx/utilities/plink \
---bfile reference/ukb_imp_v3.qc_${cluster} \
---keep-allele-order \
---chr $CHR \
---from-bp $BP_START \
---to-bp $BP_END \
---make-bed \
---out reference/ukb_imp_v3.qc_${cluster}_ref
-
-# Create LD matrix (if changing to PLINK2 change to "--r-unphased" instead of "--r")
-../SuSiEx/utilities/plink \
---bfile reference/ukb_imp_v3.qc_${cluster}_ref \
- --keep-allele-order \
- --r square bin4 \
- --out reference/ukb_imp_v3.qc_${cluster}
-
-# Calculate allele frequencies:
-../SuSiEx/utilities/plink \
---bfile reference/ukb_imp_v3.qc_${cluster}_ref \
---keep-allele-order \
---freq \
---out reference/ukb_imp_v3.qc_${cluster}
-
-
-# Loop over all ancestries:
-#reference/ukb_imp_v3.qc_EUR, reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS
-
-
-# Calculate and save how many variants are in each region (for Supplementary Table)
-
-
-
-
 
 # ----------------------------------------------------
 # ----- Run SuSiEX (convert to nextflow process) -----
+
+CHR=1
+BP_START=7314654
+BP_END=8314677
+# use meta/*.clumped.ranges to get start and end positions and chr
+# make sure they are on the correct hg19 build though
+# only clumps for EUR, nothing for SAS or AFR because there weren't any GWS SNPs
+# sample sizes are taken from sumstats.Neff.csv
+
 ../SuSiEx/bin/SuSiEx \
-  --sst_file=test/EUR.sumstats.txt,test/AFR.sumstats.txt,test/SAS.sumstats.txt \
-  --n_gwas=5800000,48000,7300 \
-  --ld_file=reference/ukb_imp_v3.qc_EUR_LD,reference/ukb_imp_v3.qc_AFR_LD,reference/ukb_imp_v3.qc_SAS_LD \
+  --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,\
+             test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,\
+             test/fixed-N06A-SAS.human_g1k_v37.neff08.txt \
+  --n_gwas=667771,39866,5814 \
+  --ref_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS \
+  --ld_file=fineMapping/EUR,fineMapping/AFR,fineMapping/SAS \
   --out_dir=./fineMapping \
   --out_name=SuSiEx.EUR.AFR.SAS.output.cs95 \
   --level=0.95 \
