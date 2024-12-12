@@ -7,7 +7,8 @@
 #$ -cwd
 
 # Use UKBiobank genetic data for creating LD references as these are in the hg19 format
-# Subset pgen files to specific ancestries
+# Creates one pfile for all ancestries. 
+# With an extra column in the .psam file indicating the ancestry for that ID
 
 cd /exports/eddie/scratch/$USER/GitRepos/antidep-gwas
 export PATH=$PATH:/gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2
