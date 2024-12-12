@@ -164,67 +164,26 @@ BP_END=8314677
   --se_col=6,6,6 \
   --pval_col=7,7,7 \
   --mult-step=True \
+  --plink=../SuSiEx/utilities/plink \
   --keep-ambig=True |& tee fineMapping/SuSiEx.EUR.AFR.SAS.output.cs95.log
 
-../SuSiEx/bin/SuSiEx \
-  --sst_file=test/EUR.sumstats.txt,test/SAS.sumstats.txt \
-  --n_gwas=5800000,7300 \
-  --ref_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_SAS \
-  --ld_file=fineMapping/EUR,fineMapping/SAS \
-  --out_dir=./fineMapping \
-  --out_name=SuSiEx.EUR.SAS.output.cs95 \
-  --level=0.95 \
-  --pval_thresh=1e-5 \
-  --chr=$CHR \
-  --bp=$BP_START,$BP_END \
-  --maf=0.005 \
-  --snp_col=1,1 \
-  --chr_col=9,9 \
-  --bp_col=10,10 \
-  --a1_col=2,2 \
-  --a2_col=3,3 \
-  --eff_col=5,5 \
-  --se_col=6,6 \
-  --pval_col=7,7 \
-  --plink=../SuSiEx/utilities/plink \
-  --mult-step=True \
-  --keep-ambig=True |& tee fineMapping/SuSiEx.EUR.SAS.output.cs95.log
 
+# "Error: Effect size of Line 28807 is not a number (NAN)"
+# in what looks like the sumstats file
+sed -n '28808p' test/EUR*
+# It contains a beta value with a zero
+awk '$5 == 0 { count++ } END { print count }' test/EUR*
+# There's a lot of zero beta values in each sum stats
+# For now let's remove them to see if the rest of SuSiEx works
+awk '$5 != 0' test/fixed-N06A-EUR.human_g1k_v37.neff08.txt > test/fixed-N06A-EUR.human_g1k_v37.neff08.noZero.txt
+awk '$5 != 0' test/fixed-N06A-AFR.human_g1k_v37.neff08.txt > test/fixed-N06A-AFR.human_g1k_v37.neff08.noZero.txt
+awk '$5 != 0' test/fixed-N06A-SAS.human_g1k_v37.neff08.txt > test/fixed-N06A-SAS.human_g1k_v37.neff08.noZero.txt
 
-# Error when using plink2 rather than plink
-../SuSiEx/bin/SuSiEx \
-  --sst_file=test/EUR.sumstats.txt,test/AFR.sumstats.txt,test/SAS.sumstats.txt \
-  --n_gwas=5800000,48000,7300 \
-  --ref_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS \
-  --ld_file=fineMapping/EUR,fineMapping/AFR,fineMapping/SAS \
-  --out_dir=./fineMapping \
-  --out_name=SuSiEx.EUR.AFR.SAS.output.cs95 \
-  --level=0.95 \
-  --pval_thresh=1e-5 \
-  --chr=1 \
-  --bp=7314654,8314677 \
-  --maf=0.005 \
-  --snp_col=1,1,1 \
-  --chr_col=9,9,9 \
-  --bp_col=10,10,10 \
-  --a1_col=2,2,2 \
-  --a2_col=3,3,3 \
-  --eff_col=5,5,5 \
-  --se_col=6,6,6 \
-  --pval_col=7,7,7 \
-  --plink=/gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2 \
-  --mult-step=True \
-  --keep-ambig=True |& tee fineMapping/SuSiEx.EUR.AFR.SAS.output.cs95_PLINK_DEBUG.log
-
- # The version of plink used in SuSiEx requires "--r" to be available in plink. I think this has been removed as an option in plink2. As using plink2 (as above) gives the error:
-# "Error: Unrecognized flag ('--r')."
 
 
 # ----------------------------------------------------
 # With the above code there are a few things to change:
-# 1. This is example code so "chr" and "bp" need changing to the regions needing fine mapping.
-# 2. But more importantly, the LD matrices do not seem to be being calculated for SAS. (See log file). 
-  # Solution to this is to use PLINK to calculate LD matrices directly (using the genome wide signifcant SNP regions) and parse them to "--ld-file", if doing this remove flags for "--ref-file" and "--plink".
-  # See their script to calculate LD matrices here: https://github.com/getian107/SuSiEx/blob/master/utilities/SuSiEx_LD.py, maybe adapt it to use plink2.
-# 3. Also need to check what to use as sample size for "--n_gwas", is this the sample size stated in the abstract of these studies or is this the effective sample size for the study?
+# 1. This is example code so "chr" and "bp" need changing to the regions needing fine mapping. Use meta/*EUR.clumped.ranges to get base positions
+# 2. SuSiEx doesn't seem to like it when effect sizes are zero in the sum stats file
+
 
