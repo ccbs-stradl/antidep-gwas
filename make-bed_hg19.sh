@@ -14,6 +14,9 @@
 # mind 0.02 = filters out individuals with missing genotype data
 # keep-col-match keeps IDs where the string matches the ancestry cluster (ie. EUR, AFR or SAS)
 
+# reference/ukb-ld-ref_ancestry.id is made in the script make-pgen_hg19.sh
+# change these scripts to be part of the nextflow pipeline
+
 cd /exports/eddie/scratch/$USER/GitRepos/antidep-gwas
 
 # Create a file for each ancestry in UKB (EUR AFR SAS) with columns for UKB ID (FID and IID)
