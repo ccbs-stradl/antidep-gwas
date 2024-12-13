@@ -41,74 +41,63 @@ done
 # ----- Identify lead SNPs for each ancestry ---------
 # "in cross-population fine-mapping, we analyzed loci that reached genome-wide significance in at least one of the population-specific GWAS "
 
+# define the region we want to fine map around lead SNPs
+# "1-Mb regions" used in SuSiEx paper simulations, 
+# use meta/*.clumped.ranges output from meta.nf
+
 # First count how many genome-wide significant (GWS) SNPs are in each ancestry
 for cluster in EUR AFR SAS; do
-cat test/${cluster}* | awk '$7 <= 5e-8' | wc -l
+cat test/fixed-N06A-${cluster}.human_g1k_v37.neff08.txt | awk '$7 <= 5e-8' | wc -l
 done
 # EUR: 2151; AFR: 0; SAS:0
 
-# Create Supplementary Table of all 2,151 GWS SNPs with the following columns:
-# SNP, EUR_P_VAL, AFR_P_VAL, SAS_P_VAL
-cat test/* \
-| awk '$7 <= 5e-8' \
-| awk 'a[$1]++ == 0' \
-| awk '{print $1}' \
-| sort > fineMapping/GWS_SNPs_tmp.txt
 
-for cluster in EUR AFR SAS; do
-cat test/${cluster}* \
-| awk -v cluster="${cluster}" '$1 != "." {print $1, $7}' \
-| sort > fineMapping/GWS_SNPs_tmp_${cluster}.txt
-done
-
-echo -e "SNP\tEUR_P_VAL\tAFR_P_VAL\tSAS_P_VAL" > fineMapping/GWS_SNPs_PVals.txt
-join -a1 -e "NA" fineMapping/GWS_SNPs_tmp.txt fineMapping/GWS_SNPs_tmp_EUR.txt \
-| join -a1 -e "NA" - fineMapping/GWS_SNPs_tmp_AFR.txt \
-| join -a1 -e "NA" - fineMapping/GWS_SNPs_tmp_SAS.txt >> fineMapping/GWS_SNPs_PVals.txt
-
-# join: fineMapping/GWS_SNPs_tmp_EUR.txt:16: is not sorted: rs1000002 0.9628  
-# join: fineMapping/GWS_SNPs_tmp_AFR.txt:21: is not sorted: rs1000002 0.785001
-# join: fineMapping/GWS_SNPs_tmp_SAS.txt:17: is not sorted: rs1000002 0.7926  
-# join: input is not in sorted order
-# join: input is not in sorted order
-# join: input is not in sorted order
-
-# Not convinced this has worked correctly, tempted to read it into R or Python and wrangle there
-head fineMapping/GWS_SNPs_PVals.txt
-
-
-# We also need to save the chromosome and base position for each GWS SNP
-# then calculate the min and max base position value of the region for fine mapping
-# ie. define the region we want to fine map around lead SNPs
-# "1-Mb regions" used in SuSiEx paper simulations, ie. BP ± 500,000 for min/max values
-# what if BP ±500,000 is outside the range of the chromosome?
-# Also there's a lot of SNPs that overlap...
-# Unsure how best to get the BP start and end values for each fine mapping region
-# Let's do this in R.
+# ----
 R
 
 library(data.table)
 library(dplyr)
 library(purrr)
 
-# Read in GWS SNPs
-GWS_SNPs <- fread("fineMapping/GWS_SNPs_tmp.txt", header = FALSE) %>% pull(1)
+
+# ---------------
+# Create table of GWS SNPs that will be fine mapped with the P-values for each ancestry:
 
 # Read in sumstats and subset to GWS SNPs
 sumstats <- lapply(c("EUR", "AFR", "SAS"), function(cluster){
-  fread(paste0("test/fixed-N06A-", cluster, "human_g1k_v37.neff08.txt")) %>%
+  fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) 
+})
+
+
+GWS_SNPs <- lapply(sumstats, function(sumstats){
+  sumstats %>%
+  filter(P <= 5e-8) %>%
+  pull(SNP)
+}) %>% unlist()
+
+
+clusters <- c("EUR", "AFR", "SAS")
+sumstats <- lapply(1:3, function(i){
+  sumstats[[i]] %>%
   filter(SNP %in% GWS_SNPs) %>%
-  rename_with(~ paste0(cluster, "_", .), -SNP)  # Add cluster prefix to column names, except for SNP
+  rename_with(~ paste0(clusters[i], "_", .), -SNP)  # Add cluster prefix to column names, except for SNP
 })
 
 # Check if they all contain those SNPs
 lapply(sumstats, nrow)
+  # [[1]]
+  # [1] 2151
+
+  # [[2]]
+  # [1] 1973
+
+  # [[3]]
+  # [1] 1992
 # Some SNPs are missing in AFR and SAS
 
 # Join all the sumstats on SNP col into one table with the cluster prefix before each duplicated col name
 # Left join onto EUR, to keep all GWS SNPs
 sumstats <- reduce(sumstats, left_join, by = "SNP")
-
 
 # Check that CHR and BP are the same across all ancestries for the same SNP (QC check of build)
 # ignore missing SNPs
@@ -125,7 +114,26 @@ sumstats <- sumstats %>%
 
 write.table(sumstats, "fineMapping/GWS_SNPs.txt", row.names = FALSE, sep = "\t", quote = FALSE)
 
+# Noticed a few GWS_SNPs are on chromosome X, let's just count these
+sumstats %>%
+  filter(CHR == "X") %>%
+  nrow()
+  # 110
+
+# ---------------
+# Check if GWS SNP fall within .clumped.ranges output from meta.nf
+# because our gwas sumstats are now on hg19 whereas the output in meta is in Gr38.
+# I'm not sure if this would mean the clumped ranges are different or not
+
+clumped_ranges <- fread("meta/fixed-N06A-EUR.clumped.ranges")
+sort(clumped_ranges$POS)
+# gives 110 ranges, we need to check that all our GWS SNPs fall within all these ranges
+# even by eye i can see that there are GWS SNPs on CHR 1 but no CHR 1 in clumped ranges
+
+
+
 quit()
+# ----
 
 rm fineMapping/*_tmp_*
 
