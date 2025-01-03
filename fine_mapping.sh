@@ -6,6 +6,14 @@ for cluster in EUR AFR SAS; do
 done
 
 # ----------------------------------------------------
+qlogin -l h_vmem=32G
+
+cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
+
+module load roslin/bcftools/1.20
+module load roslin/samtools/1.9
+
+# ----------------------------------------------------
 # Calculate effective sample size for each meta-analysis sumstats
 # Edit the meta.nf to include this as a process:
 R
@@ -20,14 +28,6 @@ mutate(neff = 1/ (1/cases + 1/controls)) |> group_by(pheno, cluster) |> summariz
 
 write.csv(sumstats, "sumstats.Neff.csv", quote = F, row.names = F)
 quit()
-
-# ----------------------------------------------------
-qlogin -l h_vmem=32G
-
-cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
-
-module load roslin/bcftools/1.20
-module load roslin/samtools/1.9
 
 # ----------------------------------------------------
 # ----- Process sumstats -----------------------------
@@ -152,7 +152,7 @@ BP_END=8314677
 ../SuSiEx/bin/SuSiEx \
   --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt \
   --n_gwas=667771,39866,5814 \
-  --ref_file=reference/ukb_imp_v3.qc_EUR,reference/ukb_imp_v3.qc_AFR,reference/ukb_imp_v3.qc_SAS \
+  --ref_file=reference/ukb_imp_v3.qc.geno02.mind02_EUR,reference/ukb_imp_v3.qc.geno02.mind02_AFR,reference/ukb_imp_v3.qc.geno02.mind02_SAS \
   --ld_file=fineMapping/EUR,fineMapping/AFR,fineMapping/SAS \
   --out_dir=./fineMapping \
   --out_name=SuSiEx.EUR.AFR.SAS.output.cs95 \
