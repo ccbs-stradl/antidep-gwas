@@ -37,6 +37,38 @@ echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > test/fixed-N06A-${clu
 bcftools query -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz | awk -v OFS='\t' -v neff_threshold=0.8 '$11 >= neff_threshold * $11 {print $1, $2, $3, $4, $5, $6, 10^-($7), $8, $9, $10, $11}' >> test/fixed-N06A-${cluster}.human_g1k_v37.neff08.txt
 done
 
+# Count the number of times zero occurs in the standard error column
+# These rows where SE == 0 should be removed for SuSiEx to run
+# Please see: https://github.com/getian107/SuSiEx/issues/20
+
+# This uses awk to count where column number 6 (which is the SE column) matches "0"
+# count++ increments the count for each occurrence of 0.
+for file in test/*; do
+  awk '$6 == 0 {count++} END {print count+0}' "$file"
+done
+
+# Note - check why there are occurances of a zero SE to begin with
+
+# Remove rows where SE == 0 in R:
+# ----
+R
+
+library(data.table)
+library(dplyr)
+
+lapply(c("EUR", "AFR", "SAS"), function(cluster){
+  # Read in sumsstats and remove rows where SE = 0
+  sumstats <- fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) %>% 
+  filter(SE != 0)
+  # Rewrite sumstats with suffix "noZero"
+  fwrite(sumstats, paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt"))
+  # Return number of rows in sumstats
+  return(nrow(sumstats))
+})
+
+quit()
+# ----
+
 # ----------------------------------------------------
 # ----- Identify lead SNPs for each ancestry ---------
 # "in cross-population fine-mapping, we analyzed loci that reached genome-wide significance in at least one of the population-specific GWAS "
