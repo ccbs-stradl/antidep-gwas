@@ -157,20 +157,20 @@ quit()
 
 # ----------------------------------------------------
 # ----- Identify regions to perform fine mapping on --
-# From the methods section of the SuSiEx paper:
+# Follow the same methods as in the SuSiEx paper:
 # "Loci definition.
-# We used a 6-way LD clumping-based method to define genomic loci, using 1KG data as the LD reference for clumping. CEU, GBR, TSI, FIN and IBS were combined as the reference for the EUR population; ESN, GWD, LWK, MSL and YRI were combined as the reference for the AFR population; CHB, CHS, CDX, JPT and KHV were combined as the reference for the EAS population. We extracted all variants with M⁢A⁢F  >0.5%, and for each of the 25 traits, performed the LD clumping in the three populations using the corresponding reference panel and PLINK45. To include loci that reached genome-wide significance (𝑃  <5⁢E −8) only in the meta-analysis, we further performed clumping for the meta-GWAS across the three populations, using the three reference panels, respectively. For each clumping, we set the p-value threshold of the leading variant as 5E-8 (--clump-p1) and the threshold of the tagging variant as 0.05 (--clump-p2), and set the LD threshold as 0.1 (--clump-r2) and the distance threshold as 250 kb (--clump-kb). We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream. Finally, we merged adjacent loci if the LD (𝑟2) between the leading variants was larger than 0.6 in any LD reference panel. "
+# We used a 6-way LD clumping-based method to define genomic loci, using 1KG data as the LD reference for clumping. CEU, GBR, TSI, FIN and IBS were combined as the reference for the EUR population; ESN, GWD, LWK, MSL and YRI were combined as the reference for the AFR population; CHB, CHS, CDX, JPT and KHV were combined as the reference for the EAS population. We extracted all variants with M⁢A⁢F  >0.5%, and for each of the 25 traits, performed the LD clumping in the three populations using the corresponding reference panel and PLINK45. 
+# To include loci that reached genome-wide significance (𝑃  <5⁢E −8) only in the meta-analysis, we further performed clumping for the meta-GWAS across the three populations, using the three reference panels, respectively. For each clumping, we set the p-value threshold of the leading variant as 5E-8 (--clump-p1) and the threshold of the tagging variant as 0.05 (--clump-p2), and set the LD threshold as 0.1 (--clump-r2) and the distance threshold as 250 kb (--clump-kb). 
+# We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream. 
+# Finally, we merged adjacent loci if the LD (𝑟2) between the leading variants was larger than 0.6 in any LD reference panel. "
 
-
-# Clump the GWAS on hg19 to see if it's different to the results in meta.nf
-
+# --------------------
 # Request memory and ensure plink is on the execuable path
 qlogin -l h_vmem=32G -pe sharedmem 8
-
-# Ensure plink2 is in executable path (plink 2 version: 20241222)
 export PATH=$PATH:/exports/igmm/eddie/GenScotDepression/amelia/packages/plink2
 cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
 
+# --------------------
 # We will perform clumping on each ancestry separately
 # Let's start with the EUR ancestry as this is the only ancestry that had GWS SNPs in our GWAS, and our aim is to find the BP windows around the GWS SNPs we want to perform SuSiEx on.
 
@@ -195,68 +195,56 @@ plink2 \
 # written to test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.missing_id .
 # --clump: 1479 clumps formed from 29395 index candidates.  
 
-# Load the clumping results into R to figure out the min and max BP for each clump region
+
+# --------------------
+# Load the clumping results into R to figure out the min and max BP for each clump region following the same method as in SuSiEx
+
+# We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream. 
 # ----
 R
 
 library(data.table)
 library(dplyr)
-library(stringr)
-library(IRanges) # to detect overlap in ranges
 
 # Read in clumps results
-clumps <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps")
-sumstats <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt")
+clumped_data <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps")
 
-# For each row ie. clump set take the list of SNPs in that clumped region ie. column "SP2"
-# and assign them a CPID from the sumstats file
-# Loop over all rows and extract the BP_START, BP_END, CHR and lead SNP position
-# check lead SNP position is within BP_START and BP_END
-# check there is no overlap in regions of BP_START and BP_END
+loci <- clumped_data %>% 
+  dplyr::select(CHR= `#CHROM`, BP_START=POS, SNP=ID)
 
-clump_ranges_df <- lapply(1:nrow(clumps), function(i){
-  leadSNP <- clumps %>%
-              dplyr::slice(i)
-
-  ranges <- sumstats %>%
-      filter(SNP %in% unlist(str_split(clumps$SP2[i], ","))) %>%
-      group_by(CHR) %>%
-      summarise(
-      BP_START = min(BP),
-      BP_END = max(BP)
-      ) %>%
-      mutate(lead_SNP = leadSNP$ID,
-             lead_POS = leadSNP$POS) %>%
-      mutate(inRange = lead_POS > BP_START & lead_POS < BP_END)
-
-  return(ranges)
-
-}) %>% do.call(rbind,.)
-
-i <- 1475
+# Extend each locus by 100 kb upstream and downstream
+loci <- loci %>%
+  mutate(BP_END = BP_START + 100000,  # 100 kb downstream
+         BP_START = pmax(0, BP_START - 100000)) %>% # 100 kb upstream (ensure it doesn't go negative) 
+         arrange(CHR, BP_START)
 
 
-write.csv(clump_ranges_df, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.pos.csv",
-row.names = F, quote = F)
-# clump_ranges_df <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.pos.csv")
+# Save lead SNPs as a list to calculate LD between them
+write.table(loci$SNP, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leading_snps",
+row.names = F, quote = F, sep = "\t", col.names = F)
 
-# Create IRanges objects for the start and end positions for each CHR
-lapply(unique(clump_ranges_df$CHR), function(chr){
-  clump_ranges_df_CHR <- clump_ranges_df %>%
-                          filter(CHR == chr)
-  ranges <- IRanges(start = clump_ranges_df_CHR$BP_START, end = clump_ranges_df_CHR$BP_END)
+# Save the table of min and max BP positions for SuSiEx
+write.table(loci, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
+row.names = F, quote = F, sep = "\t")
 
-  return(list(chr, countOverlaps(ranges, ranges)))
-})
+quit()
 
+# --------------------
+# Finally, we merged adjacent loci if the LD (𝑟2) between the leading variants was larger than 0.6 in any LD reference panel. "
 
-# If it returns a vector of all 1 then there are no overlaps
-# If it returns a vector where any value != 1 then we need to go back and check the clumping process
-# yes it does return overlapping regions....does that matter?
+# Calculate the LD between leading SNPs 
+# so we can evaluate which have r^2 > 0.6
+plink2 \
+  --pgen reference/ukb_imp_v3.qc.geno02_EUR.pgen \
+  --psam reference/ukb_imp_v3.qc.geno02_EUR.psam \
+  --pvar reference/ukb_imp_v3.qc.geno02_EUR.pvar.zst \
+  --extract test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leading_snps \
+  --r2-phased \
+  --ld-window-r2 0.6 \
+  --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leadSNPs
 
+# This gives an empty file which I assume means no lead SNPs have r2 > 0.6
 
-# Check the lead SNPs are in fineMapping/GWS_SNPs.txt (previously identified GWS SNPs)
-# They should all be in there, note that we are clumping with a less stringent P value of 0.0001, check if we need to change this to GWS
 
 # ----------------------------------------------------
 # ----- Run SuSiEX (convert to nextflow process) -----
@@ -264,9 +252,10 @@ lapply(unique(clump_ranges_df$CHR), function(chr){
 # Tidy up directory
 rm fineMapping/*_tmp_*
 
-# BP ranges are from test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.pos.csv
+# BP ranges are from test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges
 # sample sizes are taken from sumstats.Neff.csv
 
+# Edit below to loop over BP positions
 
 ../SuSiEx/bin/SuSiEx \
   --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt \
