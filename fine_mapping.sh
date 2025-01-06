@@ -156,6 +156,12 @@ quit()
 # ----
 
 # ----------------------------------------------------
+# ----- Identify regions to perform fine mapping on --
+# From the methods section of the SuSiEx paper:
+# "Loci definition.
+# We used a 6-way LD clumping-based method to define genomic loci, using 1KG data as the LD reference for clumping. CEU, GBR, TSI, FIN and IBS were combined as the reference for the EUR population; ESN, GWD, LWK, MSL and YRI were combined as the reference for the AFR population; CHB, CHS, CDX, JPT and KHV were combined as the reference for the EAS population. We extracted all variants with M⁢A⁢F  >0.5%, and for each of the 25 traits, performed the LD clumping in the three populations using the corresponding reference panel and PLINK45. To include loci that reached genome-wide significance (𝑃  <5⁢E −8) only in the meta-analysis, we further performed clumping for the meta-GWAS across the three populations, using the three reference panels, respectively. For each clumping, we set the p-value threshold of the leading variant as 5E-8 (--clump-p1) and the threshold of the tagging variant as 0.05 (--clump-p2), and set the LD threshold as 0.1 (--clump-r2) and the distance threshold as 250 kb (--clump-kb). We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream. Finally, we merged adjacent loci if the LD (𝑟2) between the leading variants was larger than 0.6 in any LD reference panel. "
+
+
 # Clump the GWAS on hg19 to see if it's different to the results in meta.nf
 
 # Request memory and ensure plink is on the execuable path
@@ -174,14 +180,13 @@ plink2 \
   --clump test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt \
   --clump-id-field SNP \
   --clump-p-field P \
-  --clump-p1 0.0001 \
-  --clump-p2 1.0 \
+  --clump-p1 5e-8 \
+  --clump-p2 0.05 \
   --clump-r2 0.1 \
-  --clump-kb 1000 \
+  --clump-kb 250 \
   --pgen reference/ukb_imp_v3.qc.geno02_EUR.pgen \
   --psam reference/ukb_imp_v3.qc.geno02_EUR.psam \
   --pvar reference/ukb_imp_v3.qc.geno02_EUR.pvar.zst \
-  --allow-extra-chr \
   --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero \
 	--threads 8
 
@@ -209,25 +214,31 @@ sumstats <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt")
 # check lead SNP position is within BP_START and BP_END
 # check there is no overlap in regions of BP_START and BP_END
 
-clump_ranges_df <- lapply(1:10, function(i){
-  leadPos <- clumps %>%
-              slice(i) %>%
-              pull(POS)
+clump_ranges_df <- lapply(1:nrow(clumps), function(i){
+  leadSNP <- clumps %>%
+              dplyr::slice(i)
 
   ranges <- sumstats %>%
-    filter(SNP %in% unlist(str_split(clumps$SP2[i], ","))) %>%
+      filter(SNP %in% unlist(str_split(clumps$SP2[i], ","))) %>%
+      group_by(CHR) %>%
       summarise(
       BP_START = min(BP),
-      BP_END = max(BP),
-      CHR = unique(CHR) # unsure if this will cause an error if there are multiple CHR in clump (is that possible?)
+      BP_END = max(BP)
       ) %>%
-      mutate(lead_POS = leadPos) %>%
-      mutate(inRange = leadPos > BP_START & leadPos < BP_END)
+      mutate(lead_SNP = leadSNP$ID,
+             lead_POS = leadSNP$POS) %>%
+      mutate(inRange = lead_POS > BP_START & lead_POS < BP_END)
 
   return(ranges)
 
 }) %>% do.call(rbind,.)
 
+i <- 1475
+
+
+write.csv(clump_ranges_df, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.pos.csv",
+row.names = F, quote = F)
+# clump_ranges_df <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.pos.csv")
 
 # Create IRanges objects for the start and end positions for each CHR
 lapply(unique(clump_ranges_df$CHR), function(chr){
@@ -241,7 +252,11 @@ lapply(unique(clump_ranges_df$CHR), function(chr){
 
 # If it returns a vector of all 1 then there are no overlaps
 # If it returns a vector where any value != 1 then we need to go back and check the clumping process
-# yes it does return overlapping regions....
+# yes it does return overlapping regions....does that matter?
+
+
+# Check the lead SNPs are in fineMapping/GWS_SNPs.txt (previously identified GWS SNPs)
+# They should all be in there, note that we are clumping with a less stringent P value of 0.0001, check if we need to change this to GWS
 
 # ----------------------------------------------------
 # ----- Run SuSiEX (convert to nextflow process) -----
@@ -249,13 +264,9 @@ lapply(unique(clump_ranges_df$CHR), function(chr){
 # Tidy up directory
 rm fineMapping/*_tmp_*
 
-CHR=1
-BP_START=7314654
-BP_END=8314677
-# use meta/*.clumped.ranges to get start and end positions and chr
-# make sure they are on the correct hg19 build though
-# only clumps for EUR, nothing for SAS or AFR because there weren't any GWS SNPs
+# BP ranges are from test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.pos.csv
 # sample sizes are taken from sumstats.Neff.csv
+
 
 ../SuSiEx/bin/SuSiEx \
   --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt \
@@ -263,7 +274,7 @@ BP_END=8314677
   --ref_file=reference/ukb_imp_v3.qc.geno02.mind02_EUR,reference/ukb_imp_v3.qc.geno02.mind02_AFR,reference/ukb_imp_v3.qc.geno02.mind02_SAS \
   --ld_file=fineMapping/EUR,fineMapping/AFR,fineMapping/SAS \
   --out_dir=./fineMapping \
-  --out_name=SuSiEx.EUR.AFR.SAS.output.cs95 \
+  --out_name=SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${$BP_END} \
   --level=0.95 \
   --pval_thresh=1e-5 \
   --chr=$CHR \
@@ -279,7 +290,7 @@ BP_END=8314677
   --pval_col=7,7,7 \
   --mult-step=True \
   --plink=../SuSiEx/utilities/plink \
-  --keep-ambig=True |& tee fineMapping/SuSiEx.EUR.AFR.SAS.output.cs95.log
+  --keep-ambig=True |& tee fineMapping/logs/SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${$BP_END}.log
 
 # ----------------------------------------------------
 # With the above code there are a few things to change:
