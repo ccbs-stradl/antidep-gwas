@@ -48,6 +48,7 @@ awk '$6 == 0 { count++ } END { print count }' test/EUR*
 # Note - check why there are occurances of a zero SE to begin with
 
 # Remove rows where SE == 0 in R:
+# Also create a column for CPID as we need this later to define BP ranges
 # ----
 R
 
@@ -57,7 +58,8 @@ library(dplyr)
 lapply(c("EUR", "AFR", "SAS"), function(cluster){
   # Read in sumsstats and remove rows where SE = 0
   sumstats <- fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) %>% 
-  filter(SE != 0)
+  filter(SE != 0) %>%
+  mutate(CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
   # Rewrite sumstats with suffix "noZero"
   fwrite(sumstats, paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt"), sep = "\t")
   # Return number of rows in sumstats
@@ -150,16 +152,6 @@ sumstats %>%
   nrow()
   # 110
 
-# ---------------
-# Check if GWS SNP fall within .clumped.ranges output from meta.nf
-# because our gwas sumstats are now on hg19 whereas the output in meta is in Gr38.
-# I'm not sure if this would mean the clumped ranges are different or not
-
-clumped_ranges <- fread("meta/fixed-N06A-EUR.clumped.ranges")
-sort(clumped_ranges$POS)
-# gives 110 ranges, we need to check that all our GWS SNPs fall within all these ranges
-# even by eye i can see that there are GWS SNPs on CHR 1 but no CHR 1 in clumped ranges
-
 quit()
 # ----
 
@@ -167,13 +159,8 @@ quit()
 # Clump the GWAS on hg19 to see if it's different to the results in meta.nf
 
 # Request memory and ensure plink is on the execuable path
-qlogin -l h_vmem=16G -pe sharedmem 8
-# this created a dodgy node where I can't access /exports/igmm/eddie/
-# reporting this as a ticket to IS. I think this is the same problem a colleague had recently
-
-# Trying a different memory specification which may be a different pool of nodes
 qlogin -l h_vmem=32G -pe sharedmem 8
-# This creates a good path
+
 # Ensure plink2 is in executable path (plink 2 version: 20241222)
 export PATH=$PATH:/exports/igmm/eddie/GenScotDepression/amelia/packages/plink2
 cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
@@ -202,66 +189,6 @@ plink2 \
 # Warning: 5001 top variant IDs in --clump file missing from main dataset.  IDs
 # written to test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.missing_id .
 # --clump: 1479 clumps formed from 29395 index candidates.  
-
-# No clumped.ranges file produced from above plink2 command
-# Unsure how clumped.ranges was produced in meta.nf without a --clump-range flag
-head -n 1 meta/fixed-N06A-EUR.clumped
-head -n 1 meta/fixed-N06A-EUR.clumps
-# I think clumped and clumped.ranges were made from a different command, and .clumps is the actual output from meta. In which case .clumped and clumped.ranges files should probably be removed?
-# I think .clumped is the output from PLINK 1.9 and .clumps is the output from PLINK 2??
-
-# In which case can we figure out the BP ranges from the .clumps output produced above alone?
-# If we change the SNP id from rsID to chrpos ID before clumping then we could break up the SNP string to get the SNP position from the ID.
-
-
-
-# Edit the code where we remove BP == 0, 
-# so this can all be done in one step
-# ----
-R
-
-library(data.table)
-library(dplyr)
-library(stringr)
-
-lapply(c("EUR", "AFR", "SAS"), function(cluster){
-  # Read in sumsstats and remove rows where SE = 0
-  sumstats <- fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) %>% 
-    filter(SE != 0) %>%
-    mutate(CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
-  # Rewrite sumstats with suffix "noZero"
-  fwrite(sumstats, paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt"), sep = "\t")
-  # Return number of rows in sumstats
-  return(nrow(sumstats))
-})
-
-quit()
-# ----
-
-# We also need to make sure we have CPIDs in the reference file
-
-
-
-# Now re-run clumping using CPID:
-plink2 \
-  --clump test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt \
-  --clump-id-field CPID \
-  --clump-p-field P \
-  --clump-p1 0.0001 \
-  --clump-p2 1.0 \
-  --clump-r2 0.1 \
-  --clump-kb 1000 \
-  --pgen reference/ukb_imp_v3.qc.geno02_EUR.pgen \
-  --psam reference/ukb_imp_v3.qc.geno02_EUR.psam \
-  --pvar reference/ukb_imp_v3.qc.geno02_EUR.pvar.zst \
-  --allow-extra-chr \
-  --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero \
-	--threads 8
-
-
-# The alternative approach is to match the rsIDs to the CPIDs after clumping
-
-
 
 # Load the clumping results into R to figure out the min and max BP for each clump region
 # ----
@@ -300,7 +227,6 @@ clump_ranges_df <- lapply(1:10, function(i){
   return(ranges)
 
 }) %>% do.call(rbind,.)
-
 
 
 # Create IRanges objects for the start and end positions for each CHR
