@@ -43,9 +43,7 @@ done
 
 # This uses awk to count where column number 6 (which is the SE column) matches "0"
 # count++ increments the count for each occurrence of 0.
-for file in test/*; do
-  awk '$6 == 0 {count++} END {print count+0}' "$file"
-done
+awk '$6 == 0 { count++ } END { print count }' test/EUR*
 
 # Note - check why there are occurances of a zero SE to begin with
 
@@ -61,7 +59,7 @@ lapply(c("EUR", "AFR", "SAS"), function(cluster){
   sumstats <- fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) %>% 
   filter(SE != 0)
   # Rewrite sumstats with suffix "noZero"
-  fwrite(sumstats, paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt"))
+  fwrite(sumstats, paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt"), sep = "\t")
   # Return number of rows in sumstats
   return(nrow(sumstats))
 })
@@ -162,16 +160,168 @@ sort(clumped_ranges$POS)
 # gives 110 ranges, we need to check that all our GWS SNPs fall within all these ranges
 # even by eye i can see that there are GWS SNPs on CHR 1 but no CHR 1 in clumped ranges
 
+quit()
+# ----
 
+# ----------------------------------------------------
+# Clump the GWAS on hg19 to see if it's different to the results in meta.nf
+
+# Request memory and ensure plink is on the execuable path
+qlogin -l h_vmem=16G -pe sharedmem 8
+# this created a dodgy node where I can't access /exports/igmm/eddie/
+# reporting this as a ticket to IS. I think this is the same problem a colleague had recently
+
+# Trying a different memory specification which may be a different pool of nodes
+qlogin -l h_vmem=32G -pe sharedmem 8
+# This creates a good path
+# Ensure plink2 is in executable path (plink 2 version: 20241222)
+export PATH=$PATH:/exports/igmm/eddie/GenScotDepression/amelia/packages/plink2
+cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
+
+# We will perform clumping on each ancestry separately
+# Let's start with the EUR ancestry as this is the only ancestry that had GWS SNPs in our GWAS, and our aim is to find the BP windows around the GWS SNPs we want to perform SuSiEx on.
+
+# I'm also going to perform clumping on the SNPs AFTER SE == 0 rows are removed
+
+plink2 \
+  --clump test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt \
+  --clump-id-field SNP \
+  --clump-p-field P \
+  --clump-p1 0.0001 \
+  --clump-p2 1.0 \
+  --clump-r2 0.1 \
+  --clump-kb 1000 \
+  --pgen reference/ukb_imp_v3.qc.geno02_EUR.pgen \
+  --psam reference/ukb_imp_v3.qc.geno02_EUR.psam \
+  --pvar reference/ukb_imp_v3.qc.geno02_EUR.pvar.zst \
+  --allow-extra-chr \
+  --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero \
+	--threads 8
+
+# fixed-N06A-EUR.human_g1k_v37.neff08_noZero.log:
+# Warning: 5001 top variant IDs in --clump file missing from main dataset.  IDs
+# written to test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.missing_id .
+# --clump: 1479 clumps formed from 29395 index candidates.  
+
+# No clumped.ranges file produced from above plink2 command
+# Unsure how clumped.ranges was produced in meta.nf without a --clump-range flag
+head -n 1 meta/fixed-N06A-EUR.clumped
+head -n 1 meta/fixed-N06A-EUR.clumps
+# I think clumped and clumped.ranges were made from a different command, and .clumps is the actual output from meta. In which case .clumped and clumped.ranges files should probably be removed?
+# I think .clumped is the output from PLINK 1.9 and .clumps is the output from PLINK 2??
+
+# In which case can we figure out the BP ranges from the .clumps output produced above alone?
+# If we change the SNP id from rsID to chrpos ID before clumping then we could break up the SNP string to get the SNP position from the ID.
+
+
+
+# Edit the code where we remove BP == 0, 
+# so this can all be done in one step
+# ----
+R
+
+library(data.table)
+library(dplyr)
+library(stringr)
+
+lapply(c("EUR", "AFR", "SAS"), function(cluster){
+  # Read in sumsstats and remove rows where SE = 0
+  sumstats <- fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) %>% 
+    filter(SE != 0) %>%
+    mutate(CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
+  # Rewrite sumstats with suffix "noZero"
+  fwrite(sumstats, paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt"), sep = "\t")
+  # Return number of rows in sumstats
+  return(nrow(sumstats))
+})
 
 quit()
 # ----
 
-rm fineMapping/*_tmp_*
+# We also need to make sure we have CPIDs in the reference file
 
+
+
+# Now re-run clumping using CPID:
+plink2 \
+  --clump test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt \
+  --clump-id-field CPID \
+  --clump-p-field P \
+  --clump-p1 0.0001 \
+  --clump-p2 1.0 \
+  --clump-r2 0.1 \
+  --clump-kb 1000 \
+  --pgen reference/ukb_imp_v3.qc.geno02_EUR.pgen \
+  --psam reference/ukb_imp_v3.qc.geno02_EUR.psam \
+  --pvar reference/ukb_imp_v3.qc.geno02_EUR.pvar.zst \
+  --allow-extra-chr \
+  --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero \
+	--threads 8
+
+
+# The alternative approach is to match the rsIDs to the CPIDs after clumping
+
+
+
+# Load the clumping results into R to figure out the min and max BP for each clump region
+# ----
+R
+
+library(data.table)
+library(dplyr)
+library(stringr)
+library(IRanges) # to detect overlap in ranges
+
+# Read in clumps results
+clumps <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps")
+sumstats <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt")
+
+# For each row ie. clump set take the list of SNPs in that clumped region ie. column "SP2"
+# and assign them a CPID from the sumstats file
+# Loop over all rows and extract the BP_START, BP_END, CHR and lead SNP position
+# check lead SNP position is within BP_START and BP_END
+# check there is no overlap in regions of BP_START and BP_END
+
+clump_ranges_df <- lapply(1:10, function(i){
+  leadPos <- clumps %>%
+              slice(i) %>%
+              pull(POS)
+
+  ranges <- sumstats %>%
+    filter(SNP %in% unlist(str_split(clumps$SP2[i], ","))) %>%
+      summarise(
+      BP_START = min(BP),
+      BP_END = max(BP),
+      CHR = unique(CHR) # unsure if this will cause an error if there are multiple CHR in clump (is that possible?)
+      ) %>%
+      mutate(lead_POS = leadPos) %>%
+      mutate(inRange = leadPos > BP_START & leadPos < BP_END)
+
+  return(ranges)
+
+}) %>% do.call(rbind,.)
+
+
+
+# Create IRanges objects for the start and end positions for each CHR
+lapply(unique(clump_ranges_df$CHR), function(chr){
+  clump_ranges_df_CHR <- clump_ranges_df %>%
+                          filter(CHR == chr)
+  ranges <- IRanges(start = clump_ranges_df_CHR$BP_START, end = clump_ranges_df_CHR$BP_END)
+
+  return(list(chr, countOverlaps(ranges, ranges)))
+})
+
+
+# If it returns a vector of all 1 then there are no overlaps
+# If it returns a vector where any value != 1 then we need to go back and check the clumping process
+# yes it does return overlapping regions....
 
 # ----------------------------------------------------
 # ----- Run SuSiEX (convert to nextflow process) -----
+
+# Tidy up directory
+rm fineMapping/*_tmp_*
 
 CHR=1
 BP_START=7314654
@@ -205,23 +355,8 @@ BP_END=8314677
   --plink=../SuSiEx/utilities/plink \
   --keep-ambig=True |& tee fineMapping/SuSiEx.EUR.AFR.SAS.output.cs95.log
 
-
-# "Error: Effect size of Line 28807 is not a number (NAN)"
-# in what looks like the sumstats file
-sed -n '28808p' test/EUR*
-# It contains a beta value with a zero
-awk '$5 == 0 { count++ } END { print count }' test/EUR*
-# There's a lot of zero beta values in each sum stats
-# For now let's remove them to see if the rest of SuSiEx works
-awk '$5 != 0' test/fixed-N06A-EUR.human_g1k_v37.neff08.txt > test/fixed-N06A-EUR.human_g1k_v37.neff08.noZero.txt
-awk '$5 != 0' test/fixed-N06A-AFR.human_g1k_v37.neff08.txt > test/fixed-N06A-AFR.human_g1k_v37.neff08.noZero.txt
-awk '$5 != 0' test/fixed-N06A-SAS.human_g1k_v37.neff08.txt > test/fixed-N06A-SAS.human_g1k_v37.neff08.noZero.txt
-
-
-
 # ----------------------------------------------------
 # With the above code there are a few things to change:
 # 1. This is example code so "chr" and "bp" need changing to the regions needing fine mapping. Use meta/*EUR.clumped.ranges to get base positions
-# 2. SuSiEx doesn't seem to like it when effect sizes are zero in the sum stats file
 
 
