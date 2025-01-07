@@ -2,7 +2,7 @@
 # ----------------------------------------------------
 # Make LD reference files (submit as jobs):
 for cluster in EUR AFR SAS; do
-  qsub -v cluster=$cluster make-bed_hg19.sh
+    qsub -v cluster=$cluster -t 1-22 make-bed_hg19.sh
 done
 
 # ----------------------------------------------------
@@ -370,6 +370,38 @@ BP_END=22670074
   --plink=../SuSiEx/utilities/plink \
   --keep-ambig=True |& tee fineMapping/logs/SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${BP_END}.log
 
+# ----------------------------------------------------
+# Run their test example script with a different CHR
+cd ../SuSiEx/examples
+
+../bin/SuSiEx \
+	--sst_file=EUR.sumstats.txt,AFR.sumstats.txt \
+	--n_gwas=50000,50000 \
+	--ref_file=EUR,AFR \
+	--ld_file=EUR,AFR \
+	--out_dir=./ \
+	--out_name=SuSiEx.EUR.AFR.output.cs95 \
+	--level=0.95 \
+	--pval_thresh=1 \
+	--chr=2 \
+	--bp=7314654,8314677 \
+	--snp_col=2,2 \
+	--chr_col=1,1 \
+	--bp_col=3,3 \
+	--a1_col=4,4 \
+	--a2_col=5,5 \
+	--eff_col=6,6 \
+	--se_col=7,7 \
+	--pval_col=9,9 \
+	--plink=../utilities/plink \
+	--mult-step=True \
+	--keep-ambig=True \
+	--threads=16
+
+# Error: Line 1 in reference file: EUR_ref.bim contain variants not in "2"
+        1       rs6577428:7314655:T:C   0       7314655 T       C
+# Interesting, the same error occurs
+# tail EUR.bim shows only CHR 1 is in this file
 
 # ----------------------------------------------------
 # File containing CHR, BP_START, BP_END

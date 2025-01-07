@@ -26,21 +26,25 @@
 
 cd /exports/eddie/scratch/$USER/GitRepos/antidep-gwas
 
+CHR=$SGE_TASK_ID
+
 # Create a file for each ancestry in UKB (EUR AFR SAS) with columns for UKB ID (FID and IID)
 # Too many individuals were dropped when mind was 0.02, so try filtering geno first then mind
+# Make a separate file for each CHR
+
 /gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2 \
 --pfile /exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc \
 --keep-col-match reference/ukb-ld-ref_ancestry.id $cluster \
+--chr $CHR \
 --geno 0.02 \
 --make-pgen 'vzs' \
---out reference/ukb_imp_v3.qc.geno02_${cluster} \
+--out reference/ukb_imp_v3.qc.geno02_${cluster}_${CHR} \
 --threads 4
 
 /gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2 \
---pfile reference/ukb_imp_v3.qc.geno02_${cluster} 'vzs' \
+--pfile reference/ukb_imp_v3.qc.geno02_${cluster}_${CHR} 'vzs' \
 --mind 0.02 \
 --make-bed \
---out reference/ukb_imp_v3.qc.geno02.mind02_${cluster} \
+--out reference/ukb_imp_v3.qc.geno02.mind02_${cluster}_${CHR} \
 --threads 4
-
 
