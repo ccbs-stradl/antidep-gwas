@@ -1,9 +1,9 @@
 
 Software parameters:
---sst_file = test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt
+--sst_file = test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt
 --ld_file = fineMapping/EUR,fineMapping/AFR,fineMapping/SAS
 --n_gwas = 667771,39866,5814
---out_dir = ./fineMapping
+--out_dir = ./fineMapping/results
 --out_name = SuSiEx.EUR.AFR.SAS.output.cs95_2:22470074:22670074
 --chr = 2
 --bp = 22470074,22670074

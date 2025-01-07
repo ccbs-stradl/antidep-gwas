@@ -323,12 +323,28 @@ quit()
 
 # Unsure whether to run these as separate jobs, as that's a lot of jobs
 # Or loop them within a job
+# It is quite quick to run SuSiEx so i think looping within one job will be better
 
 # Edit below to loop over BP positions
+
+CHR=20
+BP_START=51036424
+BP_END=51236424
+# Error: Line 1 in reference file: fineMapping/EUR_ref.bim contain variants not in "20"
+#         1       rs77558207      0       7315580 T       C
 
 CHR=1
 BP_START=190528084
 BP_END=190728084
+# SuSiEx runs but produces empty files
+
+CHR=2
+BP_START=22470074
+BP_END=22670074
+# Error: Line 1 in reference file: fineMapping/EUR_ref.bim contain variants not in "2"
+        1       rs77558207      0       7315580 T       C
+
+# I wonder if the LD reference files need to be split by CHR?
 
 ../SuSiEx/bin/SuSiEx \
   --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt \
@@ -353,6 +369,7 @@ BP_END=190728084
   --mult-step=True \
   --plink=../SuSiEx/utilities/plink \
   --keep-ambig=True |& tee fineMapping/logs/SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${BP_END}.log
+
 
 # ----------------------------------------------------
 # File containing CHR, BP_START, BP_END
