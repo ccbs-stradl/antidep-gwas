@@ -1,9 +1,10 @@
 
 Software parameters:
---sst_file = test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt
---ld_file = fineMapping/EUR,fineMapping/AFR,fineMapping/SAS
+--sst_file = test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt
+--ref_file = reference/ukb_imp_v3.qc.geno02.mind02_EUR_12,reference/ukb_imp_v3.qc.geno02.mind02_AFR_12,reference/ukb_imp_v3.qc.geno02.mind02_SAS_12
+--ld_file = fineMapping/EUR_12,fineMapping/AFR_12,fineMapping/SAS_12
 --n_gwas = 667771,39866,5814
---out_dir = ./fineMapping
+--out_dir = ./fineMapping/results
 --out_name = SuSiEx.EUR.AFR.SAS.output.cs95_12:58122672:58322672
 --chr = 12
 --bp = 58122672,58322672
@@ -18,7 +19,7 @@ Software parameters:
 --plink = ../SuSiEx/utilities/plink
 --keep-ambig = true
 --mult-step = true
---precmp = true
+--precmp = false
 --maf = 0.005
 --level = 0.95
 --min_purity = 0.5
@@ -27,6 +28,228 @@ Software parameters:
 --n_sig = 5
 --max_iter = 100
 --threads = 1
-... parse reference file: fineMapping/EUR_ref.bim ...
-Error: Line 1 in reference file: fineMapping/EUR_ref.bim contain variants not in "12"
-	1	rs77558207	0	7315580	T	C
+... calculate LD matrix: fineMapping/EUR_12.ld ...
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/EUR_12_ref.log.
+Options in effect:
+  --bfile reference/ukb_imp_v3.qc.geno02.mind02_EUR_12
+  --chr 12
+  --extract fineMapping/EUR_12.snp
+  --keep-allele-order
+  --maf 0.005
+  --make-bed
+  --out fineMapping/EUR_12_ref
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+837845 variants loaded from .bim file.
+7500 people (3513 males, 3987 females) loaded from .fam.
+--extract: 867 variants remaining.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 7500 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.996098.
+566 variants removed due to minor allele threshold(s)
+(--maf/--max-maf/--mac/--max-mac).
+301 variants and 7500 people pass filters and QC.
+Note: No phenotypes present.
+--make-bed to fineMapping/EUR_12_ref.bed + fineMapping/EUR_12_ref.bim +
+fineMapping/EUR_12_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/EUR_12.log.
+Options in effect:
+  --bfile fineMapping/EUR_12_ref
+  --keep-allele-order
+  --out fineMapping/EUR_12
+  --r square bin4
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+301 variants loaded from .bim file.
+7500 people (3513 males, 3987 females) loaded from .fam.
+Using up to 8 threads (change this with --threads).
+Before main variant filters, 7500 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.994412.
+301 variants and 7500 people pass filters and QC.
+Note: No phenotypes present.
+--r square bin4 to fineMapping/EUR_12.ld.bin ... 0% [processing]writing]             done.
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/EUR_12_frq.log.
+Options in effect:
+  --bfile fineMapping/EUR_12_ref
+  --freq
+  --keep-allele-order
+  --out fineMapping/EUR_12_frq
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+301 variants loaded from .bim file.
+7500 people (3513 males, 3987 females) loaded from .fam.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 7500 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.994412.
+--freq: Allele frequencies (founders only) written to
+fineMapping/EUR_12_frq.frq .
+... calculate LD matrix: fineMapping/AFR_12.ld ...
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/AFR_12_ref.log.
+Options in effect:
+  --bfile reference/ukb_imp_v3.qc.geno02.mind02_AFR_12
+  --chr 12
+  --extract fineMapping/AFR_12.snp
+  --keep-allele-order
+  --maf 0.005
+  --make-bed
+  --out fineMapping/AFR_12_ref
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+556790 variants loaded from .bim file.
+7500 people (3173 males, 4327 females) loaded from .fam.
+--extract: 644 variants remaining.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 7500 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.997286.
+562 variants removed due to minor allele threshold(s)
+(--maf/--max-maf/--mac/--max-mac).
+82 variants and 7500 people pass filters and QC.
+Note: No phenotypes present.
+--make-bed to fineMapping/AFR_12_ref.bed + fineMapping/AFR_12_ref.bim +
+fineMapping/AFR_12_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/AFR_12.log.
+Options in effect:
+  --bfile fineMapping/AFR_12_ref
+  --keep-allele-order
+  --out fineMapping/AFR_12
+  --r square bin4
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+82 variants loaded from .bim file.
+7500 people (3173 males, 4327 females) loaded from .fam.
+Using up to 8 threads (change this with --threads).
+Before main variant filters, 7500 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.992296.
+82 variants and 7500 people pass filters and QC.
+Note: No phenotypes present.
+--r square bin4 to fineMapping/AFR_12.ld.bin ... 0% [processing]writing]             done.
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/AFR_12_frq.log.
+Options in effect:
+  --bfile fineMapping/AFR_12_ref
+  --freq
+  --keep-allele-order
+  --out fineMapping/AFR_12_frq
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+82 variants loaded from .bim file.
+7500 people (3173 males, 4327 females) loaded from .fam.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 7500 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.992296.
+--freq: Allele frequencies (founders only) written to
+fineMapping/AFR_12_frq.frq .
+... calculate LD matrix: fineMapping/SAS_12.ld ...
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/SAS_12_ref.log.
+Options in effect:
+  --bfile reference/ukb_imp_v3.qc.geno02.mind02_SAS_12
+  --chr 12
+  --extract fineMapping/SAS_12.snp
+  --keep-allele-order
+  --maf 0.005
+  --make-bed
+  --out fineMapping/SAS_12_ref
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+704199 variants loaded from .bim file.
+7499 people (3995 males, 3504 females) loaded from .fam.
+--extract: 708 variants remaining.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 7499 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.995449.
+521 variants removed due to minor allele threshold(s)
+(--maf/--max-maf/--mac/--max-mac).
+187 variants and 7499 people pass filters and QC.
+Note: No phenotypes present.
+--make-bed to fineMapping/SAS_12_ref.bed + fineMapping/SAS_12_ref.bim +
+fineMapping/SAS_12_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/SAS_12.log.
+Options in effect:
+  --bfile fineMapping/SAS_12_ref
+  --keep-allele-order
+  --out fineMapping/SAS_12
+  --r square bin4
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+187 variants loaded from .bim file.
+7499 people (3995 males, 3504 females) loaded from .fam.
+Using up to 8 threads (change this with --threads).
+Before main variant filters, 7499 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.993107.
+187 variants and 7499 people pass filters and QC.
+Note: No phenotypes present.
+--r square bin4 to fineMapping/SAS_12.ld.bin ... 0% [processing]writing]             done.
+PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
+(C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to fineMapping/SAS_12_frq.log.
+Options in effect:
+  --bfile fineMapping/SAS_12_ref
+  --freq
+  --keep-allele-order
+  --out fineMapping/SAS_12_frq
+
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 217451 MB successfully, after larger attempt(s) failed.
+187 variants loaded from .bim file.
+7499 people (3995 males, 3504 females) loaded from .fam.
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 7499 founders and 0 nonfounders present.
+Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
+Total genotyping rate is 0.993107.
+--freq: Allele frequencies (founders only) written to
+fineMapping/SAS_12_frq.frq .
+... parse reference file: fineMapping/EUR_12_ref.bim ...
+... 301 SNPs in the fine-mapping region read from fineMapping/EUR_12_ref.bim ...
+... 402 SNPs in the fine-mapping region read from test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt ...
+... parse reference file: fineMapping/AFR_12_ref.bim ...
+... 82 SNPs in the fine-mapping region read from fineMapping/AFR_12_ref.bim ...
+... 825 SNPs in the fine-mapping region read from test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt ...
+... parse reference file: fineMapping/SAS_12_ref.bim ...
+... 187 SNPs in the fine-mapping region read from fineMapping/SAS_12_ref.bim ...
+... 452 SNPs in the fine-mapping region read from test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt ...
+... 362 common SNPs in the reference and sumstats ...
+... parse LD file: fineMapping/EUR_12.ld.bin ...
+... (301,301) LD matrix read from fineMapping/EUR_12.ld.bin ...
+... parse LD file: fineMapping/AFR_12.ld.bin ...
+... (82,82) LD matrix read from fineMapping/AFR_12.ld.bin ...
+... parse LD file: fineMapping/SAS_12.ld.bin ...
+... (187,187) LD matrix read from fineMapping/SAS_12.ld.bin ...
+* Mult-step model fitting *
+... fit SuSiEx model with 5 signals...
+--- iter-1 ---
+--- iter-2 ---
+--- iter-3 ---
+--- iter-4 ---
+--- iter-5 ---
+... write credible sets to file: ./fineMapping/results/SuSiEx.EUR.AFR.SAS.output.cs95_12:58122672:58322672.summary/.cs/.snp ...
