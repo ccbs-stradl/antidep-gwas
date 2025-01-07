@@ -9,6 +9,13 @@
 #$ -m beas
 #$ -M aedmond3@ed.ac.uk
 
+# ------------
+# Edits to make:
+# ENSURE PLINK2 PATH IS NOT HARD CODED IN NEXTFLOW PIPELINE
+# ENSURE PATH TO PFILE IS NOT HARD CODED IN NEXTFLOW PIPELINE
+# Include MAF 0.05 as methods of SuSiEx: "We extracted all variants with M⁢A⁢F  >0.5%"
+# ------------
+
 # Creates separate bim, bed, fam files for each ancestry from the UK Biobank pgen files (hg19)
 # geno 0.02 = filters out variants with missing genotype data
 # mind 0.02 = filters out individuals with missing genotype data
