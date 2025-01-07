@@ -154,7 +154,7 @@ write.table(sumstats, "fineMapping/GWS_SNPs.txt", row.names = FALSE, sep = "\t",
 sumstats %>%
   filter(CHR == "X") %>%
   nrow()
-  # 110
+  # 110 - note none of these came up in the clumping below
 
 quit()
 # ----
@@ -207,6 +207,10 @@ library(dplyr)
 # Read in clumps results
 clumped_data <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps")
 
+# How many clumped regions do we have?
+nrow(clumped_data)
+# 63
+
 loci <- clumped_data %>% 
   dplyr::select(CHR= `#CHROM`, BP_START=POS, SNP=ID)
 
@@ -214,8 +218,13 @@ loci <- clumped_data %>%
 loci <- loci %>%
   mutate(BP_END = BP_START + 100000,  # 100 kb downstream
          BP_START = pmax(0, BP_START - 100000)) %>% # 100 kb upstream (ensure it doesn't go negative) 
-         arrange(CHR, BP_START)
+         arrange(CHR, BP_START) %>%
+  relocate(CHR, BP_START, BP_END, SNP)
 
+# Check if these lead SNPs are the same as what we previously identified as GWS SNPs
+GWS_SNPs <- fread("fineMapping/GWS_SNPs.txt")
+all(loci$SNP %in% GWS_SNPs$SNP )
+# Yes, all 63 lead SNPs idenfied in clumping were also GWS SNPs
 
 # Save lead SNPs as a list to calculate LD between them
 write.table(loci$SNP, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leading_snps",
@@ -241,27 +250,93 @@ plink2 \
   --ld-window-r2 0.6 \
   --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leadSNPs
 
-# This gives an empty file which I assume means no lead SNPs have r2 > 0.6
+# Check if any SNPs have r2 > 0.6, if they do run the R script to merge regions
+# else do not run this R script (it will throw an error because the file does not exist)
+if [ -f "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leadSNPs.vcor" ]; then
+    echo "Ensure the following R script is run as a nextflow process."
+else
+    echo "The below R script should not be executed."
+fi
+
+# Read in SNPs with r2 > 0.6 into R and merge them
+R
+
+library(dplyr)
+library(data.table)
+
+cor <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leadSNPs.vcor")
+loci <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges")
+
+# QC: Check the SNPs with r2 > 0.6 are in our lead SNPs list
+cor$ID_A %in% loci$SNP
+cor$ID_B %in% loci$SNP
+
+# Check the SNPs that need merging are on the same chromosome
+if(!any(cor$`#CHROM_A` == cor$CHROM_B)){
+  # Stop nextflow process with an error message: "debug the PLINK LD r2 > 0.6 process"
+}
+
+# For each SNP pair in cor (ie. each row),
+# merge their corresponding regions in the loci dataframe
+# Take the minimum out of BP_START and maximum out of BP_END (from the pairs)
+# Comma separate the SNPs in the SNP col
+# Add column with the number of GWS SNPs in that region
+
+loci <- loci %>%
+  mutate(GWS_SNPs = 1)
+
+merged_regions <- lapply(1:nrow(cor), function(i){
+  SNP_pair <- cor %>%
+              slice(i)
+
+  merged_region <- loci %>%
+    filter(SNP %in% c(SNP_pair$ID_A, SNP_pair$ID_B)) %>%
+      summarise(
+        BP_START = min(BP_START),          
+        SNP = paste(SNP, collapse = ","),   
+        BP_END = max(BP_END),               
+        GWS_SNPs = n()
+      ) %>%
+      mutate(CHR = paste(unique(c(SNP_pair$`#CHROM_A`, SNP_pair$CHROM_B)), collapse = ",")) %>%
+      relocate(CHR, BP_START, BP_END, SNP, GWS_SNPs)
+
+
+}) %>% do.call(rbind,.)
+
+loci <- loci %>%
+      filter(!SNP %in% c(cor$ID_A, cor$ID_B))
+
+loci <- rbind(loci, merged_regions) %>%
+        arrange(as.numeric(CHR), BP_START)
+
+write.table(loci, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
+row.names = F, quote = F, sep = "\t")
+
+quit()
 
 
 # ----------------------------------------------------
 # ----- Run SuSiEX (convert to nextflow process) -----
 
-# Tidy up directory
-rm fineMapping/*_tmp_*
-
 # BP ranges are from test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges
 # sample sizes are taken from sumstats.Neff.csv
 
+# Unsure whether to run these as separate jobs, as that's a lot of jobs
+# Or loop them within a job
+
 # Edit below to loop over BP positions
 
+CHR=1
+BP_START=190528084
+BP_END=190728084
+
 ../SuSiEx/bin/SuSiEx \
-  --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt \
+  --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt \
   --n_gwas=667771,39866,5814 \
   --ref_file=reference/ukb_imp_v3.qc.geno02.mind02_EUR,reference/ukb_imp_v3.qc.geno02.mind02_AFR,reference/ukb_imp_v3.qc.geno02.mind02_SAS \
   --ld_file=fineMapping/EUR,fineMapping/AFR,fineMapping/SAS \
-  --out_dir=./fineMapping \
-  --out_name=SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${$BP_END} \
+  --out_dir=./fineMapping/results \
+  --out_name=SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${BP_END} \
   --level=0.95 \
   --pval_thresh=1e-5 \
   --chr=$CHR \
@@ -277,6 +352,46 @@ rm fineMapping/*_tmp_*
   --pval_col=7,7,7 \
   --mult-step=True \
   --plink=../SuSiEx/utilities/plink \
-  --keep-ambig=True |& tee fineMapping/logs/SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${$BP_END}.log
+  --keep-ambig=True |& tee fineMapping/logs/SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${BP_END}.log
 
 # ----------------------------------------------------
+# File containing CHR, BP_START, BP_END
+CLUMP_RANGES_FILE="test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges"
+
+tail -n +2 "$CLUMP_RANGES_FILE" | while IFS=$'\t' read -r line; do
+    # Get CHR, BP_START, BP_END by using awk to match column names indices
+    # Really important we put these cols in the correct order in the R scripts making the "loci" object
+    CHR=$(echo "$line" | awk '{print $1+0}')  
+    BP_START=$(echo "$line" | awk '{print $2+0}')
+    BP_END=$(echo "$line" | awk '{print $3+0}')
+    
+    echo "Processing CHR: $CHR, BP_START: $BP_START, BP_END: $BP_END"
+
+    ../SuSiEx/bin/SuSiEx \
+      --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt \
+      --n_gwas=667771,39866,5814 \
+      --ref_file=reference/ukb_imp_v3.qc.geno02.mind02_EUR,reference/ukb_imp_v3.qc.geno02.mind02_AFR,reference/ukb_imp_v3.qc.geno02.mind02_SAS \
+      --ld_file=fineMapping/EUR,fineMapping/AFR,fineMapping/SAS \
+      --out_dir=./fineMapping \
+      --out_name=SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${BP_END} \
+      --level=0.95 \
+      --pval_thresh=1e-5 \
+      --chr=$CHR \
+      --bp=$BP_START,$BP_END \
+      --maf=0.005 \
+      --snp_col=1,1,1 \
+      --chr_col=9,9,9 \
+      --bp_col=10,10,10 \
+      --a1_col=2,2,2 \
+      --a2_col=3,3,3 \
+      --eff_col=5,5,5 \
+      --se_col=6,6,6 \
+      --pval_col=7,7,7 \
+      --mult-step=True \
+      --plink=../SuSiEx/utilities/plink \
+      --keep-ambig=True |& tee fineMapping/logs/SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${BP_END}.log
+
+done < "$CLUMP_RANGES_FILE"
+
+# ----------------------------------------------------
+# ----- Plot results ---------------------------------

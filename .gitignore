@@ -27,5 +27,6 @@ txt
 liftover/
 liftover
 MR-MEGA
-fineMapping
+fineMapping/*
+!fineMapping/logs/
 logs/

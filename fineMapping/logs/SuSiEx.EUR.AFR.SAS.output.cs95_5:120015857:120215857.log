@@ -1,0 +1,32 @@
+
+Software parameters:
+--sst_file = test/fixed-N06A-EUR.human_g1k_v37.neff08.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08.txt
+--ld_file = fineMapping/EUR,fineMapping/AFR,fineMapping/SAS
+--n_gwas = 667771,39866,5814
+--out_dir = ./fineMapping
+--out_name = SuSiEx.EUR.AFR.SAS.output.cs95_5:120015857:120215857
+--chr = 5
+--bp = 120015857,120215857
+--chr_col = 9,9,9
+--snp_col = 1,1,1
+--bp_col = 10,10,10
+--a1_col = 2,2,2
+--a2_col = 3,3,3
+--eff_col = 5,5,5
+--se_col = 6,6,6
+--pval_col = 7,7,7
+--plink = ../SuSiEx/utilities/plink
+--keep-ambig = true
+--mult-step = true
+--precmp = true
+--maf = 0.005
+--level = 0.95
+--min_purity = 0.5
+--pval_thresh = 1e-05
+--tol = 0.0001
+--n_sig = 5
+--max_iter = 100
+--threads = 1
+... parse reference file: fineMapping/EUR_ref.bim ...
+Error: Line 1 in reference file: fineMapping/EUR_ref.bim contain variants not in "5"
+	1	rs77558207	0	7315580	T	C
