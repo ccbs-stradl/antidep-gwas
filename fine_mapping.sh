@@ -1,23 +1,27 @@
 # Test SuSiEx script before adding to nextflow pipeline:
 # ----------------------------------------------------
-# Make reference files:
+# Make LD reference files (submit as jobs):
 for cluster in EUR AFR SAS; do
   qsub -v cluster=$cluster make-bed_hg19.sh
 done
 
 # ----------------------------------------------------
-qlogin -l h_vmem=32G
+# Load interactive session for the rest of this script
+qlogin -l h_vmem=32Gqlogin -l h_vmem=32G -pe sharedmem 8
 
 cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
 
+export PATH=$PATH:/exports/igmm/eddie/GenScotDepression/amelia/packages/plink2
 module load roslin/bcftools/1.20
 module load roslin/samtools/1.9
 
 # ----------------------------------------------------
-# Calculate effective sample size for each meta-analysis sumstats
+# ----- Calculate effective sample size for each meta-analysis sumstats
 # Edit the meta.nf to include this as a process:
 R
+
 library(dplyr)
+
 sumstats <- read.csv("sumstats.csv")
 sumstats %>% 
   mutate(neff = 4/(1/cases + 1/controls)) %>%
@@ -27,6 +31,7 @@ sumstats %>%
 mutate(neff = 1/ (1/cases + 1/controls)) |> group_by(pheno, cluster) |> summarize(neff = sum(neff))
 
 write.csv(sumstats, "sumstats.Neff.csv", quote = F, row.names = F)
+
 quit()
 
 # ----------------------------------------------------
@@ -56,10 +61,10 @@ library(data.table)
 library(dplyr)
 
 lapply(c("EUR", "AFR", "SAS"), function(cluster){
-  # Read in sumsstats and remove rows where SE = 0
+  # Read in sumsstats and remove rows where SE = 0, create new col for CPID
   sumstats <- fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) %>% 
-  filter(SE != 0) %>%
-  mutate(CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
+    filter(SE != 0) %>%
+    mutate(CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
   # Rewrite sumstats with suffix "noZero"
   fwrite(sumstats, paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt"), sep = "\t")
   # Return number of rows in sumstats
@@ -73,16 +78,18 @@ quit()
 # ----- Identify lead SNPs for each ancestry ---------
 # "in cross-population fine-mapping, we analyzed loci that reached genome-wide significance in at least one of the population-specific GWAS "
 
-# define the region we want to fine map around lead SNPs
-# "1-Mb regions" used in SuSiEx paper simulations, 
-# use meta/*.clumped.ranges output from meta.nf
-
-# First count how many genome-wide significant (GWS) SNPs are in each ancestry
+# Count how many genome-wide significant (GWS) SNPs are in each ancestry
 for cluster in EUR AFR SAS; do
 cat test/fixed-N06A-${cluster}.human_g1k_v37.neff08.txt | awk '$7 <= 5e-8' | wc -l
 done
 # EUR: 2151; AFR: 0; SAS:0
 
+# How many remain after removing SE == 0
+for cluster in EUR AFR SAS; do
+cat test/fixed-N06A-${cluster}.human_g1k_v37.neff08_noZero.txt | awk '$7 <= 5e-8' | wc -l
+done
+# EUR: 2151; AFR: 0; SAS:0
+# GWS SNPs do not have SE == 0
 
 # ----
 R
@@ -91,13 +98,10 @@ library(data.table)
 library(dplyr)
 library(purrr)
 
-
-# ---------------
 # Create table of GWS SNPs that will be fine mapped with the P-values for each ancestry:
-
 # Read in sumstats and subset to GWS SNPs
 sumstats <- lapply(c("EUR", "AFR", "SAS"), function(cluster){
-  fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) 
+  fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt")) 
 })
 
 
@@ -121,7 +125,7 @@ lapply(sumstats, nrow)
   # [1] 2151
 
   # [[2]]
-  # [1] 1973
+  # [1] 1967
 
   # [[3]]
   # [1] 1992
@@ -159,16 +163,10 @@ quit()
 # ----- Identify regions to perform fine mapping on --
 # Follow the same methods as in the SuSiEx paper:
 # "Loci definition.
-# We used a 6-way LD clumping-based method to define genomic loci, using 1KG data as the LD reference for clumping. CEU, GBR, TSI, FIN and IBS were combined as the reference for the EUR population; ESN, GWD, LWK, MSL and YRI were combined as the reference for the AFR population; CHB, CHS, CDX, JPT and KHV were combined as the reference for the EAS population. We extracted all variants with M⁢A⁢F  >0.5%, and for each of the 25 traits, performed the LD clumping in the three populations using the corresponding reference panel and PLINK45. 
+# We used a 6-way LD clumping-based method to define genomic loci, using 1KG data as the LD reference for clumping. CEU, GBR, TSI, FIN and IBS were combined as the reference for the EUR population; ESN, GWD, LWK, MSL and YRI were combined as the reference for the AFR population; CHB, CHS, CDX, JPT and KHV were combined as the reference for the EAS population. We extracted all variants with M⁢A⁢F  >0.5%, and for each of the 25 traits, performed the LD clumping in the three populations using the corresponding reference panel and PLINK. 
 # To include loci that reached genome-wide significance (𝑃  <5⁢E −8) only in the meta-analysis, we further performed clumping for the meta-GWAS across the three populations, using the three reference panels, respectively. For each clumping, we set the p-value threshold of the leading variant as 5E-8 (--clump-p1) and the threshold of the tagging variant as 0.05 (--clump-p2), and set the LD threshold as 0.1 (--clump-r2) and the distance threshold as 250 kb (--clump-kb). 
 # We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream. 
 # Finally, we merged adjacent loci if the LD (𝑟2) between the leading variants was larger than 0.6 in any LD reference panel. "
-
-# --------------------
-# Request memory and ensure plink is on the execuable path
-qlogin -l h_vmem=32G -pe sharedmem 8
-export PATH=$PATH:/exports/igmm/eddie/GenScotDepression/amelia/packages/plink2
-cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
 
 # --------------------
 # We will perform clumping on each ancestry separately
@@ -282,7 +280,3 @@ rm fineMapping/*_tmp_*
   --keep-ambig=True |& tee fineMapping/logs/SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${$BP_END}.log
 
 # ----------------------------------------------------
-# With the above code there are a few things to change:
-# 1. This is example code so "chr" and "bp" need changing to the regions needing fine mapping. Use meta/*EUR.clumped.ranges to get base positions
-
-
