@@ -344,7 +344,7 @@ tail -n +2 "$CLUMP_RANGES_FILE" | while IFS=$'\t' read -r line; do
       --sst_file=test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt \
       --n_gwas=667771,39866,5814 \
       --ref_file=reference/ukb_imp_v3.qc.geno02.mind02_EUR_${CHR},reference/ukb_imp_v3.qc.geno02.mind02_AFR_${CHR},reference/ukb_imp_v3.qc.geno02.mind02_SAS_${CHR} \
-      --ld_file=fineMapping/EUR_${CHR},fineMapping/AFR_${CHR},fineMapping/SAS_${CHR} \
+      --ld_file=fineMapping/ld/EUR_${CHR},fineMapping/ld/AFR_${CHR},fineMapping/ld/SAS_${CHR} \
       --out_dir=./fineMapping/results \
       --out_name=SuSiEx.EUR.AFR.SAS.output.cs95_${CHR}:${BP_START}:${BP_END} \
       --level=0.95 \
@@ -370,6 +370,48 @@ end=`date +%s`
 runtime=$((end-start))
 echo $runtime
 
+# ----------------------------------------------------
+# A .summary file, a .cs file and a .snp file will be written to the specified output directory.
+
+# If the varitional algorithm did not converge, "FAIL" will be written to both the .summary
+# file and the .cs file. If no credible set was identified at the specified coverage level 
+# after purity and marginal p-value filtering, "NULL" will be written to both the .summary 
+# file and the .cs file.
+
+# Check we have the same number of output files as the number of BP ranges
+ls fineMapping/results/*.summary | wc -l # 61, correct
+
+# Check which files contain NULL
+grep -o "NULL" fineMapping/results/*.summary
+
+# Count how many files contain NULL
+grep -o "NULL" fineMapping/results/*.summary | wc -l 
+# 43 files contain the word null
+
+# Check which files contain FAIL
+grep -l "FAIL" fineMapping/results/*.summary 
+# no files
+
+# Check which files contain results
+grep -L "NULL" fineMapping/results/*.summary | wc -l
+# 18 files with results
+
+grep -l "CS_ID" fineMapping/results/*.summary | xargs cat > fineMapping/combined_results.summary
+
+# May be easier to read the .cs and .snp files in separately to R and merge in R
+# Merging the .summary files just gives us a nice file quickly to scan the results by eye.
 
 # ----------------------------------------------------
-# ----- Plot results ---------------------------------
+# ----- Explore results ---------------------------------
+
+# From the combined .summary files:
+# Load them into R and format "#CHR:BP:BP" into new separate columns 
+# Explore the following:
+# - How many credible sets per fine mapped region
+# - How does the max PIP vary between top SNPs
+# - Plot the p-val of the top SNPs
+
+# With the .cs and .snp files:
+# - Location of SNPs in credible sets (locus zoom plot - Mark do you have code for this?)
+#   - May also need data from .snp files (contains information for all the SNPs that are used in the fine-mapping algorithm)
+# - Plot just the SNPs in the credible sets to see how close their PIP is, this will help determine the confidence in the causal SNP.
