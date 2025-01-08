@@ -7,7 +7,7 @@ done
 
 # ----------------------------------------------------
 # Load interactive session for the rest of this script
-qlogin -l h_vmem=32Gqlogin -l h_vmem=32G -pe sharedmem 8
+qlogin -l h_vmem=32G login -l h_vmem=32G -pe sharedmem 8
 
 cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
 
@@ -27,8 +27,6 @@ sumstats %>%
   mutate(neff = 4/(1/cases + 1/controls)) %>%
   group_by(pheno, cluster) %>%
   summarise(neff = sum(neff))
-
-mutate(neff = 1/ (1/cases + 1/controls)) |> group_by(pheno, cluster) |> summarize(neff = sum(neff))
 
 write.csv(sumstats, "sumstats.Neff.csv", quote = F, row.names = F)
 
@@ -53,7 +51,7 @@ awk '$6 == 0 { count++ } END { print count }' test/EUR*
 # Note - check why there are occurances of a zero SE to begin with
 
 # Remove rows where SE == 0 in R:
-# Also create a column for CPID as we need this later to define BP ranges
+# Also create a column for CPID
 # ----
 R
 
@@ -168,6 +166,8 @@ quit()
 # We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream. 
 # Finally, we merged adjacent loci if the LD (𝑟2) between the leading variants was larger than 0.6 in any LD reference panel. "
 
+# The changes we made to this method: using a larger clumping window of 1Mb and then not doing the merging of loci if r2 > 0.6
+
 # --------------------
 # We will perform clumping on each ancestry separately
 # Let's start with the EUR ancestry as this is the only ancestry that had GWS SNPs in our GWAS, and our aim is to find the BP windows around the GWS SNPs we want to perform SuSiEx on.
@@ -181,7 +181,7 @@ plink2 \
   --clump-p1 5e-8 \
   --clump-p2 0.05 \
   --clump-r2 0.1 \
-  --clump-kb 250 \
+  --clump-kb 1000 \
   --pgen reference/ukb_imp_v3.qc.geno02_EUR.pgen \
   --psam reference/ukb_imp_v3.qc.geno02_EUR.psam \
   --pvar reference/ukb_imp_v3.qc.geno02_EUR.pvar.zst \
@@ -195,9 +195,7 @@ plink2 \
 
 
 # --------------------
-# Load the clumping results into R to figure out the min and max BP for each clump region following the same method as in SuSiEx
-
-# We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream. 
+# Load the clumping results into R to figure out the min and max BP for each clump region following a similar method as in SuSiEx
 # ----
 R
 
@@ -235,85 +233,6 @@ write.table(loci, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
 row.names = F, quote = F, sep = "\t")
 
 quit()
-
-# --------------------
-# Finally, we merged adjacent loci if the LD (𝑟2) between the leading variants was larger than 0.6 in any LD reference panel. "
-
-# Calculate the LD between leading SNPs 
-# so we can evaluate which have r^2 > 0.6
-plink2 \
-  --pgen reference/ukb_imp_v3.qc.geno02_EUR.pgen \
-  --psam reference/ukb_imp_v3.qc.geno02_EUR.psam \
-  --pvar reference/ukb_imp_v3.qc.geno02_EUR.pvar.zst \
-  --extract test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leading_snps \
-  --r2-phased \
-  --ld-window-r2 0.6 \
-  --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leadSNPs
-
-# Check if any SNPs have r2 > 0.6, if they do run the R script to merge regions
-# else do not run this R script (it will throw an error because the file does not exist)
-if [ -f "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leadSNPs.vcor" ]; then
-    echo "Ensure the following R script is run as a nextflow process."
-else
-    echo "The below R script should not be executed."
-fi
-
-# Read in SNPs with r2 > 0.6 into R and merge them
-R
-
-library(dplyr)
-library(data.table)
-
-cor <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leadSNPs.vcor")
-loci <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges")
-
-# QC: Check the SNPs with r2 > 0.6 are in our lead SNPs list
-cor$ID_A %in% loci$SNP
-cor$ID_B %in% loci$SNP
-
-# Check the SNPs that need merging are on the same chromosome
-if(!any(cor$`#CHROM_A` == cor$CHROM_B)){
-  # Stop nextflow process with an error message: "debug the PLINK LD r2 > 0.6 process"
-}
-
-# For each SNP pair in cor (ie. each row),
-# merge their corresponding regions in the loci dataframe
-# Take the minimum out of BP_START and maximum out of BP_END (from the pairs)
-# Comma separate the SNPs in the SNP col
-# Add column with the number of GWS SNPs in that region
-
-loci <- loci %>%
-  mutate(GWS_SNPs = 1)
-
-merged_regions <- lapply(1:nrow(cor), function(i){
-  SNP_pair <- cor %>%
-              slice(i)
-
-  merged_region <- loci %>%
-    filter(SNP %in% c(SNP_pair$ID_A, SNP_pair$ID_B)) %>%
-      summarise(
-        BP_START = min(BP_START),          
-        SNP = paste(SNP, collapse = ","),   
-        BP_END = max(BP_END),               
-        GWS_SNPs = n()
-      ) %>%
-      mutate(CHR = paste(unique(c(SNP_pair$`#CHROM_A`, SNP_pair$CHROM_B)), collapse = ",")) %>%
-      relocate(CHR, BP_START, BP_END, SNP, GWS_SNPs)
-
-
-}) %>% do.call(rbind,.)
-
-loci <- loci %>%
-      filter(!SNP %in% c(cor$ID_A, cor$ID_B))
-
-loci <- rbind(loci, merged_regions) %>%
-        arrange(as.numeric(CHR), BP_START)
-
-write.table(loci, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
-row.names = F, quote = F, sep = "\t")
-
-quit()
-
 
 # ----------------------------------------------------
 # ----- Run SuSiEX (convert to nextflow process) -----
