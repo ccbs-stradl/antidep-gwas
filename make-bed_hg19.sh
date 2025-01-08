@@ -13,7 +13,6 @@
 # Edits to make:
 # ENSURE PLINK2 PATH IS NOT HARD CODED IN NEXTFLOW PIPELINE
 # ENSURE PATH TO PFILE IS NOT HARD CODED IN NEXTFLOW PIPELINE
-# Include MAF 0.05 as methods of SuSiEx: "We extracted all variants with M⁢A⁢F  >0.5%"
 # ------------
 
 # Creates separate bim, bed, fam files for each ancestry from the UK Biobank pgen files (hg19)
@@ -37,6 +36,7 @@ CHR=$SGE_TASK_ID
 --keep-col-match reference/ukb-ld-ref_ancestry.id $cluster \
 --chr $CHR \
 --geno 0.02 \
+--maf 0.005 \
 --make-pgen 'vzs' \
 --out reference/ukb_imp_v3.qc.geno02_${cluster}_${CHR} \
 --threads 4
