@@ -73,93 +73,11 @@ quit()
 # ----
 
 # ----------------------------------------------------
-# ----- Identify lead SNPs for each ancestry ---------
-# "in cross-population fine-mapping, we analyzed loci that reached genome-wide significance in at least one of the population-specific GWAS "
-
-# Count how many genome-wide significant (GWS) SNPs are in each ancestry
-for cluster in EUR AFR SAS; do
-cat test/fixed-N06A-${cluster}.human_g1k_v37.neff08.txt | awk '$7 <= 5e-8' | wc -l
-done
-# EUR: 2151; AFR: 0; SAS:0
-
-# How many remain after removing SE == 0
-for cluster in EUR AFR SAS; do
-cat test/fixed-N06A-${cluster}.human_g1k_v37.neff08_noZero.txt | awk '$7 <= 5e-8' | wc -l
-done
-# EUR: 2151; AFR: 0; SAS:0
-# GWS SNPs do not have SE == 0
-
-# ----
-R
-
-library(data.table)
-library(dplyr)
-library(purrr)
-
-# Create table of GWS SNPs that will be fine mapped with the P-values for each ancestry:
-# Read in sumstats and subset to GWS SNPs
-sumstats <- lapply(c("EUR", "AFR", "SAS"), function(cluster){
-  fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08_noZero.txt")) 
-})
-
-
-GWS_SNPs <- lapply(sumstats, function(sumstats){
-  sumstats %>%
-  filter(P <= 5e-8) %>%
-  pull(SNP)
-}) %>% unlist()
-
-
-clusters <- c("EUR", "AFR", "SAS")
-sumstats <- lapply(1:3, function(i){
-  sumstats[[i]] %>%
-  filter(SNP %in% GWS_SNPs) %>%
-  rename_with(~ paste0(clusters[i], "_", .), -SNP)  # Add cluster prefix to column names, except for SNP
-})
-
-# Check if they all contain those SNPs
-lapply(sumstats, nrow)
-  # [[1]]
-  # [1] 2151
-
-  # [[2]]
-  # [1] 1967
-
-  # [[3]]
-  # [1] 1992
-# Some SNPs are missing in AFR and SAS
-
-# Join all the sumstats on SNP col into one table with the cluster prefix before each duplicated col name
-# Left join onto EUR, to keep all GWS SNPs
-sumstats <- reduce(sumstats, left_join, by = "SNP")
-
-# Check that CHR and BP are the same across all ancestries for the same SNP (QC check of build)
-# ignore missing SNPs
-sum(!sumstats$EUR_CHR == sumstats$AFR_CHR, na.rm = T) # should all = 0
-sum(!sumstats$EUR_CHR == sumstats$SAS_CHR, na.rm = T)
-sum(!sumstats$EUR_BP == sumstats$AFR_BP, na.rm = T) # should all = 0
-sum(!sumstats$EUR_BP == sumstats$SAS_BP, na.rm = T)
-
-# Subset to keep SNP, CHR and BP, EUR_P, AFR_P, SAS_P
-sumstats <- sumstats %>%
-  mutate(BP_START = EUR_BP - 500000) %>%
-  mutate(BP_END = EUR_BP + 500000) %>%
-  select(SNP, CHR = EUR_CHR, BP = EUR_BP, BP_START, BP_END, EUR_P, AFR_P, SAS_P) 
-
-write.table(sumstats, "fineMapping/GWS_SNPs.txt", row.names = FALSE, sep = "\t", quote = FALSE)
-
-# Noticed a few GWS_SNPs are on chromosome X, let's just count these
-sumstats %>%
-  filter(CHR == "X") %>%
-  nrow()
-  # 110 - note none of these came up in the clumping below
-
-quit()
-# ----
-
-# ----------------------------------------------------
 # ----- Identify regions to perform fine mapping on --
 # Follow the same methods as in the SuSiEx paper:
+
+# "in cross-population fine-mapping, we analyzed loci that reached genome-wide significance in at least one of the population-specific GWAS "
+
 # "Loci definition.
 # We used a 6-way LD clumping-based method to define genomic loci, using 1KG data as the LD reference for clumping. CEU, GBR, TSI, FIN and IBS were combined as the reference for the EUR population; ESN, GWD, LWK, MSL and YRI were combined as the reference for the AFR population; CHB, CHS, CDX, JPT and KHV were combined as the reference for the EAS population. We extracted all variants with M⁢A⁢F  >0.5%, and for each of the 25 traits, performed the LD clumping in the three populations using the corresponding reference panel and PLINK. 
 # To include loci that reached genome-wide significance (𝑃  <5⁢E −8) only in the meta-analysis, we further performed clumping for the meta-GWAS across the three populations, using the three reference panels, respectively. For each clumping, we set the p-value threshold of the leading variant as 5E-8 (--clump-p1) and the threshold of the tagging variant as 0.05 (--clump-p2), and set the LD threshold as 0.1 (--clump-r2) and the distance threshold as 250 kb (--clump-kb). 
@@ -218,11 +136,6 @@ loci <- loci %>%
          BP_START = pmax(0, BP_START - 100000)) %>% # 100 kb upstream (ensure it doesn't go negative) 
          arrange(CHR, BP_START) %>%
   relocate(CHR, BP_START, BP_END, SNP)
-
-# Check if these lead SNPs are the same as what we previously identified as GWS SNPs
-GWS_SNPs <- fread("fineMapping/GWS_SNPs.txt")
-all(loci$SNP %in% GWS_SNPs$SNP )
-# Yes, all 63 lead SNPs idenfied in clumping were also GWS SNPs
 
 # Save lead SNPs as a list to calculate LD between them
 write.table(loci$SNP, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leading_snps",
@@ -289,7 +202,10 @@ end=`date +%s`
 runtime=$((end-start))
 echo $runtime
 
+
 # ----------------------------------------------------
+# ----- Explore results ---------------------------------
+
 # A .summary file, a .cs file and a .snp file will be written to the specified output directory.
 
 # If the varitional algorithm did not converge, "FAIL" will be written to both the .summary
@@ -319,9 +235,6 @@ grep -l "CS_ID" fineMapping/results/*.summary | xargs cat > fineMapping/combined
 
 # May be easier to read the .cs and .snp files in separately to R and merge in R
 # Merging the .summary files just gives us a nice file quickly to scan the results by eye.
-
-# ----------------------------------------------------
-# ----- Explore results ---------------------------------
 
 # From the combined .summary files:
 # Load them into R and format "#CHR:BP:BP" into new separate columns 
