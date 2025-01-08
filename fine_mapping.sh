@@ -46,9 +46,26 @@ done
 
 # This uses awk to count where column number 6 (which is the SE column) matches "0"
 # count++ increments the count for each occurrence of 0.
-awk '$6 == 0 { count++ } END { print count }' test/EUR*
+awk '$6 == 0 { count++ } END { print count }' test/fixed-N06A-EUR.human_g1k_v37.neff08.txt
+awk '$6 == 0 { count++ } END { print count }' test/fixed-N06A-AFR.human_g1k_v37.neff08.txt
+awk '$6 == 0 { count++ } END { print count }' test/fixed-N06A-SAS.human_g1k_v37.neff08.txt
 
 # Note - check why there are occurances of a zero SE to begin with
+# Send 2-3 rsIDs to Mark to trace back to find where these zeros are introduced
+awk '$6 == 0 { print; if (++count == 5) exit }' test/fixed-N06A-EUR.human_g1k_v37.neff08.txt
+# rs6703008, rs3128108
+awk '$6 == 0 { print; if (++count == 5) exit }' test/fixed-N06A-AFR.human_g1k_v37.neff08.txt
+# rs7526076, rs12132100
+awk '$6 == 0 { print; if (++count == 5) exit }' test/fixed-N06A-SAS.human_g1k_v37.neff08.txt
+# rs880050, rs2180311
+
+SNPs="rs6703008 rs3128108 rs7526076 rs12132100 rs880050 rs2180311"
+
+for SNP in $SNPs; do
+zcat liftover/fixed-N06A-EUR.human_g1k_v37.vcf.gz | grep $SNP
+zcat meta/fixed-N06A-EUR.meta.gz | grep $SNP
+zcat sumstats/*N06A-EUR*.gz | grep $SNP
+done
 
 # Remove rows where SE == 0 in R:
 # Also create a column for CPID
