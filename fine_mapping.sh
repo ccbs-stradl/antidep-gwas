@@ -7,7 +7,7 @@ done
 
 # ----------------------------------------------------
 # Load interactive session for the rest of this script
-qlogin -l h_vmem=32G login -l h_vmem=32G -pe sharedmem 8
+qlogin -l h_vmem=32G -pe sharedmem 8
 
 cd /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
 
@@ -231,14 +231,14 @@ echo $runtime
 # file and the .cs file.
 
 # Check we have the same number of output files as the number of BP ranges
-ls fineMapping/results/*.summary | wc -l # 61, correct
+ls fineMapping/results/*.summary | wc -l 
 
 # Check which files contain NULL
 grep -o "NULL" fineMapping/results/*.summary
 
 # Count how many files contain NULL
 grep -o "NULL" fineMapping/results/*.summary | wc -l 
-# 43 files contain the word null
+# 46 files contain the word null
 
 # Check which files contain FAIL
 grep -l "FAIL" fineMapping/results/*.summary 
@@ -246,12 +246,8 @@ grep -l "FAIL" fineMapping/results/*.summary
 
 # Check which files contain results
 grep -L "NULL" fineMapping/results/*.summary | wc -l
-# 18 files with results
+# 19 files with results
 
-grep -l "CS_ID" fineMapping/results/*.summary | xargs cat > fineMapping/combined_results.summary
-
-# May be easier to read the .cs and .snp files in separately to R and merge in R
-# Merging the .summary files just gives us a nice file quickly to scan the results by eye.
 
 # From the combined .summary files:
 # Load them into R and format "#CHR:BP:BP" into new separate columns 
@@ -264,3 +260,98 @@ grep -l "CS_ID" fineMapping/results/*.summary | xargs cat > fineMapping/combined
 # - Location of SNPs in credible sets (locus zoom plot - Mark do you have code for this?)
 #   - May also need data from .snp files (contains information for all the SNPs that are used in the fine-mapping algorithm)
 # - Plot just the SNPs in the credible sets to see how close their PIP is, this will help determine the confidence in the causal SNP.
+
+# ------------------------------------------
+R
+
+library(data.table)
+library(dplyr)
+library(ggplot2)
+
+# List all .summary files in the directory
+files_summary <- list.files("fineMapping/results/", 
+                            pattern = "summary", 
+                            full.names = TRUE)
+
+# Define a function to process each file
+process_file <- function(file) {
+  # Read the file line by line
+  results_summary <- readLines(file)
+  
+  # Step 1: Extract the comment line (the first line starting with '#')
+  comment_line <- results_summary[1]
+
+    # Check if the comment_line starts with "#chr"
+  if (results_summary[2] %in% c("NULL", "FAIL")) {
+    # Skip files that are NULL or FAIL
+    message(paste("Skipping file (it has no results)):", file))
+    return(NULL)
+  }
+  
+  # Step 2: The second line contains the column names, so split it into column names
+  col_names <- unlist(strsplit(results_summary[2], "\\s+"))
+  
+  # Step 3: The remaining lines are the data
+  data_lines <- results_summary[-c(1, 2)]  # Remove the first two lines (comment and column names)
+  
+  # Read the data lines into a data.table, and convert it to a data frame 
+  results_summary <- fread(text = paste(data_lines, collapse = "\n"), 
+                          col.names = col_names) %>%
+                      as.data.frame()
+  
+  # Step 4: Extract CHR, BP_START, and BP_END from the comment line
+  # Assuming the format is like "#chr11:46131891-46331891", we'll extract chr, start, and end
+  chr_info <- sub("^# chr", "", comment_line)  # Remove the "# chr" part
+  chr_parts <- unlist(strsplit(chr_info, "[:-]"))  # Split by colon and dash
+  
+  # Step 5: Use dplyr to add the new columns for CHR, BP_START, and BP_END
+  results_summary <- results_summary %>%
+    mutate(
+      CHR = chr_parts[1],
+      BP_START = as.integer(chr_parts[2]),
+      BP_END = as.integer(chr_parts[3])
+    )
+  
+  # Return the processed data
+  return(results_summary)
+}
+
+# Apply the process_file function to all files using lapply
+results_summary <-  lapply(files_summary, process_file) %>%
+                      do.call(rbind,.)
+
+
+# ------------------------------
+head(results_summary)
+# cols useful for plotting:
+# CS_LENGTH - number of SNPs in the credible set
+# CS_PURITY - purity of the credible set
+# MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set.
+# CHR BP_START BP_END
+# -LOG10P
+
+# --------
+# Plot the relationship between:
+# CS_LENGTH - number of SNPs in the credible set
+# CS_PURITY - purity of the credible set
+# MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set.
+
+png("fineMapping/plots/length_purity_maxPIP.png", width = 1000, height = 600, res = 150)
+
+ggplot(results_summary, aes(x = CS_PURITY, y = MAX_PIP, size = CS_LENGTH)) +
+  geom_point(alpha = 0.6, colour = "deepskyblue3") +  
+  scale_size_continuous(range = c(1, 10)) +  
+  labs(
+    x = "Credible Set Purity",
+    y = "Maximum Posterior Inclusion Probability",
+    size = "Number of SNPs\nin credible set\n(min=1; max=170)"
+  ) +
+  theme_minimal()
+
+dev.off()
+
+# --------
+# Determine which ancestries were used in the fine mapping,
+# do this by seeing where NA occurs in eg. -LOG10P col
+# maybe also combine with POST-HOC_PROB_POP1,2,3 cols - look up what these are
+ 
