@@ -2,7 +2,7 @@
 Software parameters:
 --sst_file = test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt
 --ref_file = reference/ukb_imp_v3.qc.geno02.mind02_EUR_5,reference/ukb_imp_v3.qc.geno02.mind02_AFR_5,reference/ukb_imp_v3.qc.geno02.mind02_SAS_5
---ld_file = fineMapping/EUR_5,fineMapping/AFR_5,fineMapping/SAS_5
+--ld_file = fineMapping/ld/EUR_5,fineMapping/ld/AFR_5,fineMapping/ld/SAS_5
 --n_gwas = 667771,39866,5814
 --out_dir = ./fineMapping/results
 --out_name = SuSiEx.EUR.AFR.SAS.output.cs95_5:30725684:30925684
@@ -28,41 +28,41 @@ Software parameters:
 --n_sig = 5
 --max_iter = 100
 --threads = 1
-... calculate LD matrix: fineMapping/EUR_5.ld ...
+... calculate LD matrix: fineMapping/ld/EUR_5.ld ...
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/EUR_5_ref.log.
+Logging to fineMapping/ld/EUR_5_ref.log.
 Options in effect:
   --bfile reference/ukb_imp_v3.qc.geno02.mind02_EUR_5
   --chr 5
-  --extract fineMapping/EUR_5.snp
+  --extract fineMapping/ld/EUR_5.snp
   --keep-allele-order
   --maf 0.005
   --make-bed
-  --out fineMapping/EUR_5_ref
+  --out fineMapping/ld/EUR_5_ref
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
 Allocated 217451 MB successfully, after larger attempt(s) failed.
-1134878 variants loaded from .bim file.
+605146 variants loaded from .bim file.
 7500 people (3513 males, 3987 females) loaded from .fam.
---extract: 1579 variants remaining.
+--extract: 925 variants remaining.
 Using 1 thread (no multithreaded calculations invoked).
 Before main variant filters, 7500 founders and 0 nonfounders present.
 Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
-Total genotyping rate is 0.996814.
-688 variants removed due to minor allele threshold(s)
+Total genotyping rate is 0.995982.
+34 variants removed due to minor allele threshold(s)
 (--maf/--max-maf/--mac/--max-mac).
 891 variants and 7500 people pass filters and QC.
 Note: No phenotypes present.
---make-bed to fineMapping/EUR_5_ref.bed + fineMapping/EUR_5_ref.bim +
-fineMapping/EUR_5_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
+--make-bed to fineMapping/ld/EUR_5_ref.bed + fineMapping/ld/EUR_5_ref.bim +
+fineMapping/ld/EUR_5_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/EUR_5.log.
+Logging to fineMapping/ld/EUR_5.log.
 Options in effect:
-  --bfile fineMapping/EUR_5_ref
+  --bfile fineMapping/ld/EUR_5_ref
   --keep-allele-order
-  --out fineMapping/EUR_5
+  --out fineMapping/ld/EUR_5
   --r square bin4
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
@@ -75,15 +75,15 @@ Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%
 Total genotyping rate is 0.996083.
 891 variants and 7500 people pass filters and QC.
 Note: No phenotypes present.
---r square bin4 to fineMapping/EUR_5.ld.bin ... 0% [processing]writing]             done.
+--r square bin4 to fineMapping/ld/EUR_5.ld.bin ... 0% [processing]writing]             done.
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/EUR_5_frq.log.
+Logging to fineMapping/ld/EUR_5_frq.log.
 Options in effect:
-  --bfile fineMapping/EUR_5_ref
+  --bfile fineMapping/ld/EUR_5_ref
   --freq
   --keep-allele-order
-  --out fineMapping/EUR_5_frq
+  --out fineMapping/ld/EUR_5_frq
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
 Allocated 217451 MB successfully, after larger attempt(s) failed.
@@ -93,158 +93,158 @@ Using 1 thread (no multithreaded calculations invoked).
 Before main variant filters, 7500 founders and 0 nonfounders present.
 Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
 Total genotyping rate is 0.996083.
---freq: Allele frequencies (founders only) written to fineMapping/EUR_5_frq.frq
-.
-... calculate LD matrix: fineMapping/AFR_5.ld ...
+--freq: Allele frequencies (founders only) written to
+fineMapping/ld/EUR_5_frq.frq .
+... calculate LD matrix: fineMapping/ld/AFR_5.ld ...
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/AFR_5_ref.log.
+Logging to fineMapping/ld/AFR_5_ref.log.
 Options in effect:
   --bfile reference/ukb_imp_v3.qc.geno02.mind02_AFR_5
   --chr 5
-  --extract fineMapping/AFR_5.snp
+  --extract fineMapping/ld/AFR_5.snp
   --keep-allele-order
   --maf 0.005
   --make-bed
-  --out fineMapping/AFR_5_ref
+  --out fineMapping/ld/AFR_5_ref
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
 Allocated 217451 MB successfully, after larger attempt(s) failed.
-721135 variants loaded from .bim file.
-7500 people (3173 males, 4327 females) loaded from .fam.
---extract: 988 variants remaining.
+256733 variants loaded from .bim file.
+7453 people (3159 males, 4294 females) loaded from .fam.
+--extract: 339 variants remaining.
 Using 1 thread (no multithreaded calculations invoked).
-Before main variant filters, 7500 founders and 0 nonfounders present.
+Before main variant filters, 7453 founders and 0 nonfounders present.
 Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
-Total genotyping rate is 0.994843.
-687 variants removed due to minor allele threshold(s)
+Total genotyping rate is 0.990708.
+38 variants removed due to minor allele threshold(s)
 (--maf/--max-maf/--mac/--max-mac).
-301 variants and 7500 people pass filters and QC.
+301 variants and 7453 people pass filters and QC.
 Note: No phenotypes present.
---make-bed to fineMapping/AFR_5_ref.bed + fineMapping/AFR_5_ref.bim +
-fineMapping/AFR_5_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
+--make-bed to fineMapping/ld/AFR_5_ref.bed + fineMapping/ld/AFR_5_ref.bim +
+fineMapping/ld/AFR_5_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/AFR_5.log.
+Logging to fineMapping/ld/AFR_5.log.
 Options in effect:
-  --bfile fineMapping/AFR_5_ref
+  --bfile fineMapping/ld/AFR_5_ref
   --keep-allele-order
-  --out fineMapping/AFR_5
+  --out fineMapping/ld/AFR_5
   --r square bin4
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
 Allocated 217451 MB successfully, after larger attempt(s) failed.
 301 variants loaded from .bim file.
-7500 people (3173 males, 4327 females) loaded from .fam.
+7453 people (3159 males, 4294 females) loaded from .fam.
 Using up to 8 threads (change this with --threads).
-Before main variant filters, 7500 founders and 0 nonfounders present.
+Before main variant filters, 7453 founders and 0 nonfounders present.
 Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
-Total genotyping rate is 0.990917.
-301 variants and 7500 people pass filters and QC.
+Total genotyping rate is 0.991042.
+301 variants and 7453 people pass filters and QC.
 Note: No phenotypes present.
---r square bin4 to fineMapping/AFR_5.ld.bin ... 0% [processing]writing]             done.
+--r square bin4 to fineMapping/ld/AFR_5.ld.bin ... 0% [processing]writing]             done.
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/AFR_5_frq.log.
+Logging to fineMapping/ld/AFR_5_frq.log.
 Options in effect:
-  --bfile fineMapping/AFR_5_ref
+  --bfile fineMapping/ld/AFR_5_ref
   --freq
   --keep-allele-order
-  --out fineMapping/AFR_5_frq
+  --out fineMapping/ld/AFR_5_frq
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
 Allocated 217451 MB successfully, after larger attempt(s) failed.
 301 variants loaded from .bim file.
-7500 people (3173 males, 4327 females) loaded from .fam.
+7453 people (3159 males, 4294 females) loaded from .fam.
 Using 1 thread (no multithreaded calculations invoked).
-Before main variant filters, 7500 founders and 0 nonfounders present.
+Before main variant filters, 7453 founders and 0 nonfounders present.
 Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
-Total genotyping rate is 0.990917.
---freq: Allele frequencies (founders only) written to fineMapping/AFR_5_frq.frq
-.
-... calculate LD matrix: fineMapping/SAS_5.ld ...
+Total genotyping rate is 0.991042.
+--freq: Allele frequencies (founders only) written to
+fineMapping/ld/AFR_5_frq.frq .
+... calculate LD matrix: fineMapping/ld/SAS_5.ld ...
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/SAS_5_ref.log.
+Logging to fineMapping/ld/SAS_5_ref.log.
 Options in effect:
   --bfile reference/ukb_imp_v3.qc.geno02.mind02_SAS_5
   --chr 5
-  --extract fineMapping/SAS_5.snp
+  --extract fineMapping/ld/SAS_5.snp
   --keep-allele-order
   --maf 0.005
   --make-bed
-  --out fineMapping/SAS_5_ref
+  --out fineMapping/ld/SAS_5_ref
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
 Allocated 217451 MB successfully, after larger attempt(s) failed.
-949960 variants loaded from .bim file.
-7495 people (3993 males, 3502 females) loaded from .fam.
---extract: 1285 variants remaining.
+405118 variants loaded from .bim file.
+7480 people (3988 males, 3492 females) loaded from .fam.
+--extract: 661 variants remaining.
 Using 1 thread (no multithreaded calculations invoked).
-Before main variant filters, 7495 founders and 0 nonfounders present.
+Before main variant filters, 7480 founders and 0 nonfounders present.
 Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
-Total genotyping rate is 0.99429.
-650 variants removed due to minor allele threshold(s)
+Total genotyping rate is 0.991874.
+26 variants removed due to minor allele threshold(s)
 (--maf/--max-maf/--mac/--max-mac).
-635 variants and 7495 people pass filters and QC.
+635 variants and 7480 people pass filters and QC.
 Note: No phenotypes present.
---make-bed to fineMapping/SAS_5_ref.bed + fineMapping/SAS_5_ref.bim +
-fineMapping/SAS_5_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
+--make-bed to fineMapping/ld/SAS_5_ref.bed + fineMapping/ld/SAS_5_ref.bim +
+fineMapping/ld/SAS_5_ref.fam ... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%done.
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/SAS_5.log.
+Logging to fineMapping/ld/SAS_5.log.
 Options in effect:
-  --bfile fineMapping/SAS_5_ref
+  --bfile fineMapping/ld/SAS_5_ref
   --keep-allele-order
-  --out fineMapping/SAS_5
+  --out fineMapping/ld/SAS_5
   --r square bin4
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
 Allocated 217451 MB successfully, after larger attempt(s) failed.
 635 variants loaded from .bim file.
-7495 people (3993 males, 3502 females) loaded from .fam.
+7480 people (3988 males, 3492 females) loaded from .fam.
 Using up to 8 threads (change this with --threads).
-Before main variant filters, 7495 founders and 0 nonfounders present.
+Before main variant filters, 7480 founders and 0 nonfounders present.
 Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
-Total genotyping rate is 0.991921.
-635 variants and 7495 people pass filters and QC.
+Total genotyping rate is 0.991931.
+635 variants and 7480 people pass filters and QC.
 Note: No phenotypes present.
---r square bin4 to fineMapping/SAS_5.ld.bin ... 0% [processing]writing]             done.
+--r square bin4 to fineMapping/ld/SAS_5.ld.bin ... 0% [processing]writing]             done.
 PLINK v1.90b7 64-bit (16 Jan 2023)             www.cog-genomics.org/plink/1.9/
 (C) 2005-2023 Shaun Purcell, Christopher Chang   GNU General Public License v3
-Logging to fineMapping/SAS_5_frq.log.
+Logging to fineMapping/ld/SAS_5_frq.log.
 Options in effect:
-  --bfile fineMapping/SAS_5_ref
+  --bfile fineMapping/ld/SAS_5_ref
   --freq
   --keep-allele-order
-  --out fineMapping/SAS_5_frq
+  --out fineMapping/ld/SAS_5_frq
 
 1030881 MB RAM detected; reserving 515440 MB for main workspace.
 Allocated 217451 MB successfully, after larger attempt(s) failed.
 635 variants loaded from .bim file.
-7495 people (3993 males, 3502 females) loaded from .fam.
+7480 people (3988 males, 3492 females) loaded from .fam.
 Using 1 thread (no multithreaded calculations invoked).
-Before main variant filters, 7495 founders and 0 nonfounders present.
+Before main variant filters, 7480 founders and 0 nonfounders present.
 Calculating allele frequencies... 0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99% done.
-Total genotyping rate is 0.991921.
---freq: Allele frequencies (founders only) written to fineMapping/SAS_5_frq.frq
-.
-... parse reference file: fineMapping/EUR_5_ref.bim ...
-... 891 SNPs in the fine-mapping region read from fineMapping/EUR_5_ref.bim ...
+Total genotyping rate is 0.991931.
+--freq: Allele frequencies (founders only) written to
+fineMapping/ld/SAS_5_frq.frq .
+... parse reference file: fineMapping/ld/EUR_5_ref.bim ...
+... 891 SNPs in the fine-mapping region read from fineMapping/ld/EUR_5_ref.bim ...
 ... 1023 SNPs in the fine-mapping region read from test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt ...
-... parse reference file: fineMapping/AFR_5_ref.bim ...
-... 301 SNPs in the fine-mapping region read from fineMapping/AFR_5_ref.bim ...
+... parse reference file: fineMapping/ld/AFR_5_ref.bim ...
+... 301 SNPs in the fine-mapping region read from fineMapping/ld/AFR_5_ref.bim ...
 ... 1381 SNPs in the fine-mapping region read from test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt ...
-... parse reference file: fineMapping/SAS_5_ref.bim ...
-... 635 SNPs in the fine-mapping region read from fineMapping/SAS_5_ref.bim ...
+... parse reference file: fineMapping/ld/SAS_5_ref.bim ...
+... 635 SNPs in the fine-mapping region read from fineMapping/ld/SAS_5_ref.bim ...
 ... 1012 SNPs in the fine-mapping region read from test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt ...
 ... 926 common SNPs in the reference and sumstats ...
-... parse LD file: fineMapping/EUR_5.ld.bin ...
-... (891,891) LD matrix read from fineMapping/EUR_5.ld.bin ...
-... parse LD file: fineMapping/AFR_5.ld.bin ...
-... (301,301) LD matrix read from fineMapping/AFR_5.ld.bin ...
-... parse LD file: fineMapping/SAS_5.ld.bin ...
-... (635,635) LD matrix read from fineMapping/SAS_5.ld.bin ...
+... parse LD file: fineMapping/ld/EUR_5.ld.bin ...
+... (891,891) LD matrix read from fineMapping/ld/EUR_5.ld.bin ...
+... parse LD file: fineMapping/ld/AFR_5.ld.bin ...
+... (301,301) LD matrix read from fineMapping/ld/AFR_5.ld.bin ...
+... parse LD file: fineMapping/ld/SAS_5.ld.bin ...
+... (635,635) LD matrix read from fineMapping/ld/SAS_5.ld.bin ...
 * Mult-step model fitting *
 ... fit SuSiEx model with 5 signals...
 --- iter-1 ---
