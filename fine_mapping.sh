@@ -267,6 +267,10 @@ R
 library(data.table)
 library(dplyr)
 library(ggplot2)
+library(tidyr)
+library(purrr)
+library(stringr)
+
 
 # List all .summary files in the directory
 files_summary <- list.files("fineMapping/results/", 
@@ -321,37 +325,98 @@ results_summary <-  lapply(files_summary, process_file) %>%
                       do.call(rbind,.)
 
 
-# ------------------------------
-head(results_summary)
-# cols useful for plotting:
+##############################
+##### PLOTS ##################
+# ----------------
+# ------- Plot the relationship between:
 # CS_LENGTH - number of SNPs in the credible set
 # CS_PURITY - purity of the credible set
 # MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set.
-# CHR BP_START BP_END
-# -LOG10P
-
-# --------
-# Plot the relationship between:
-# CS_LENGTH - number of SNPs in the credible set
-# CS_PURITY - purity of the credible set
-# MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set.
+# ----------------
 
 png("fineMapping/plots/length_purity_maxPIP.png", width = 1000, height = 600, res = 150)
 
-ggplot(results_summary, aes(x = CS_PURITY, y = MAX_PIP, size = CS_LENGTH)) +
-  geom_point(alpha = 0.6, colour = "deepskyblue3") +  
+# Edit below to colour by proximity in the genome
+results_summary %>%
+  arrange(as.numeric(CHR)) %>%
+  mutate(CHR = factor(CHR, levels = unique(CHR))) %>%
+ggplot(., aes(x = CS_PURITY, y = MAX_PIP, size = CS_LENGTH)) +
+  geom_point(alpha = 0.6, aes(colour = CHR)) +  
   scale_size_continuous(range = c(1, 10)) +  
   labs(
     x = "Credible Set Purity",
     y = "Maximum Posterior Inclusion Probability",
-    size = "Number of SNPs\nin credible set\n(min=1; max=170)"
+    size = "Number of SNPs\nin credible set\n(min=1; max=170)",
+    colour = "Chromosome"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    # Arrange the legends side by side and wrap CHR legend into two columns
+    legend.position = "right", # Place legends at the bottom
+    legend.box = "horizontal",  # Arrange legends horizontally
+  ) +
+  guides(
+    # Set the legend for CHR (color) to have 2 columns
+    colour = guide_legend(ncol = 2, order = 2), 
+    size = guide_legend(order = 1),  # Ensure size legend appears first
+  )
 
 dev.off()
 
-# --------
+# ----------------
+# -------- Plot the probability the top SNP in the credible set is causal in each ancestry 
+# ----------------
 # Determine which ancestries were used in the fine mapping,
 # do this by seeing where NA occurs in eg. -LOG10P col
-# maybe also combine with POST-HOC_PROB_POP1,2,3 cols - look up what these are
+# maybe also combine with POST-HOC_PROB_POP1,2,3 cols:
+# POST-HOC_PROB_POP${i}: Post hoc probability credible set manifest causal in population ${i}.
+# The order of input to SuSiEx was EUR, AFR, SAS
+
+ancestries <- c("EUR", "AFR", "SAS")
+
+results_summary <- results_summary %>%
+  mutate(ANCESTRY = ALT_ALLELE) %>%
+  separate(ANCESTRY, into = ancestries, sep = ",") %>%
+  mutate(ANCESTRY = pmap_chr(across(all_of(ancestries)), function(...) {
+    values <- c(...)
+    present_ancestries <- ancestries[values != "NA"]  # Check which are not NA
+    if (length(present_ancestries) > 0) {
+      paste(present_ancestries, collapse = ",")  # Concatenate present ancestries
+    } else {
+      "None"  # If all are NA
+    }
+  })) %>%
+    dplyr::select(-c("EUR", "AFR", "SAS"))
+
  
+png("fineMapping/plots/POST-HOC_PROB_POP.png", width = 1000, height = 800, res = 150)
+
+results_summary %>%
+  mutate(LOCATION = str_glue("{CHR}:{BP_START}:{BP_END}")) %>%
+  arrange(as.numeric(CHR), as.numeric(BP_START)) %>%
+  mutate(LOCATION = factor(LOCATION, levels = LOCATION)) %>%
+  pivot_longer(
+    cols = starts_with("POST-HOC_PROB_POP"),  
+    names_to = "POST_HOC_PROB_POP_ANCESTRY",  
+    values_to = "POST_HOC_PROB_POP_CS"        
+  ) %>%
+  mutate(POST_HOC_PROB_POP_ANCESTRY = ancestries[as.integer(str_extract(POST_HOC_PROB_POP_ANCESTRY, "\\d+"))]) %>%
+  mutate(POST_HOC_PROB_POP_ANCESTRY = factor(POST_HOC_PROB_POP_ANCESTRY, levels = unique(POST_HOC_PROB_POP_ANCESTRY))) %>%
+  ggplot(data = .) +
+    geom_point(aes(x = LOCATION, 
+                  y = POST_HOC_PROB_POP_CS, 
+                  shape = POST_HOC_PROB_POP_ANCESTRY,
+                  color = ANCESTRY)) + 
+    labs(
+      x = "Fine mapped region",
+      y = "Post-hoc probability credible set is causal",
+      shape = "Ancestry",
+      color = "Ancestries of LD references\nused in SuSiEx"
+    ) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  
+dev.off()
+
+# ----------------
+# 
