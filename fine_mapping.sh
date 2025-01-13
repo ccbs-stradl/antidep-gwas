@@ -121,7 +121,7 @@ plink2 \
   --psam reference/ukb_imp_v3.qc.geno02_EUR.psam \
   --pvar reference/ukb_imp_v3.qc.geno02_EUR.pvar.zst \
   --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero \
-	--threads 8
+  --threads 8
 
 # fixed-N06A-EUR.human_g1k_v37.neff08_noZero.log:
 # Warning: 5001 top variant IDs in --clump file missing from main dataset.  IDs
@@ -270,7 +270,7 @@ library(ggplot2)
 library(tidyr)
 library(purrr)
 library(stringr)
-
+# -------------
 
 # List all .summary files in the directory
 files_summary <- list.files("fineMapping/results/", 
@@ -418,5 +418,193 @@ results_summary %>%
   
 dev.off()
 
-# ----------------
-# 
+####################################
+### LOCUS ZOOM PLOTS ###############
+
+# List all .summary files in the directory
+files_cs <- list.files("fineMapping/results/", 
+                            pattern = "\\.cs$", 
+                            full.names = TRUE)
+
+# Define a function to process each file
+process_file_cs <- function(file) {
+  # Read the file line by line
+  results <- fread(file)
+  
+  # Check if the file is NULL/FAIL
+  if (nrow(results) == 0) {
+    # Skip files that are NULL or FAIL
+    message(paste("Skipping file (it has no results)):", file))
+    return(NULL)
+  }
+  
+  # Extract CHR, BP_START, and BP_END from the file name
+  chr_parts <- stringr::str_match(file, "cs95_(\\d+):(\\d+):(\\d+)\\.cs")
+  
+  # Step 5: Use dplyr to add the new columns for CHR, BP_START, and BP_END
+  results <- results %>%
+    mutate(
+      CHR = as.numeric(chr_parts[2]),
+      BP_START = as.integer(chr_parts[3]),
+      BP_END = as.integer(chr_parts[4])
+    )
+  
+  # Return the processed data
+  return(results)
+}
+
+# Apply the process_file function to all files using lapply
+results_cs <-  lapply(files_cs, process_file_cs) %>%
+                      do.call(rbind,.)
+
+
+# Plot a locus zoom plot for the first credible set result
+test_cs <- results_cs %>%
+          filter(CHR == 1, BP_START == 190528084) %>%
+          rename(CHROM = CHR, POS = BP) %>%
+          separate(`-LOG10P`, into = paste0("logP_", ancestries), sep = ",") %>%
+          mutate(P = as.numeric(logP_EUR))
+
+test_cs %>%
+  arrange(desc(OVRL_PIP)) %>%
+  slice(1)
+
+library(topr)
+topr::locuszoom(
+  df = test_cs,
+  chr = 1,
+  xmin = 190528084,
+  xmax = 190728084,
+  log_trans_p = FALSE,
+  build = 37
+)
+
+# Edit to read in file with all SNPs
+files_snp <- list.files("fineMapping/results/", 
+                            pattern = "\\.snp$", 
+                            full.names = TRUE)
+
+# Define a function to process each file
+process_file_snp <- function(file) {
+  # Read the file line by line
+  results <- fread(file)
+  
+  # Check if the file is NULL/FAIL
+  if (nrow(results) == 0 | ncol(results) == 2) {
+    # Skip files that are NULL or FAIL
+    message(paste("Skipping file (it has no results)):", file))
+    return(NULL)
+  }
+  
+  # Extract CHR, BP_START, and BP_END from the file name
+  chr_parts <- stringr::str_match(file, "cs95_(\\d+):(\\d+):(\\d+)\\.snp")
+  
+  # Step 5: Use dplyr to add the new columns for CHR, BP_START, and BP_END
+  results <- results %>%
+    mutate(
+      CHR = as.numeric(chr_parts[2]),
+      BP_START = as.integer(chr_parts[3]),
+      BP_END = as.integer(chr_parts[4])
+    )
+  
+  # Return the processed data
+  return(results)
+}
+
+# Apply the process_file function to all files using lapply
+results_snp <-  lapply(files_snp, process_file_snp) 
+
+test_snp <- results_snp[[1]]
+
+snps <- test_snp %>%
+  arrange(desc(`PIP(CS1)`)) %>%
+  pull(SNP)
+
+
+writeLines(snps, "test/ld_snps.txt")
+
+# Add r2 column to results, conduct in PLINK
+system2("plink2", # edit to make this a variable for where plink2 is stored locally
+        args = c(
+          "--bfile", "reference/ukb_imp_v3.qc.geno02.mind02_EUR_1",
+          "--r2-phased",
+          "--ld-snp", snps[1],
+          "--ld-window-kb", "1000",
+          "--ld-window-r2", "0.2", # r^2 < 0.2 is filtered out
+          "--extract", "test/ld_snps.txt",
+          "--out", "test/ld_results_test"
+        )
+)
+
+ld_results <- fread("test/ld_results_test.vcor")
+
+# to get the p-values for all the SNPs we need to load in the gwas sumstats!
+# test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt
+sumstats <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt")
+
+# Add this to the test_snp dataframe
+test_joined <- test_snp %>%
+  left_join(.,ld_results, join_by(SNP == ID_B)) %>%
+  left_join(., sumstats, by = "SNP") %>%
+  dplyr::select(-ends_with(".y")) %>%
+  rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+  filter(CHR == 1, BP_START == 190528084) %>%
+  left_join(test_cs, join_by(SNP)) %>%
+  dplyr::select(-ends_with(".y")) %>%
+  rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+  dplyr::select(SNP, 
+                CHROM = CHR,
+                POS = BP,
+                P,
+                R2 = PHASED_R2,
+                PIP_CS1 = `PIP(CS1)`,
+                OVRL_PIP,
+                CS_PIP) %>%
+  mutate(R2 = ifelse(SNP == snps[1], 1, R2)) %>%
+  mutate(R2 = ifelse(is.na(R2), 0, R2)) %>%
+  mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
+  
+# ----- Locus plot:
+# Loop over ancestries
+# Loop over fine mapped regions
+
+lz_plot <- topr::locuszoom(
+  df = test_joined,
+  chr = 1,
+  xmin = 190528084,
+  xmax = 190728084,
+  log_trans_p = TRUE,
+  build = 37,
+  alpha = 0.5,
+  extract_plots = TRUE
+)$main_plot
+
+
+# PIP plot:
+bounding_boxes <- test_joined %>%
+  filter(PIP_color == "CS_SNP") %>%
+  summarize(
+    xmin = min(POS)-5000,
+    xmax = max(POS)+5000,
+    ymin = min(PIP_CS1)-0.01,
+    ymax = max(PIP_CS1)+0.01
+  )
+
+pip_plot <- ggplot(test_joined) +
+  geom_point(aes(x = POS, y = PIP_CS1, color = PIP_color))+
+  geom_rect(data = bounding_boxes, 
+              aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), 
+              alpha = 0, color = "black", inherit.aes = FALSE) +
+  labs(x = "Position (BP)",
+  y = "PIP",
+  color = "SNP in credible set") +
+  theme_minimal()
+
+library(gridExtra)
+
+png("fineMapping/plots/test_region_plot.png", width = 2300, height = 1600, res = 300)
+grid.arrange(lz_plot, pip_plot, ncol = 1)
+dev.off()
+
+# Notes:
+# topr adds it's own gene annotations.. can we override this with the mBAT-combo results?
