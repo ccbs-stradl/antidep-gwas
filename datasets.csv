@@ -37,7 +37,8 @@ GenScot,N06AA,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06AA-QCdGS20K-noGSindividualsOv
 GenScot,N06AB,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06AB-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie.gz,rmUKBB_2309,GRCh38,EUR,4845,14276
 GenScot,N06A,GS20K_TOPMedFreeze5b_nomono_I1-bt-N06A-QCdGS20K-noGSindividualsOverlappingWithUKB500K.regenie.gz,rmUKBB_2309,GRCh38,EUR,7960,11161
 BBJ,N06A,GWASsummary_ATC_N06A_Japanese_SakaueKanai2020.auto.txt.gz,SK2020,GRCh37,EAS,3288,175438
-FinnGen,N06A,summary_stats-finngen_R9_ANTIDEPRESSANTS.gz,R9,GRCh38,EUR,131176,337396
+FinnGen,N06A,summary_stats-finngen_R9_ANTIDEPRESSANTS.gz,R9,GRCh38,EUR,106785,88536
+FinnGen,N06A,finngen_R12_ANTIDEPRESSANTS.gz,R12,GRCh38,EUR,149403,111976
 UKB,N06AA,ukb21007_topmed-N06AA-AFR-bt-atc_antidep-rf_hgdp1kg_clusters-noPGC.regenie.tsv.gz,21007_2309,GRCh38,AFR,521,2211
 UKB,N06AA,ukb21007_topmed-N06AA-EUR-bt-atc_antidep-rf_hgdp1kg_clusters-noPGC.regenie.tsv.gz,21007_2309,GRCh38,EUR,35970,175211
 UKB,N06A,ukb21007_topmed-N06A-AFR-bt-atc_antidep-rf_hgdp1kg_clusters-noPGC.regenie.tsv.gz,21007_2309,GRCh38,AFR,730,2004
