@@ -264,6 +264,7 @@ grep -L "NULL" fineMapping/results/*.summary | wc -l
 # ------------------------------------------
 R
 
+library(cowplot)
 library(data.table)
 library(dplyr)
 library(ggplot2)
@@ -448,119 +449,159 @@ dev.off()
 ####################################
 ### LOCUS ZOOM PLOTS ###############
 
-# Plot a locus zoom plot for the first credible set result
-test_cs <- results_cs %>%
-          filter(CHR == 1, BP_START == 190528084) %>%
-          rename(CHROM = CHR, POS = BP) %>%
-          separate(`-LOG10P`, into = paste0("logP_", ancestries), sep = ",") %>%
-          mutate(P = as.numeric(logP_EUR))
+# Loop over fine mapped regions, creating a new plot file for each containing:
 
-test_cs %>%
-  arrange(desc(OVRL_PIP)) %>%
-  slice(1)
+# Plot a region plot of -log10(p) vs SNP for each ancestry (1 ancestry plot per row)
+# Another option is to overlay ancestries on top of each other and not colour by R2, but that might be messy?
+# Bottom row is PIP vs SNP plot (the PIP is the overall PIP from susieX, a combination of all ancestries)s
 
-library(topr)
-topr::locuszoom(
-  df = test_cs,
-  chr = 1,
-  xmin = 190528084,
-  xmax = 190728084,
-  log_trans_p = FALSE,
-  build = 37
-)
+# Define fine mapped regions:
+# These will be each element of results$snp and results$cs
+# They should be in the same order
 
-
-test_snp <- results_snp[[1]]
-
-snps <- test_snp %>%
-  arrange(desc(`PIP(CS1)`)) %>%
-  pull(SNP)
-
-
-writeLines(snps, "test/ld_snps.txt")
-
-# Add r2 column to results, conduct in PLINK
-system2("plink2", # edit to make this a variable for where plink2 is stored locally
-        args = c(
-          "--bfile", "reference/ukb_imp_v3.qc.geno02.mind02_EUR_1",
-          "--r2-phased",
-          "--ld-snp", snps[1],
-          "--ld-window-kb", "1000",
-          "--ld-window-r2", "0.2", # r^2 < 0.2 is filtered out
-          "--extract", "test/ld_snps.txt",
-          "--out", "test/ld_results_test"
-        )
-)
-
-ld_results <- fread("test/ld_results_test.vcor")
-
-# to get the p-values for all the SNPs we need to load in the gwas sumstats!
+# ------
+# To get the p-values for all the SNPs we need to load in the gwas sumstats
+# Note not all these SNPs were included in the fine mapping, 
+# perhaps indicate the SNPs that were included on the plot
 # test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt
-sumstats <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt")
+sumstats <- lapply(ancestries, function(ancestry){ # change input to actual path in nextflow process
+  fread(paste0("test/fixed-N06A-",ancestry,".human_g1k_v37.neff08_noZero.txt")) 
+  })
+names(sumstats) <- ancestries
 
-# Add this to the test_snp dataframe
-test_joined <- test_snp %>%
-  left_join(.,ld_results, join_by(SNP == ID_B)) %>%
-  left_join(., sumstats, by = "SNP") %>%
-  dplyr::select(-ends_with(".y")) %>%
-  rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-  filter(CHR == 1, BP_START == 190528084) %>%
-  left_join(test_cs, join_by(SNP)) %>%
-  dplyr::select(-ends_with(".y")) %>%
-  rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-  dplyr::select(SNP, 
-                CHROM = CHR,
-                POS = BP,
-                P,
-                R2 = PHASED_R2,
-                PIP_CS1 = `PIP(CS1)`,
-                OVRL_PIP,
-                CS_PIP) %>%
-  mutate(R2 = ifelse(SNP == snps[1], 1, R2)) %>%
-  mutate(R2 = ifelse(is.na(R2), 0, R2)) %>%
-  mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
-  
-# ----- Locus plot:
-# Loop over ancestries
-# Loop over fine mapped regions
+# Loop over each fine mapped region
+for(i in 1:length(results$cs)){
 
-lz_plot <- topr::locuszoom(
-  df = test_joined,
-  chr = 1,
-  xmin = 190528084,
-  xmax = 190728084,
-  log_trans_p = TRUE,
-  build = 37,
-  alpha = 0.5,
-  extract_plots = TRUE
-)$main_plot
+  cs <- results$cs[[i]] %>%
+              rename(CHROM = CHR, POS = BP) %>%
+              separate(`-LOG10P`, into = paste0("logP_", ancestries), sep = ",") %>%
+              mutate(P = as.numeric(logP_EUR))
+
+  snp <- results$snp[[i]]
+
+  # Get CHR:BP:BP for the fine mapped region
+  CHR <- unique(cs$CHR)
+  BP_START <- unique(cs$BP_START)
+  BP_END <- unique(cs$BP_END)
+  region <- paste0(CHR, ":", BP_START, ":", BP_END)
+
+  # Region plot -log10(p) vs snp requires R^2 between SNPs
+  # Get a list of SNPs that were included in the fine mapping
+  # arrange by PIP so the first row is the SNP with highest PIP
+  snp_list <- snp %>%
+    arrange(desc(`PIP(CS1)`)) %>%
+    pull(SNP)
+
+  writeLines(snp_list, paste0("tmp/snp_list_", region, ".txt"))
+
+  # Per ancestry:
+  region_plots <- lapply(ancestries, function(ancestry){
+    # Add r2 column to results, conduct in PLINK
+    system2("plink2", # edit to make this a variable for where plink2 is stored locally
+            args = c(
+              "--bfile", paste0("reference/ukb_imp_v3.qc.geno02.mind02_", ancestry ,"_", CHR),
+              "--r2-phased",
+              "--ld-snp", snps[1],
+              "--ld-window-kb", "1000",
+              "--ld-window-r2", "0.2", # r^2 < 0.2 is filtered out
+              "--extract", paste0("tmp/snp_list_", region, ".txt"),
+              "--out", paste0("tmp/ld_results",ancestry, region, ".txt")
+            )
+    )
+
+    # Define the path to the LD results file
+    ld_results_file <- paste0("tmp/ld_results", ancestry, region, ".txt.vcor")
+
+    # Check if the LD results file exists
+    if (file.exists(ld_results_file)) {
+      # If the file exists, load the LD results
+      ld_results <- fread(ld_results_file)
+      
+      # Perform the usual joining logic
+      joined_results <- snp %>%
+        left_join(., ld_results, by = c("SNP" = "ID_B")) %>%
+        left_join(., sumstats[[ancestry]], by = "SNP") %>%
+        dplyr::select(-ends_with(".y")) %>%
+        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+        filter(CHR == 1, BP_START == 190528084) %>%
+        left_join(test_cs, by = "SNP") %>%
+        dplyr::select(-ends_with(".y")) %>%
+        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+        dplyr::select(SNP, 
+                      CHROM = CHR,
+                      POS = BP,
+                      P,
+                      R2 = PHASED_R2,
+                      PIP_CS1 = `PIP(CS1)`,
+                      OVRL_PIP,
+                      CS_PIP) %>%
+        mutate(R2 = ifelse(SNP == snps[1], 1, R2)) %>%
+        mutate(R2 = ifelse(is.na(R2), 0, R2)) %>%
+        mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
+    } else {
+      # If the file does not exist, create a default joined_results with R2 set to NA for all rows
+      joined_results <- snp %>%
+        left_join(., sumstats[[ancestry]], by = "SNP") %>%
+        dplyr::select(-ends_with(".y")) %>%
+        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+        filter(CHR == 1, BP_START == 190528084) %>%
+        left_join(test_cs, by = "SNP") %>%
+        dplyr::select(-ends_with(".y")) %>%
+        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+        dplyr::select(SNP, 
+                      CHROM = CHR,
+                      POS = BP,
+                      P,
+                      R2 = NA,  # R2 column with NA for all rows
+                      PIP_CS1 = `PIP(CS1)`,
+                      OVRL_PIP,
+                      CS_PIP) %>%
+        mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
+    }
+
+      
+    # Region plot (one per ancestry):
+    region_plot <- topr::locuszoom(
+      df = joined_results,
+      chr = CHR,
+      xmin = BP_START,
+      xmax = BP_END,
+      log_trans_p = TRUE,
+      build = 37,
+      alpha = 0.5,
+      extract_plots = TRUE,
+      title = ancestry
+    )$main_plot
+
+    return(region_plot)
+  })
+
+  # PIP plot (one for all ancestries):
+  bounding_boxes <- joined_results %>%
+    filter(PIP_color == "CS_SNP") %>%
+    summarize(
+      xmin = min(POS)-5000,
+      xmax = max(POS)+5000,
+      ymin = min(PIP_CS1)-0.01,
+      ymax = max(PIP_CS1)+0.01
+    )
+
+  pip_plot <- ggplot(joined_results) +
+    geom_point(aes(x = POS, y = PIP_CS1, color = PIP_color))+
+    geom_rect(data = bounding_boxes, 
+                aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), 
+                alpha = 0, color = "black", inherit.aes = FALSE) +
+    labs(x = paste0("Position (BP) on CHR: ", CHR),
+    y = "PIP",
+    color = "SNP in credible set") +
+    theme_minimal()
 
 
-# PIP plot:
-bounding_boxes <- test_joined %>%
-  filter(PIP_color == "CS_SNP") %>%
-  summarize(
-    xmin = min(POS)-5000,
-    xmax = max(POS)+5000,
-    ymin = min(PIP_CS1)-0.01,
-    ymax = max(PIP_CS1)+0.01
-  )
+  png(paste0("fineMapping/plots/region_plot", region, ".png"), width = 2300, height = 2300, res = 300)
+  cowplot::plot_grid(plotlist = c(region_plots, list(pip_plot)), ncol = 1)
+  dev.off()
 
-pip_plot <- ggplot(test_joined) +
-  geom_point(aes(x = POS, y = PIP_CS1, color = PIP_color))+
-  geom_rect(data = bounding_boxes, 
-              aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), 
-              alpha = 0, color = "black", inherit.aes = FALSE) +
-  labs(x = "Position (BP)",
-  y = "PIP",
-  color = "SNP in credible set") +
-  theme_minimal()
-
-library(gridExtra)
-
-png("fineMapping/plots/test_region_plot.png", width = 2300, height = 1600, res = 300)
-grid.arrange(lz_plot, pip_plot, ncol = 1)
-dev.off()
+}
 
 # Notes:
 # topr adds it's own gene annotations.. can we override this with the mBAT-combo results?
