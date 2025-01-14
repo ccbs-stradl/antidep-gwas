@@ -414,6 +414,8 @@ plotAncestryCausal <-  function(summary_results = results$summary){
     dplyr::select(-c("EUR", "AFR", "SAS")) %>%
     # create a column for location on the genome
     mutate(LOCATION = str_glue("{CHR}:{BP_START}:{BP_END}")) %>%
+    # Ensure CHR and BP are in correct order on x-axis
+    arrange(as.numeric(CHR), as.numeric(BP_START)) %>%
     mutate(LOCATION = factor(LOCATION, levels = LOCATION)) %>%
     # Reshape the data so that POST-HOC_PROB_POP columns are turned into long format
     pivot_longer(
