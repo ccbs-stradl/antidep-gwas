@@ -271,58 +271,77 @@ library(tidyr)
 library(purrr)
 library(stringr)
 # -------------
-
-# List all .summary files in the directory
-files_summary <- list.files("fineMapping/results/", 
-                            pattern = "summary", 
-                            full.names = TRUE)
-
 # Define a function to process each file
-process_file <- function(file) {
-  # Read the file line by line
-  results_summary <- readLines(file)
-  
-  # Step 1: Extract the comment line (the first line starting with '#')
-  comment_line <- results_summary[1]
+process_file <- function(file, file_ext) {
 
-    # Check if the comment_line starts with "#chr"
-  if (results_summary[2] %in% c("NULL", "FAIL")) {
-    # Skip files that are NULL or FAIL
-    message(paste("Skipping file (it has no results)):", file))
+  # Error handling using tryCatch to handle any potential file read errors
+  tryCatch({
+
+    # Process .summary files
+    if (file_ext == "summary") {
+      # Read the file as lines
+      results <- fread(file, skip = 1) 
+      # Process .cs or .snp files
+    } else if (file_ext == "cs" | file_ext == "snp") {
+      # Read in the file as a data.frame
+      results <- fread(file)
+    }
+      # Check if the file has no rows (empty or failed file), in which case we skip it
+      # Some of the SNP files are not empty, and contain only CHR and BP cols
+      # These can be removed too because their corresponding .cs files contain NULL
+      if (nrow(results) == 0 | (file_ext == "snp" & ncol(results) == 2)) {
+        message(paste("Skipping file (it has no results):", file))
+        return(NULL)
+      }
+    
+    # Extract chromosome (CHR), start position (BP_START), and end position (BP_END)
+    # These values are extracted from the file name using regular expressions
+    # The regex pattern matches filenames like: "cs95_1:1000:2000.cs" or "cs95_1:1000:2000.snp"
+    chr_parts <- str_match(file, "(\\d+):(\\d+):(\\d+)\\.(cs|snp|summary)")
+      
+    # Add the new columns to the data
+    results <- results %>%
+      mutate(
+        CHR = as.numeric(chr_parts[2]),
+        BP_START = as.integer(chr_parts[3]),
+        BP_END = as.integer(chr_parts[4])
+      )
+
+    return(results)
+
+  }, error = function(e) {
+    message(paste("Error processing file:", file, "Error:", e$message))
     return(NULL)
-  }
-  
-  # Step 2: The second line contains the column names, so split it into column names
-  col_names <- unlist(strsplit(results_summary[2], "\\s+"))
-  
-  # Step 3: The remaining lines are the data
-  data_lines <- results_summary[-c(1, 2)]  # Remove the first two lines (comment and column names)
-  
-  # Read the data lines into a data.table, and convert it to a data frame 
-  results_summary <- fread(text = paste(data_lines, collapse = "\n"), 
-                          col.names = col_names) %>%
-                      as.data.frame()
-  
-  # Step 4: Extract CHR, BP_START, and BP_END from the comment line
-  # Assuming the format is like "#chr11:46131891-46331891", we'll extract chr, start, and end
-  chr_info <- sub("^# chr", "", comment_line)  # Remove the "# chr" part
-  chr_parts <- unlist(strsplit(chr_info, "[:-]"))  # Split by colon and dash
-  
-  # Step 5: Use dplyr to add the new columns for CHR, BP_START, and BP_END
-  results_summary <- results_summary %>%
-    mutate(
-      CHR = chr_parts[1],
-      BP_START = as.integer(chr_parts[2]),
-      BP_END = as.integer(chr_parts[3])
-    )
-  
-  # Return the processed data
-  return(results_summary)
+  })
 }
 
-# Apply the process_file function to all files using lapply
-results_summary <-  lapply(files_summary, process_file) %>%
-                      do.call(rbind,.)
+format_results <- function(path){
+  file_extensions <- c("summary", "cs", "snp")
+
+  results <- lapply(file_extensions, function(ext){
+            paths <- list.files(path, 
+              pattern = paste0("\\.", ext ,"$"), 
+              full.names = TRUE)
+
+            processed_files <- lapply(paths, function(path){
+              process_file(file = path, file_ext = ext)
+              })
+            # Clean up NULL values (failed files)
+            processed_files <- processed_files[!sapply(processed_files, is.null)]
+
+            return(processed_files)
+            })
+
+  names(results) <- file_extensions
+  results$summary <- do.call(rbind, results$summary)
+  return(results)
+}
+
+path_to_susiex_results <- "fineMapping/results/"
+results <- format_results(path_to_susiex_results)
+
+# Check that each processed file type has the same number of fine mapped regions 
+nrow(results$summary) == length(results$cs) && length(results$cs) == length(results$snp)
 
 
 ##############################
@@ -334,33 +353,34 @@ results_summary <-  lapply(files_summary, process_file) %>%
 # MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set.
 # ----------------
 
-png("fineMapping/plots/length_purity_maxPIP.png", width = 1000, height = 600, res = 150)
-
-# Edit below to colour by proximity in the genome
-results_summary %>%
+plotLengthPurityMaxPIP <-  function(summary_results = results$summary){
+  summary_results %>%
   arrange(as.numeric(CHR)) %>%
   mutate(CHR = factor(CHR, levels = unique(CHR))) %>%
-ggplot(., aes(x = CS_PURITY, y = MAX_PIP, size = CS_LENGTH)) +
-  geom_point(alpha = 0.6, aes(colour = CHR)) +  
-  scale_size_continuous(range = c(1, 10)) +  
-  labs(
-    x = "Credible Set Purity",
-    y = "Maximum Posterior Inclusion Probability",
-    size = "Number of SNPs\nin credible set\n(min=1; max=170)",
-    colour = "Chromosome"
-  ) +
-  theme_minimal() +
-  theme(
-    # Arrange the legends side by side and wrap CHR legend into two columns
-    legend.position = "right", # Place legends at the bottom
-    legend.box = "horizontal",  # Arrange legends horizontally
-  ) +
-  guides(
-    # Set the legend for CHR (color) to have 2 columns
-    colour = guide_legend(ncol = 2, order = 2), 
-    size = guide_legend(order = 1),  # Ensure size legend appears first
-  )
+  ggplot(., aes(x = CS_PURITY, y = MAX_PIP, size = CS_LENGTH)) +
+    geom_point(alpha = 0.6, aes(colour = CHR)) +  
+    scale_size_continuous(range = c(1, 10)) +  
+    labs(
+      x = "Credible Set Purity",
+      y = "Maximum Posterior Inclusion Probability",
+      size = "Number of SNPs\nin credible set\n(min=1; max=170)",
+      colour = "Chromosome"
+    ) +
+    theme_minimal() +
+    theme(
+      # Arrange the legends side by side and wrap CHR legend into two columns
+      legend.position = "right", # Place legends at the bottom
+      legend.box = "horizontal",  # Arrange legends horizontally
+    ) +
+    guides(
+      # Set the legend for CHR (color) to have 2 columns
+      colour = guide_legend(ncol = 2, order = 2), 
+      size = guide_legend(order = 1),  # Ensure size legend appears first
+    )
+}
 
+png("fineMapping/plots/length_purity_maxPIP.png", width = 1000, height = 600, res = 150)
+  plotLengthPurityMaxPIP(results$summary)
 dev.off()
 
 # ----------------
@@ -370,93 +390,61 @@ dev.off()
 # do this by seeing where NA occurs in eg. -LOG10P col
 # maybe also combine with POST-HOC_PROB_POP1,2,3 cols:
 # POST-HOC_PROB_POP${i}: Post hoc probability credible set manifest causal in population ${i}.
-# The order of input to SuSiEx was EUR, AFR, SAS
 
-ancestries <- c("EUR", "AFR", "SAS")
+ancestries <- c("EUR", "AFR", "SAS") # this variable will be definied further up in the nextflow pipeline, as input for susiex
 
-results_summary <- results_summary %>%
-  mutate(ANCESTRY = ALT_ALLELE) %>%
-  separate(ANCESTRY, into = ancestries, sep = ",") %>%
-  mutate(ANCESTRY = pmap_chr(across(all_of(ancestries)), function(...) {
-    values <- c(...)
-    present_ancestries <- ancestries[values != "NA"]  # Check which are not NA
-    if (length(present_ancestries) > 0) {
-      paste(present_ancestries, collapse = ",")  # Concatenate present ancestries
-    } else {
-      "None"  # If all are NA
-    }
-  })) %>%
-    dplyr::select(-c("EUR", "AFR", "SAS"))
+plotAncestryCausal <-  function(summary_results = results$summary){
+  summary_results %>%
+    # Create a new column called ANCESTRY which tells us which ancestries have data on that SNP
+    # Many of the columns containing info from all ancestries
+    # are separated by commas for each ancestry, in the order of the susiex command
+    mutate(ANCESTRY = ALT_ALLELE) %>%
+    separate(ANCESTRY, into = ancestries, sep = ",") %>%
+    # If there is no data for that ancestry there is an NA
+    mutate(ANCESTRY = pmap_chr(across(all_of(ancestries)), function(...) {
+      values <- c(...)
+      present_ancestries <- ancestries[values != "NA"]  # Check which are not NA
+      if (length(present_ancestries) > 0) {
+        paste(present_ancestries, collapse = ",")  # Concatenate present ancestries
+      } else {
+        "None"  # If all are NA (this should not happen)
+      }
+    })) %>%
+    # remove the indiviudal ancestry columnms now we have the column we want
+    dplyr::select(-c("EUR", "AFR", "SAS")) %>%
+    # create a column for location on the genome
+    mutate(LOCATION = str_glue("{CHR}:{BP_START}:{BP_END}")) %>%
+    mutate(LOCATION = factor(LOCATION, levels = LOCATION)) %>%
+    # Reshape the data so that POST-HOC_PROB_POP columns are turned into long format
+    pivot_longer(
+      cols = starts_with("POST-HOC_PROB_POP"),  
+      names_to = "POST_HOC_PROB_POP_ANCESTRY",  
+      values_to = "POST_HOC_PROB_POP_CS"        
+    ) %>%
+    mutate(POST_HOC_PROB_POP_ANCESTRY = ancestries[as.integer(str_extract(POST_HOC_PROB_POP_ANCESTRY, "\\d+"))]) %>%
+    mutate(POST_HOC_PROB_POP_ANCESTRY = factor(POST_HOC_PROB_POP_ANCESTRY, levels = unique(POST_HOC_PROB_POP_ANCESTRY))) %>%
+    ggplot(data = .) +
+      geom_point(aes(x = LOCATION, 
+                    y = POST_HOC_PROB_POP_CS, 
+                    shape = POST_HOC_PROB_POP_ANCESTRY,
+                    color = ANCESTRY)) + 
+      labs(
+        x = "Fine mapped region",
+        y = "Post-hoc probability credible set is causal",
+        shape = "Ancestry",
+        color = "Ancestries of LD references\nused in SuSiEx"
+      ) +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+}
 
- 
+
 png("fineMapping/plots/POST-HOC_PROB_POP.png", width = 1000, height = 800, res = 150)
-
-results_summary %>%
-  mutate(LOCATION = str_glue("{CHR}:{BP_START}:{BP_END}")) %>%
-  arrange(as.numeric(CHR), as.numeric(BP_START)) %>%
-  mutate(LOCATION = factor(LOCATION, levels = LOCATION)) %>%
-  pivot_longer(
-    cols = starts_with("POST-HOC_PROB_POP"),  
-    names_to = "POST_HOC_PROB_POP_ANCESTRY",  
-    values_to = "POST_HOC_PROB_POP_CS"        
-  ) %>%
-  mutate(POST_HOC_PROB_POP_ANCESTRY = ancestries[as.integer(str_extract(POST_HOC_PROB_POP_ANCESTRY, "\\d+"))]) %>%
-  mutate(POST_HOC_PROB_POP_ANCESTRY = factor(POST_HOC_PROB_POP_ANCESTRY, levels = unique(POST_HOC_PROB_POP_ANCESTRY))) %>%
-  ggplot(data = .) +
-    geom_point(aes(x = LOCATION, 
-                  y = POST_HOC_PROB_POP_CS, 
-                  shape = POST_HOC_PROB_POP_ANCESTRY,
-                  color = ANCESTRY)) + 
-    labs(
-      x = "Fine mapped region",
-      y = "Post-hoc probability credible set is causal",
-      shape = "Ancestry",
-      color = "Ancestries of LD references\nused in SuSiEx"
-    ) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-  
+  plotAncestryCausal(results$summary)
 dev.off()
 
 ####################################
 ### LOCUS ZOOM PLOTS ###############
-
-# List all .summary files in the directory
-files_cs <- list.files("fineMapping/results/", 
-                            pattern = "\\.cs$", 
-                            full.names = TRUE)
-
-# Define a function to process each file
-process_file_cs <- function(file) {
-  # Read the file line by line
-  results <- fread(file)
-  
-  # Check if the file is NULL/FAIL
-  if (nrow(results) == 0) {
-    # Skip files that are NULL or FAIL
-    message(paste("Skipping file (it has no results)):", file))
-    return(NULL)
-  }
-  
-  # Extract CHR, BP_START, and BP_END from the file name
-  chr_parts <- stringr::str_match(file, "cs95_(\\d+):(\\d+):(\\d+)\\.cs")
-  
-  # Step 5: Use dplyr to add the new columns for CHR, BP_START, and BP_END
-  results <- results %>%
-    mutate(
-      CHR = as.numeric(chr_parts[2]),
-      BP_START = as.integer(chr_parts[3]),
-      BP_END = as.integer(chr_parts[4])
-    )
-  
-  # Return the processed data
-  return(results)
-}
-
-# Apply the process_file function to all files using lapply
-results_cs <-  lapply(files_cs, process_file_cs) %>%
-                      do.call(rbind,.)
-
 
 # Plot a locus zoom plot for the first credible set result
 test_cs <- results_cs %>%
@@ -479,40 +467,6 @@ topr::locuszoom(
   build = 37
 )
 
-# Edit to read in file with all SNPs
-files_snp <- list.files("fineMapping/results/", 
-                            pattern = "\\.snp$", 
-                            full.names = TRUE)
-
-# Define a function to process each file
-process_file_snp <- function(file) {
-  # Read the file line by line
-  results <- fread(file)
-  
-  # Check if the file is NULL/FAIL
-  if (nrow(results) == 0 | ncol(results) == 2) {
-    # Skip files that are NULL or FAIL
-    message(paste("Skipping file (it has no results)):", file))
-    return(NULL)
-  }
-  
-  # Extract CHR, BP_START, and BP_END from the file name
-  chr_parts <- stringr::str_match(file, "cs95_(\\d+):(\\d+):(\\d+)\\.snp")
-  
-  # Step 5: Use dplyr to add the new columns for CHR, BP_START, and BP_END
-  results <- results %>%
-    mutate(
-      CHR = as.numeric(chr_parts[2]),
-      BP_START = as.integer(chr_parts[3]),
-      BP_END = as.integer(chr_parts[4])
-    )
-  
-  # Return the processed data
-  return(results)
-}
-
-# Apply the process_file function to all files using lapply
-results_snp <-  lapply(files_snp, process_file_snp) 
 
 test_snp <- results_snp[[1]]
 
