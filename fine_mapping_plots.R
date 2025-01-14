@@ -1,6 +1,6 @@
 # Loop over each fine mapped region
 for(i in 1:length(results$cs)){
-
+  tryCatch({
   cs <- results$cs[[i]] %>%
               rename(CHROM = CHR, POS = BP) %>%
               separate(`-LOG10P`, into = paste0("logP_", ancestries), sep = ",") %>%
@@ -30,7 +30,7 @@ for(i in 1:length(results$cs)){
             args = c(
               "--bfile", paste0("reference/ukb_imp_v3.qc.geno02.mind02_", ancestry ,"_", CHR),
               "--r2-phased",
-              "--ld-snp", snps[1],
+              "--ld-snp", snp_list[1],
               "--ld-window-kb", "1000",
               "--ld-window-r2", "0.2", # r^2 < 0.2 is filtered out
               "--extract", paste0("tmp/snp_list_", region, ".txt"),
@@ -52,8 +52,7 @@ for(i in 1:length(results$cs)){
         left_join(., sumstats[[ancestry]], by = "SNP") %>%
         dplyr::select(-ends_with(".y")) %>%
         rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        filter(CHR == 1, BP_START == 190528084) %>%
-        left_join(test_cs, by = "SNP") %>%
+        left_join(cs, by = "SNP") %>%
         dplyr::select(-ends_with(".y")) %>%
         rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
         dplyr::select(SNP, 
@@ -73,8 +72,7 @@ for(i in 1:length(results$cs)){
         left_join(., sumstats[[ancestry]], by = "SNP") %>%
         dplyr::select(-ends_with(".y")) %>%
         rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        filter(CHR == 1, BP_START == 190528084) %>%
-        left_join(test_cs, by = "SNP") %>%
+        left_join(cs, by = "SNP") %>%
         dplyr::select(-ends_with(".y")) %>%
         rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
         mutate(R2 = NA) %>%
@@ -91,7 +89,6 @@ for(i in 1:length(results$cs)){
         mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
     }
 
-      
     # Region plot (one per ancestry):
     region_plot <- topr::locuszoom(
       df = joined_results,
@@ -132,5 +129,10 @@ for(i in 1:length(results$cs)){
   png(paste0("fineMapping/plots/region_plot", region, ".png"), width = 2300, height = 2300, res = 300)
   cowplot::plot_grid(plotlist = c(region_plots, list(pip_plot)), ncol = 1)
   dev.off()
+
+  }, error = function(e) {
+    cat("Error in fine map region ID:", i, "., For region: ", region, "., and ancestry: ", ancestry, "\n")
+    cat("Error message:", e$message, "\n")
+  })
 
 }
