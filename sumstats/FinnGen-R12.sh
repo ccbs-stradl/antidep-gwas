@@ -17,7 +17,7 @@ output=$2
     # 12  af_alt_cases
     # 13  af_alt_controls
 
-gunzip -c $sumstats | awk -F'\t' 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control"} else if ($1 == 23) {print "chrX", $2, $4, $3, $9, $10, $7, 131176, 337396, $5, $11, NA, $12, $13} else {print "chr"$1, $2, $4, $3, $9, $10, $7, 131176, 337396, $5, $11, NA, $12, $13}}' > $output
+gunzip -c $sumstats | awk -F'\t' 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control"} else if ($1 == 23) {print "chrX", $2, $4, $3, $9, $10, $7, 106785, 88536, $5, $11, NA, $12, $13} else {print "chr"$1, $2, $4, $3, $9, $10, $7, 106785, 88536, $5, $11, NA, $12, $13}}' > $output
 
 # output columns
 # chr
