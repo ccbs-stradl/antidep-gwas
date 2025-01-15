@@ -41,11 +41,13 @@ for(i in 1:length(results$cs)){
     # Define the path to the LD results file
     ld_results_file <- paste0("tmp/ld_results", ancestry, region, ".txt.vcor")
 
+
     # Check if the LD results file exists
     if (file.exists(ld_results_file)) {
       # If the file exists, load the LD results
       ld_results <- fread(ld_results_file)
       
+
       # Perform the usual joining logic
       joined_results <- snp %>%
         left_join(., ld_results, by = c("SNP" = "ID_B")) %>%
@@ -63,7 +65,7 @@ for(i in 1:length(results$cs)){
                       PIP_CS1 = `PIP(CS1)`,
                       OVRL_PIP,
                       CS_PIP) %>%
-        mutate(R2 = ifelse(SNP == snps[1], 1, R2)) %>%
+        mutate(R2 = ifelse(SNP == snp_list[1], 1, R2)) %>%
         mutate(R2 = ifelse(is.na(R2), 0, R2)) %>%
         mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
     } else {
@@ -76,8 +78,8 @@ for(i in 1:length(results$cs)){
         dplyr::select(-ends_with(".y")) %>%
         rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
         mutate(R2 = NA) %>%
-        mutate(R2 = ifelse(SNP == snps[1], 1, R2)) %>%
-        mutate(R2 = ifelse(is.na(R2), 0, R2)) %>%
+        mutate(R2 = ifelse(SNP == snp_list[1], 1, R2)) %>%
+        # mutate(R2 = ifelse(is.na(R2), 0, R2)) %>%
         dplyr::select(SNP, 
                       CHROM = CHR,
                       POS = BP,
@@ -106,7 +108,19 @@ for(i in 1:length(results$cs)){
   })
 
   # PIP plot (one for all ancestries):
-  bounding_boxes <- joined_results %>%
+  PIP_results <- snp %>%
+        left_join(cs, by = "SNP") %>%
+        dplyr::select(-ends_with(".y")) %>%
+        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+        dplyr::select(SNP, 
+                      CHROM = CHR,
+                      POS = BP,
+                      PIP_CS1 = `PIP(CS1)`,
+                      OVRL_PIP,
+                      CS_PIP) %>%
+        mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
+
+  bounding_boxes <- PIP_results %>%
     filter(PIP_color == "CS_SNP") %>%
     summarize(
       xmin = min(POS)-5000,
@@ -115,7 +129,7 @@ for(i in 1:length(results$cs)){
       ymax = max(PIP_CS1)+0.01
     )
 
-  pip_plot <- ggplot(joined_results) +
+  pip_plot <- ggplot(PIP_results) +
     geom_point(aes(x = POS, y = PIP_CS1, color = PIP_color))+
     geom_rect(data = bounding_boxes, 
                 aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), 
@@ -126,12 +140,12 @@ for(i in 1:length(results$cs)){
     theme_minimal()
 
 
-  png(paste0("fineMapping/plots/region_plot", region, ".png"), width = 2300, height = 2300, res = 300)
-  cowplot::plot_grid(plotlist = c(region_plots, list(pip_plot)), ncol = 1)
+  png(paste0("fineMapping/plots/region_plot_", region, ".png"), width = 2300, height = 2300, res = 300)
+  print(cowplot::plot_grid(plotlist = c(region_plots, list(pip_plot)), ncol = 1))
   dev.off()
 
   }, error = function(e) {
-    cat("Error in fine map region ID:", i, "., For region: ", region, "., and ancestry: ", ancestry, "\n")
+    cat("Error in fine map region ID:", i, "., For region: ", region, "\n")
     cat("Error message:", e$message, "\n")
   })
 
