@@ -23,7 +23,7 @@ output=$2
 # 17  LOG10P
 # 18  EXTRA
 
-gunzip -c $sumstats | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control"} else {print $1, $2, $5, $4, $14, $15, 10^(-$17), $11, $12, $3, $8, $9, $7, $8}}' > $output
+gunzip -c $sumstats | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control", "neff"} else {print $1, $2, $5, $4, $14, $15, 10^(-$17), $11, $12, $3, $8, $9, $7, $8, 4 / (1/$11 + 1/$12)}}' > $output
 
 # output columns
 # chr
@@ -40,3 +40,4 @@ gunzip -c $sumstats | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "o
 # imp_info
 # eaf_case
 # eaf_control
+# neff

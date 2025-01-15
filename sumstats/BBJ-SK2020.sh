@@ -24,7 +24,7 @@ output=$2
     # 19  AF.Cases
     # 20  AF.Controls
 
-gunzip -c $sumstats | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control"} else {print $2, $3, $6, $5, $11, $12, $14, 3288, 175438, $4, $8, $9, $19, $20}}' > $output
+gunzip -c $sumstats | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control", "neff"} else {print $2, $3, $6, $5, $11, $12, $14, 3288, 175438, $4, $8, $9, $19, $20, 12910.04}}' > $output
 
 # output columns
 # chr
@@ -41,3 +41,4 @@ gunzip -c $sumstats | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "o
 # imp_info
 # eaf_case
 # eaf_control
+# neff

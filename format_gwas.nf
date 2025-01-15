@@ -19,6 +19,7 @@
       - imp_info
       - eaf_case
       - eaf_control
+      - neff
     
 */
 
@@ -27,7 +28,7 @@ import groovy.json.JsonOutput
 // Input files: sumstats gz, formatting scripts, and meta data csv
 params.sumstats = "sumstats/*.gz"
 params.scripts = "sumstats/*.sh"
-params.meta = "datasets.csv"
+params.datasets = "datasets.csv"
 
 workflow {
 
@@ -43,13 +44,14 @@ workflow {
   SCRIPTS_CH = Channel.fromPath(params.scripts)
     .map { it -> [it.baseName, it] }
 
-  // sumstats meta data, keyed to filekey column
-  META_CH = Channel
-    .fromPath(params.meta)
+  // sumstats datasets information, keyed to filekey column
+  CSV_CH = Channel
+    .fromPath(params.datasets)
+  DATASETS_CH = CSV_CH
     .splitCsv(header: true)
 
   // merge sumstats, scripts, and meta data information
-  SUMSTATS_META_CH = META_CH
+  SUMSTATS_DATA_CH = DATASETS_CH
     .map { it -> [it.dataset, it] }
     .join(SUMSTATS_CH)
     .map { it -> ["${it[1].cohort}-${it[1].version}", it[1], it[2]]}
@@ -58,7 +60,10 @@ workflow {
     .map { it -> it.plus(JsonOutput.toJson(it[2])) }
     
   // run original sumstats through its reformatting script
-  FORMAT_CH = FORMAT(SUMSTATS_META_CH)
+  FORMAT_CH = FORMAT(SUMSTATS_DATA_CH)
+
+  // datasets information table
+  TABLE(SUMSTATS_DATA_CH.combine(CSV_CH))
 }
 
 // Reformat sumstats for GWASVCF input
@@ -83,5 +88,39 @@ process FORMAT {
   cat <<EOF > ${dataset}.json
   ${metajson}
   EOF
+  """
+}
+
+// Dataset information table
+process TABLE {
+  tag "${dataset}"
+  label 'analysis'
+
+  publishDir "format/gwas/${meta.build}"
+
+  cpus = 1
+  memory = 1.GB
+  time = '10m'
+
+  input:
+  tuple val(dataset), val(cohortversion), val(meta), path(sumstats), path(script), val(metajson), path(datasets)
+
+  output:
+  tuple val(dataset), val(meta), path("${dataset}.csv")
+
+  script:
+  """
+  #!Rscript
+
+  library(dplyr)
+  library(readr)
+
+  datasets <- read_csv("${datasets}")
+
+  ds <- datasets |>
+    filter(dataset == "${meta.dataset}") |>
+    mutate(neff = 4 / (1/cases + 1/controls))
+
+  write_csv(ds, "${dataset}.csv")
   """
 }
