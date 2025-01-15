@@ -10,6 +10,10 @@ work/
 vendor/
 bin/
 plugins/
+maps/
+maps
+maps_hg19/
+maps_hg19
 mt/
 meta/
 meta
