@@ -136,30 +136,66 @@ R
 
 library(data.table)
 library(dplyr)
+library(plyranges) # reduce_ranges
+library(BSgenome.Hsapiens.UCSC.hg19) # seqlengths(BSgenome.Hsapiens.UCSC.hg19)
 
 # Read in clumps results
 clumped_data <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps")
 
-# How many clumped regions do we have?
-nrow(clumped_data)
-# 63
-
 loci <- clumped_data %>% 
-  dplyr::select(CHR= `#CHROM`, BP_START=POS, SNP=ID)
+  dplyr::select(CHR= `#CHROM`, POS, SNP=ID) 
+
+
+# grng <- data.frame(seqnames= (1:4), start=c(10, 11, 12, 13), end=c(10, 11, 12, 13)) %>%
+#   as_granges() %>%
+#   set_genome_info(genome = "37") 
+
+# grng %>%
+#   stretch(30)
+# # But produces a negative number.... so is'n't restricted within the chromosome...
+
+# plyranges::mutate(anchor_center(grng), width = 30)
+# # cannot pipe into this function and substitute "grng" with "."
+
+# # plyranges doesn't seem to have set the genome build correctly...?
+# # It seems you can pass any character string to set_genome_info() it's not fetching any useful data
+
+genome <- seqlengths(BSgenome.Hsapiens.UCSC.hg19)
+
+chr_upper_limits <- genome[paste0("chr", 1:22)]
 
 # Extend each locus by 100 kb upstream and downstream
 loci <- loci %>%
-  mutate(BP_END = BP_START + 100000,  # 100 kb downstream
-         BP_START = pmax(0, BP_START - 100000)) %>% # 100 kb upstream (ensure it doesn't go negative) 
+         mutate(BP_END = POS + 100000,  # 100 kb upstream
+                BP_START = pmax(1, POS - 100000)) %>% # 100 kb downstream (ensure it doesn't go below 1) 
+         mutate(BP_END = pmin(BP_END, chr_upper_limits[paste0("chr", CHR)])) %>% # Ensure BP_END does not exceed the chromosome's upper limit
+         mutate(WIDTH = BP_END - BP_START + 1) %>% # get region size (not difference)
          arrange(CHR, BP_START) %>%
-  relocate(CHR, BP_START, BP_END, SNP)
+  relocate(CHR, BP_START, BP_END,  WIDTH, SNP, POS)
 
-# Save lead SNPs as a list to calculate LD between them
-write.table(loci$SNP, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.leading_snps",
-row.names = F, quote = F, sep = "\t", col.names = F)
+# TO DO
+# Example code to get overlapping regions for multiple ancestries
+#
+#
+#
+#
+#
+#
+#
+
+# Reduce ranges to collapse overlapping or nearby regions
+loci_reduced <- as_granges(loci, 
+                        seqnames = CHR,
+                        start = BP_START,
+                        end = BP_END,
+                        width = WIDTH) %>%
+  reduce_ranges(min.gapwidth = 5000)  %>% # What should this be set to?
+  as_tibble() %>%
+  mutate(WIDTH = end - start + 1) %>%
+  dplyr::select(CHR = seqnames, BP_START = start, BP_END = end, WIDTH)
 
 # Save the table of min and max BP positions for SuSiEx
-write.table(loci, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
+write.table(loci_reduced, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
 row.names = F, quote = F, sep = "\t")
 
 quit()
@@ -176,6 +212,13 @@ quit()
 
 # ----------------------------------------------------
 # File containing CHR, BP_START, BP_END
+
+# Clear previous analyses:
+rm fineMapping/ld/*
+rm fineMapping/logs/*
+rm fineMapping/results/*
+rm fineMapping/plots/*
+
 CLUMP_RANGES_FILE="test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges"
 
 start=`date +%s`
@@ -218,50 +261,10 @@ end=`date +%s`
 
 runtime=$((end-start))
 echo $runtime
-
+# 27 minutes
 
 # ----------------------------------------------------
 # ----- Explore results ---------------------------------
-
-# A .summary file, a .cs file and a .snp file will be written to the specified output directory.
-
-# If the varitional algorithm did not converge, "FAIL" will be written to both the .summary
-# file and the .cs file. If no credible set was identified at the specified coverage level 
-# after purity and marginal p-value filtering, "NULL" will be written to both the .summary 
-# file and the .cs file.
-
-# Check we have the same number of output files as the number of BP ranges
-ls fineMapping/results/*.summary | wc -l 
-
-# Check which files contain NULL
-grep -o "NULL" fineMapping/results/*.summary
-
-# Count how many files contain NULL
-grep -o "NULL" fineMapping/results/*.summary | wc -l 
-# 46 files contain the word null
-
-# Check which files contain FAIL
-grep -l "FAIL" fineMapping/results/*.summary 
-# no files
-
-# Check which files contain results
-grep -L "NULL" fineMapping/results/*.summary | wc -l
-# 19 files with results
-
-
-# From the combined .summary files:
-# Load them into R and format "#CHR:BP:BP" into new separate columns 
-# Explore the following:
-# - How many credible sets per fine mapped region
-# - How does the max PIP vary between top SNPs
-# - Plot the p-val of the top SNPs
-
-# With the .cs and .snp files:
-# - Location of SNPs in credible sets (locus zoom plot - Mark do you have code for this?)
-#   - May also need data from .snp files (contains information for all the SNPs that are used in the fine-mapping algorithm)
-# - Plot just the SNPs in the credible sets to see how close their PIP is, this will help determine the confidence in the causal SNP.
-
-# ------------------------------------------
 R
 
 library(cowplot)
@@ -271,73 +274,12 @@ library(ggplot2)
 library(tidyr)
 library(purrr)
 library(stringr)
+# install.packages("devtools")
+# devtools::install_github("ameliaes/susiexr")
+library(susiexR)
 # -------------
-# Define a function to process each file
-process_file <- function(file, file_ext) {
 
-  # Error handling using tryCatch to handle any potential file read errors
-  tryCatch({
-
-    # Process .summary files
-    if (file_ext == "summary") {
-      # Read the file as lines
-      results <- fread(file, skip = 1) 
-      # Process .cs or .snp files
-    } else if (file_ext == "cs" | file_ext == "snp") {
-      # Read in the file as a data.frame
-      results <- fread(file)
-    }
-      # Check if the file has no rows (empty or failed file), in which case we skip it
-      # Some of the SNP files are not empty, and contain only CHR and BP cols
-      # These can be removed too because their corresponding .cs files contain NULL
-      if (nrow(results) == 0 | (file_ext == "snp" & ncol(results) == 2)) {
-        message(paste("Skipping file (it has no results):", file))
-        return(NULL)
-      }
-    
-    # Extract chromosome (CHR), start position (BP_START), and end position (BP_END)
-    # These values are extracted from the file name using regular expressions
-    # The regex pattern matches filenames like: "cs95_1:1000:2000.cs" or "cs95_1:1000:2000.snp"
-    chr_parts <- str_match(file, "(\\d+):(\\d+):(\\d+)\\.(cs|snp|summary)")
-      
-    # Add the new columns to the data
-    results <- results %>%
-      mutate(
-        CHR = as.numeric(chr_parts[2]),
-        BP_START = as.integer(chr_parts[3]),
-        BP_END = as.integer(chr_parts[4])
-      )
-
-    return(results)
-
-  }, error = function(e) {
-    message(paste("Error processing file:", file, "Error:", e$message))
-    return(NULL)
-  })
-}
-
-format_results <- function(path){
-  file_extensions <- c("summary", "cs", "snp")
-
-  results <- lapply(file_extensions, function(ext){
-            paths <- list.files(path, 
-              pattern = paste0("\\.", ext ,"$"), 
-              full.names = TRUE)
-
-            processed_files <- lapply(paths, function(path){
-              process_file(file = path, file_ext = ext)
-              })
-            # Clean up NULL values (failed files)
-            processed_files <- processed_files[!sapply(processed_files, is.null)]
-
-            return(processed_files)
-            })
-
-  names(results) <- file_extensions
-  results$summary <- do.call(rbind, results$summary)
-  return(results)
-}
-
+# ---- Format SuSiEx results:
 path_to_susiex_results <- "fineMapping/results/"
 results <- format_results(path_to_susiex_results)
 
@@ -345,105 +287,28 @@ results <- format_results(path_to_susiex_results)
 nrow(results$summary) == length(results$cs) && length(results$cs) == length(results$snp)
 
 
-##############################
-##### PLOTS ##################
-# ----------------
-# ------- Plot the relationship between:
+# ---- Plot the relationship between:
 # CS_LENGTH - number of SNPs in the credible set
 # CS_PURITY - purity of the credible set
 # MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set.
-# ----------------
-
-plotLengthPurityMaxPIP <-  function(summary_results = results$summary){
-  summary_results %>%
-  arrange(as.numeric(CHR)) %>%
-  mutate(CHR = factor(CHR, levels = unique(CHR))) %>%
-  ggplot(., aes(x = CS_PURITY, y = MAX_PIP, size = CS_LENGTH)) +
-    geom_point(alpha = 0.6, aes(colour = CHR)) +  
-    scale_size_continuous(range = c(1, 10)) +  
-    labs(
-      x = "Credible Set Purity",
-      y = "Maximum Posterior Inclusion Probability",
-      size = "Number of SNPs\nin credible set\n(min=1; max=170)",
-      colour = "Chromosome"
-    ) +
-    theme_minimal() +
-    theme(
-      # Arrange the legends side by side and wrap CHR legend into two columns
-      legend.position = "right", # Place legends at the bottom
-      legend.box = "horizontal",  # Arrange legends horizontally
-    ) +
-    guides(
-      # Set the legend for CHR (color) to have 2 columns
-      colour = guide_legend(ncol = 2, order = 2), 
-      size = guide_legend(order = 1),  # Ensure size legend appears first
-    )
-}
 
 png("fineMapping/plots/length_purity_maxPIP.png", width = 1000, height = 600, res = 150)
-  plotLengthPurityMaxPIP(results$summary)
+  plotPurityPIP(results$summary)
 dev.off()
 
-# ----------------
-# -------- Plot the probability the top SNP in the credible set is causal in each ancestry 
+# ---- Plot the probability the top SNP in the credible set is causal in each ancestry 
 # ----------------
 # Determine which ancestries were used in the fine mapping,
 # do this by seeing where NA occurs in eg. -LOG10P col
 # maybe also combine with POST-HOC_PROB_POP1,2,3 cols:
 # POST-HOC_PROB_POP${i}: Post hoc probability credible set manifest causal in population ${i}.
+### TO DO ####
+#### IMPORTANT!! CHECK IF SNP ALSO EXISTS IN LD REFERENCE FILE!!!
 
 ancestries <- c("EUR", "AFR", "SAS") # this variable will be definied further up in the nextflow pipeline, as input for susiex
 
-plotAncestryCausal <-  function(summary_results = results$summary){
-  summary_results %>%
-    # Create a new column called ANCESTRY which tells us which ancestries have data on that SNP
-    # Many of the columns containing info from all ancestries
-    # are separated by commas for each ancestry, in the order of the susiex command
-    mutate(ANCESTRY = ALT_ALLELE) %>%
-    separate(ANCESTRY, into = ancestries, sep = ",") %>%
-    # If there is no data for that ancestry there is an NA
-    mutate(ANCESTRY = pmap_chr(across(all_of(ancestries)), function(...) {
-      values <- c(...)
-      present_ancestries <- ancestries[values != "NA"]  # Check which are not NA
-      if (length(present_ancestries) > 0) {
-        paste(present_ancestries, collapse = ",")  # Concatenate present ancestries
-      } else {
-        "None"  # If all are NA (this should not happen)
-      }
-    })) %>%
-    # remove the indiviudal ancestry columnms now we have the column we want
-    dplyr::select(-c("EUR", "AFR", "SAS")) %>%
-    # create a column for location on the genome
-    mutate(LOCATION = str_glue("{CHR}:{BP_START}:{BP_END}")) %>%
-    # Ensure CHR and BP are in correct order on x-axis
-    arrange(as.numeric(CHR), as.numeric(BP_START)) %>%
-    mutate(LOCATION = factor(LOCATION, levels = LOCATION)) %>%
-    # Reshape the data so that POST-HOC_PROB_POP columns are turned into long format
-    pivot_longer(
-      cols = starts_with("POST-HOC_PROB_POP"),  
-      names_to = "POST_HOC_PROB_POP_ANCESTRY",  
-      values_to = "POST_HOC_PROB_POP_CS"        
-    ) %>%
-    mutate(POST_HOC_PROB_POP_ANCESTRY = ancestries[as.integer(str_extract(POST_HOC_PROB_POP_ANCESTRY, "\\d+"))]) %>%
-    mutate(POST_HOC_PROB_POP_ANCESTRY = factor(POST_HOC_PROB_POP_ANCESTRY, levels = unique(POST_HOC_PROB_POP_ANCESTRY))) %>%
-    ggplot(data = .) +
-      geom_point(aes(x = LOCATION, 
-                    y = POST_HOC_PROB_POP_CS, 
-                    shape = POST_HOC_PROB_POP_ANCESTRY,
-                    color = ANCESTRY)) + 
-      labs(
-        x = "Fine mapped region",
-        y = "Post-hoc probability credible set is causal",
-        shape = "Ancestry",
-        color = "Ancestries of LD references\nused in SuSiEx"
-      ) +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-}
-
-
 png("fineMapping/plots/POST-HOC_PROB_POP.png", width = 1000, height = 800, res = 150)
-  plotAncestryCausal(results$summary)
+  plotAncestryCausal(results$summary, ancestries = ancestries)
 dev.off()
 
 ####################################
@@ -470,7 +335,8 @@ sumstats <- lapply(ancestries, function(ancestry){ # change input to actual path
 names(sumstats) <- ancestries
 
 # Code of for loop too long so put it in a separate file
+# This is not yet in the susiexR package as it needs simplifying
 source("fine_mapping_plots.R")
 
 # Notes:
-# topr adds it's own gene annotations.. can we override this with the mBAT-combo results?
+# topr adds it's own gene annotations to locus zoom plots

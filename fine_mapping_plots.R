@@ -66,8 +66,7 @@ for(i in 1:length(results$cs)){
                       OVRL_PIP,
                       CS_PIP) %>%
         mutate(R2 = ifelse(SNP == snp_list[1], 1, R2)) %>%
-        mutate(R2 = ifelse(is.na(R2), 0, R2)) %>%
-        mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
+        mutate(R2 = ifelse(is.na(R2), 0, R2))
     } else {
       # If the file does not exist, create a default joined_results with R2 set to NA for all rows
       joined_results <- snp %>%
@@ -87,8 +86,7 @@ for(i in 1:length(results$cs)){
                       R2,  # R2 column with NA for all rows
                       PIP_CS1 = `PIP(CS1)`,
                       OVRL_PIP,
-                      CS_PIP) %>%
-        mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
+                      CS_PIP)
     }
 
     # Region plot (one per ancestry):
@@ -102,10 +100,16 @@ for(i in 1:length(results$cs)){
       alpha = 0.5,
       extract_plots = TRUE,
       title = ancestry
-    )$main_plot
+    )
 
     return(region_plot)
   })
+
+  # get all the main locus zoom plots
+  main_plots <- lapply(region_plots, function(x) x$main_plot)
+
+  # get a gene plot for one of them
+  gene_plot <- region_plots[[1]]$gene_plot
 
   # PIP plot (one for all ancestries):
   PIP_results <- snp %>%
@@ -118,10 +122,13 @@ for(i in 1:length(results$cs)){
                       PIP_CS1 = `PIP(CS1)`,
                       OVRL_PIP,
                       CS_PIP) %>%
-        mutate(PIP_color = ifelse(PIP_CS1 == OVRL_PIP, "CS_SNP", NA))
+        mutate(PIP_color = case_when(
+          PIP_CS1 == OVRL_PIP ~ TRUE,   # If condition is TRUE, set to TRUE
+          is.na(PIP_CS1 == OVRL_PIP) ~ FALSE  # If NA set to FALSE
+        ))
 
   bounding_boxes <- PIP_results %>%
-    filter(PIP_color == "CS_SNP") %>%
+    filter(PIP_color == TRUE) %>%
     summarize(
       xmin = min(POS)-5000,
       xmax = max(POS)+5000,
@@ -141,7 +148,7 @@ for(i in 1:length(results$cs)){
 
 
   png(paste0("fineMapping/plots/region_plot_", region, ".png"), width = 2300, height = 2300, res = 300)
-  print(cowplot::plot_grid(plotlist = c(region_plots, list(pip_plot)), ncol = 1))
+  print(cowplot::plot_grid(plotlist = align_plots(plotlist = c(main_plots, list(pip_plot, gene_plot)), align = 'hv'), ncol = 1))
   dev.off()
 
   }, error = function(e) {
