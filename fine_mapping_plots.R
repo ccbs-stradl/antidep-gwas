@@ -25,7 +25,12 @@ for(i in 1:length(results$cs)){
 
   # Per ancestry:
   region_plots <- lapply(ancestries, function(ancestry){
+
     # Add r2 column to results, conduct in PLINK
+    # Define the path to the LD results file
+    ld_results_file <- paste0("tmp/ld_results", ancestry, region, ".txt.vcor")
+
+    if (!file.exists(ld_results_file)) {
     system2("plink2", # edit to make this a variable for where plink2 is stored locally
             args = c(
               "--bfile", paste0("reference/ukb_imp_v3.qc.geno02.mind02_", ancestry ,"_", CHR),
@@ -37,6 +42,7 @@ for(i in 1:length(results$cs)){
               "--out", paste0("tmp/ld_results",ancestry, region, ".txt")
             )
     )
+    }
 
     # Define the path to the LD results file
     ld_results_file <- paste0("tmp/ld_results", ancestry, region, ".txt.vcor")
@@ -102,6 +108,8 @@ for(i in 1:length(results$cs)){
       title = ancestry
     )
 
+    gene_plot <- region_plot$gene_plot
+
     return(region_plot)
   })
 
@@ -109,7 +117,16 @@ for(i in 1:length(results$cs)){
   main_plots <- lapply(region_plots, function(x) x$main_plot)
 
   # get a gene plot for one of them
-  gene_plot <- region_plots[[1]]$gene_plot
+  gene_plot <- region_plots[[1]]$gene_plot 
+  
+  gene_plot_clean <- gene_plot
+  gene_plot_clean$layers <- gene_plot_clean$layers[-1]
+  gene_plot <- gene_plot_clean +
+    ggrepel::geom_text_repel(aes(label = gene_symbol, 
+                                  y = y, 
+                                  x = gene_start,
+                                  family = biotype),
+                            nudge_y = 0.25, nudge_x = 0.25)                        
 
   # PIP plot (one for all ancestries):
   PIP_results <- snp %>%
@@ -137,11 +154,11 @@ for(i in 1:length(results$cs)){
     )
 
   pip_plot <- ggplot(PIP_results) +
-    geom_point(aes(x = POS, y = PIP_CS1, color = PIP_color))+
+    geom_point(aes(x = POS, y = PIP_CS1, color = PIP_color), alpha = 0.5)+
     geom_rect(data = bounding_boxes, 
                 aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), 
                 alpha = 0, color = "black", inherit.aes = FALSE) +
-    labs(x = paste0("Position (BP) on CHR: ", CHR),
+    labs(x = "",
     y = "PIP",
     color = "SNP in credible set") +
     theme_minimal()
