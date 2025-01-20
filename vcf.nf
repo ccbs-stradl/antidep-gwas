@@ -2,7 +2,7 @@
 	Convert sumstats to GWAS VCF format
 	
 	Inputs:
-	  - format/cohort.txt: formatted GWAS sumstats
+	  - format/dataset.txt: formatted GWAS sumstats
       - chr
       - pos
       - ea
@@ -17,7 +17,9 @@
       - imp_info
       - eaf_case
       - eaf_control
-	  - format/cohort.json: sumstats meta data		
+	    - neff
+	  - format/dataset.json: sumstats meta data
+	  - format/dataset.csv: cohort meta data
 
 **/
 import groovy.json.JsonSlurper
@@ -25,7 +27,7 @@ import groovy.json.JsonOutput
 
 
 // Input files: sumstats txt and meta json file
-params.sumstats = "format/gwas/*-GRCh38.{txt,json}"
+params.sumstats = "format/gwas/*-GRCh38.{txt,json,csv}"
 
 // Output location
 params.publish = "vcf"
@@ -35,7 +37,7 @@ params.publish = "vcf"
 params.assembly = "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}"
 // dbsnp rsID vcf
 params.dbsnp = "reference/dbsnp.v153.hg38.vcf.{gz,gz.tbi}"
-// chromosome pattenr (if there is one)
+// chromosome pattern (if there is one)
 params.chr = "chr#"
 
 // gwas2vcf files
@@ -51,8 +53,8 @@ workflow {
   def jsonSlurper = new JsonSlurper()
 	// sumstats and meta data, parse json
 	SUMSTATS_CH = Channel
-		.fromFilePairs(params.sumstats, size: 2, checkIfExists: true) { it -> it.baseName }
-    	.map { it -> it.plus(jsonSlurper.parseText(it[1][0].text)) }
+		.fromFilePairs(params.sumstats, size: 3, checkIfExists: true) { it -> it.baseName }
+    	.map { it -> it.plus(jsonSlurper.parseText(it[1][1].text)) }
   
 /*
 	Reference files
@@ -138,7 +140,7 @@ process QC {
 	tuple val(dataset), path(gwas), val(meta), val(json), val(params)
 	
 	output:
-	tuple val(dataset), val(meta), val(params), path("${dataset}-qc.txt")
+	tuple val(dataset), val(meta), val(params), path("${dataset}-qc.txt"), path("${dataset}.csv", includeInputs: true)
 	
 	script:
 	"""
@@ -184,7 +186,7 @@ process CHR {
 	time = '10m'
 
 	input:
-	tuple val(dataset), val(meta), val(params), path(gwas)
+	tuple val(dataset), val(meta), val(params), path(gwas), path(cohorts)
 	each chr
 
 	output:
@@ -210,7 +212,7 @@ process VCF {
   
 
 	cpus = 1
-	memory = 8.GB
+	memory = 16.GB
 	time = '3h'
 
 	input:
@@ -286,14 +288,14 @@ process ANNOTATIONS {
 	time = '10m'
 
 	input:
-	tuple val(dataset), val(dict), val(params), path(sumstats)
+	tuple val(dataset), val(dict), val(params), path(sumstats), path(cohorts)
 
 	output:
-	tuple val(dataset), path("${dataset}-annot.tsv")
+	tuple val(dataset), path("${dataset}-annot.tsv"), path(cohorts, includeInputs: true)
 
 	script:
 	"""
-	cat ${sumstats} | awk 'OFS="\\t" {if(NR == 1) {print "#CHROM", "POS", "REF", "ALT", "BETA", "AFCAS", "AFCON", "NE"} else {print \$1, \$2, \$4, \$3, \$5, \$13, \$14, (4*\$8*\$9)/(\$8+\$9)}}' > ${dataset}-annot.tsv
+	cat ${sumstats} | awk 'OFS="\\t" {if(NR == 1) {print "#CHROM", "POS", "REF", "ALT", "BETA", "AFCAS", "AFCON", "NE"} else {print \$1, \$2, \$4, \$3, \$5, \$13, \$14, \$15}}' > ${dataset}-annot.tsv
 	"""
 }
 
@@ -330,10 +332,10 @@ process HARMONISE {
 	time = '30m'
 	
 	input:
-	tuple val(dataset), path(annotations), path(mapping)
+	tuple val(dataset), path(annotations), path(cohorts), path(mapping)
 	
 	output:
-	tuple val(dataset), path("${dataset}-annot-mapped.tsv"), path("${dataset}-annot-mapped.cols"), path("header.txt")
+	tuple val(dataset), path("${dataset}-annot-mapped.tsv"), path("${dataset}-annot-mapped.cols"), path("header.txt"), path(cohorts, includeInputs: true)
 	
 	script:
 	"""
@@ -385,10 +387,10 @@ process ANNOTATE {
 	time = '1h'
 
 	input:
-	tuple val(dataset), path(vcf), path(tbi), path(annotations), path(columns), path(headers)
+	tuple val(dataset), path(vcf), path(tbi), path(annotations), path(columns), path(headers), path(cohorts)
 
 	output:
-	tuple val(dataset), path("${dataset}.vcf.gz"), path("${dataset}.vcf.gz.tbi")
+	tuple val(dataset), path("${dataset}.vcf.gz"), path("${dataset}.vcf.gz.tbi"), path(cohorts, includeInputs: true)
 
 	script:
 	"""
