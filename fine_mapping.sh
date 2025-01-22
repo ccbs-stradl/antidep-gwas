@@ -320,8 +320,7 @@ sumstats <- lapply(ancestries, function(ancestry){ # change input to actual path
   })
 names(sumstats) <- ancestries
 
-# Code of for loop too long so put it in a separate file
-# This is not yet in the susiexR package as it needs simplifying
+# Function to plot main figures in a separate script, now also in susiexR package
 source("fine_mapping_plots.R")
 
 for( i in 1:length(results$cs) ){
@@ -334,6 +333,13 @@ for( i in 1:length(results$cs) ){
   print(main_plot$plot)
   dev.off()
 }
+
+test <- susiexR::mainPlot(cs_results = results$cs[[1]], 
+                      snp_results = results$snp[[1]],
+                      sumstats = sumstats,
+                      ancestries = ancestries,
+                      plink = "/gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2")
+# Looks good :-)
 
 # Check number of plots saved is the same length of results$cs
 list.files("fineMapping/plots", pattern = "region_plot")
