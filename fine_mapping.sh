@@ -137,7 +137,6 @@ R
 library(data.table)
 library(dplyr)
 library(plyranges) # reduce_ranges
-library(BSgenome.Hsapiens.UCSC.hg19) # seqlengths(BSgenome.Hsapiens.UCSC.hg19)
 
 # Read in clumps results
 clumped_data <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps")
@@ -145,33 +144,23 @@ clumped_data <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps")
 loci <- clumped_data %>%
   dplyr::select(CHR= `#CHROM`, POS, SNP=ID)
 
+hg19 <- genome_info('hg19')
+# pull out lengths manually since seqnames uses "chrN" instead of "N"
+hg19_chr_lengths <- as_tibble(hg19) |> slice(1:23) |> pull(width)
 
-# grng <- data.frame(seqnames= (1:4), start=c(10, 11, 12, 13), end=c(10, 11, 12, 13)) %>%
-#   as_granges() %>%
-#   set_genome_info(genome = "37")
+# add genome info for autosomes and X
+grng <- loci %>%
+          arrange(CHR) %>%
+          as_granges(seqnames = CHR,
+                        start = POS,
+                        end = POS) 
 
-# grng %>%
-#   stretch(30)
-# # But produces a negative number.... so is'n't restricted within the chromosome...
+seqlevels(grng) <- as.character(1:23)
+seqlengths(grng) <- hg19_chr_lengths
+grng <- set_genome_info(grng, 'hg19', is_circular = rep(FALSE, 23))
 
-# plyranges::mutate(anchor_center(grng), width = 30)
-# # cannot pipe into this function and substitute "grng" with "."
-
-# # plyranges doesn't seem to have set the genome build correctly...?
-# # It seems you can pass any character string to set_genome_info() it's not fetching any useful data
-
-genome <- seqlengths(BSgenome.Hsapiens.UCSC.hg19)
-
-chr_upper_limits <- genome[paste0("chr", 1:22)]
-
-# Extend each locus by 100 kb upstream and downstream
-loci <- loci %>%
-         mutate(BP_END = POS + 100000,  # 100 kb upstream
-                BP_START = pmax(1, POS - 100000)) %>% # 100 kb downstream (ensure it doesn't go below 1)
-         mutate(BP_END = pmin(BP_END, chr_upper_limits[paste0("chr", CHR)])) %>% # Ensure BP_END does not exceed the chromosome's upper limit
-         mutate(WIDTH = BP_END - BP_START + 1) %>% # get region size (not difference)
-         arrange(CHR, BP_START) %>%
-  relocate(CHR, BP_START, BP_END,  WIDTH, SNP, POS)
+# stretch each region, by 00 kb upstream and downstream, then trim back to position boundaries
+grng_streched <- stretch(anchor_center(grng), 200000) %>% trim()
 
 # TO DO
 # Example code to get overlapping regions for multiple ancestries
@@ -184,18 +173,15 @@ loci <- loci %>%
 #
 
 # Reduce ranges to collapse overlapping or nearby regions
-loci_reduced <- as_granges(loci,
-                        seqnames = CHR,
-                        start = BP_START,
-                        end = BP_END,
-                        width = WIDTH) %>%
+grng_reduced <- grng_streched %>%
   reduce_ranges(min.gapwidth = 5000)  %>% # What should this be set to?
   as_tibble() %>%
   mutate(WIDTH = end - start + 1) %>%
   dplyr::select(CHR = seqnames, BP_START = start, BP_END = end, WIDTH)
 
+
 # Save the table of min and max BP positions for SuSiEx
-write.table(loci_reduced, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
+write.table(grng_reduced, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
 row.names = F, quote = F, sep = "\t")
 
 quit()
