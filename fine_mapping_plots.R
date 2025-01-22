@@ -1,6 +1,6 @@
 # Loop over each fine mapped region
 for(i in 1:length(results$cs)){
-  tryCatch({
+  tryCatch({  
   cs <- results$cs[[i]] %>%
               rename(CHROM = CHR, POS = BP) %>%
               separate(`-LOG10P`, into = paste0("logP_", ancestries), sep = ",") %>%
@@ -53,7 +53,7 @@ for(i in 1:length(results$cs)){
       # If the file exists, load the LD results
       ld_results <- fread(ld_results_file)
       
-
+      if(nrow(ld_results) > 0){
       # Perform the usual joining logic
       joined_results <- snp %>%
         left_join(., ld_results, by = c("SNP" = "ID_B")) %>%
@@ -71,8 +71,23 @@ for(i in 1:length(results$cs)){
                       PIP_CS1 = `PIP(CS1)`,
                       OVRL_PIP,
                       CS_PIP) %>%
-        mutate(R2 = ifelse(SNP == snp_list[1], 1, R2)) %>%
-        mutate(R2 = ifelse(is.na(R2), 0, R2))
+        mutate(R2 = ifelse(SNP == snp_list[1], 1, R2)) 
+      } else {
+        joined_results <- snp %>%
+        left_join(., sumstats[[ancestry]], by = "SNP") %>%
+        dplyr::select(-ends_with(".y")) %>%
+        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+        left_join(cs, by = "SNP") %>%
+        dplyr::select(-ends_with(".y")) %>%
+        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
+        dplyr::select(SNP, 
+                      CHROM = CHR,
+                      POS = BP,
+                      P,
+                      PIP_CS1 = `PIP(CS1)`,
+                      OVRL_PIP,
+                      CS_PIP)
+      }
     } else {
       # If the file does not exist, create a default joined_results with R2 set to NA for all rows
       joined_results <- snp %>%
@@ -82,36 +97,57 @@ for(i in 1:length(results$cs)){
         left_join(cs, by = "SNP") %>%
         dplyr::select(-ends_with(".y")) %>%
         rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        mutate(R2 = NA) %>%
-        mutate(R2 = ifelse(SNP == snp_list[1], 1, R2)) %>%
-        # mutate(R2 = ifelse(is.na(R2), 0, R2)) %>%
         dplyr::select(SNP, 
                       CHROM = CHR,
                       POS = BP,
                       P,
-                      R2,  # R2 column with NA for all rows
                       PIP_CS1 = `PIP(CS1)`,
                       OVRL_PIP,
                       CS_PIP)
     }
 
-    # Region plot (one per ancestry):
-    region_plot <- topr::locuszoom(
-      df = joined_results,
-      chr = CHR,
+    # If there is LD data then do a locus zoom plot
+    # else do a region plot instead
+
+    if ( file.exists(ld_results_file) && 
+        (("R2" %in% colnames(joined_results)) && 
+         nrow(joined_results %>% filter(R2 == 1) %>% drop_na()) > 0) &&
+        (exists("ld_results") && nrow(ld_results) > 0) ) {
+
+        # Region plot (one per ancestry):
+        region_plot <- topr::locuszoom(
+          df = joined_results,
+          chr = CHR,
+          xmin = BP_START,
+          xmax = BP_END,
+          log_trans_p = TRUE,
+          build = 37,
+          alpha = 0.5,
+          extract_plots = TRUE,
+          title = ancestry,
+          legend_text_size = 8)
+
+    }else{
+      region_plot <- topr::regionplot(
+        df = joined_results,
+        region = paste0(CHR, ":", BP_START, "-", BP_END),
+        chr = CHR,
       xmin = BP_START,
       xmax = BP_END,
-      log_trans_p = TRUE,
-      build = 37,
+      color = "grey",
+       build = 37,
       alpha = 0.5,
-      extract_plots = TRUE,
-      title = ancestry
-    )
+      extract_plots = TRUE
+      )
 
-    gene_plot <- region_plot$gene_plot
+      region_plot$main_plot <- region_plot$main_plot +
+                                  ggtitle(ancestry)
+
+    }
 
     return(region_plot)
   })
+
 
   # get all the main locus zoom plots
   main_plots <- lapply(region_plots, function(x) x$main_plot)
@@ -121,12 +157,40 @@ for(i in 1:length(results$cs)){
   
   gene_plot_clean <- gene_plot
   gene_plot_clean$layers <- gene_plot_clean$layers[-1]
-  gene_plot <- gene_plot_clean +
-    ggrepel::geom_text_repel(aes(label = gene_symbol, 
-                                  y = y, 
-                                  x = gene_start,
-                                  family = biotype),
-                            nudge_y = 0.25, nudge_x = 0.25)                        
+
+  # Get the x-axis limits and breaks from one of the main plots
+  x_axis_limits <- ggplot_build(main_plots[[1]])$layout$panel_params[[1]]$x.range
+  # Round limits to the nearest multiples of 50,000
+  rounded_min <- floor(x_axis_limits[1] / 50000) * 50000
+  rounded_max <- ceiling(x_axis_limits[2] / 50000) * 50000
+
+  # Generate custom breaks at multiples of 50,000
+  x_axis_breaks <- seq(from = rounded_min, to = rounded_max, by = 50000)
+
+  # Check all the data is available for the gene_plot to be created
+  if (all(c("gene_symbol", "y", "gene_start", "biotype") %in% colnames(gene_plot_clean$data) )) {
+    tryCatch({
+      gene_plot <- gene_plot_clean +
+        ggrepel::geom_text_repel(
+          aes(
+            label = gene_symbol, 
+            y = y, 
+            x = gene_start,
+            family = biotype
+          ),
+          nudge_y = 0.25, 
+          nudge_x = 0.25
+        )
+    }, error = function(e) {
+      message("An error occurred while creating the gene_plot: ", e$message)
+      gene_plot <- NULL
+    })
+  } else {
+    message('Required columns ("gene_symbol", "y", "gene_start", "biotype") are missing in the gene_plot data. This probably means there are no genes in the region plotted.')
+    gene_plot <- gene_plot + 
+      scale_x_continuous(limits = x_axis_limits, breaks = x_axis_breaks, expand=c(.01,.01))
+  }
+   
 
   # PIP plot (one for all ancestries):
   PIP_results <- snp %>%
@@ -142,26 +206,21 @@ for(i in 1:length(results$cs)){
         mutate(PIP_color = case_when(
           PIP_CS1 == OVRL_PIP ~ TRUE,   # If condition is TRUE, set to TRUE
           is.na(PIP_CS1 == OVRL_PIP) ~ FALSE  # If NA set to FALSE
-        ))
-
-  bounding_boxes <- PIP_results %>%
-    filter(PIP_color == TRUE) %>%
-    summarize(
-      xmin = min(POS)-5000,
-      xmax = max(POS)+5000,
-      ymin = min(PIP_CS1)-0.01,
-      ymax = max(PIP_CS1)+0.01
-    )
+        )) %>%
+        filter(PIP_color)
 
   pip_plot <- ggplot(PIP_results) +
-    geom_point(aes(x = POS, y = PIP_CS1, color = PIP_color), alpha = 0.5)+
-    geom_rect(data = bounding_boxes, 
-                aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), 
-                alpha = 0, color = "black", inherit.aes = FALSE) +
+    geom_point(aes(x = POS, y = PIP_CS1))+
+    scale_x_continuous(limits = c(BP_START, BP_END),
+                       expand=c(.01,.01)) +
+    scale_y_continuous(limits = c(-0.01, 1.01)) +
     labs(x = "",
-    y = "PIP",
-    color = "SNP in credible set") +
-    theme_minimal()
+    y = "PIP") +
+    theme_bw()+
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())+
+    geom_hline(yintercept = 0.8, color = "red", linetype = "dashed")
 
 
   png(paste0("fineMapping/plots/region_plot_", region, ".png"), width = 2300, height = 2300, res = 300)

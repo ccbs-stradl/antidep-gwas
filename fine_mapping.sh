@@ -23,7 +23,7 @@ R
 library(dplyr)
 
 sumstats <- read.csv("sumstats.csv")
-sumstats %>% 
+sumstats %>%
   mutate(neff = 4/(1/cases + 1/controls)) %>%
   group_by(pheno, cluster) %>%
   summarise(neff = sum(neff))
@@ -77,7 +77,7 @@ library(dplyr)
 
 lapply(c("EUR", "AFR", "SAS"), function(cluster){
   # Read in sumsstats and remove rows where SE = 0, create new col for CPID
-  sumstats <- fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) %>% 
+  sumstats <- fread(paste0("test/fixed-N06A-", cluster, ".human_g1k_v37.neff08.txt")) %>%
     filter(SE != 0) %>%
     mutate(CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
   # Rewrite sumstats with suffix "noZero"
@@ -96,9 +96,9 @@ quit()
 # "in cross-population fine-mapping, we analyzed loci that reached genome-wide significance in at least one of the population-specific GWAS "
 
 # "Loci definition.
-# We used a 6-way LD clumping-based method to define genomic loci, using 1KG data as the LD reference for clumping. CEU, GBR, TSI, FIN and IBS were combined as the reference for the EUR population; ESN, GWD, LWK, MSL and YRI were combined as the reference for the AFR population; CHB, CHS, CDX, JPT and KHV were combined as the reference for the EAS population. We extracted all variants with M⁢A⁢F  >0.5%, and for each of the 25 traits, performed the LD clumping in the three populations using the corresponding reference panel and PLINK. 
-# To include loci that reached genome-wide significance (𝑃  <5⁢E −8) only in the meta-analysis, we further performed clumping for the meta-GWAS across the three populations, using the three reference panels, respectively. For each clumping, we set the p-value threshold of the leading variant as 5E-8 (--clump-p1) and the threshold of the tagging variant as 0.05 (--clump-p2), and set the LD threshold as 0.1 (--clump-r2) and the distance threshold as 250 kb (--clump-kb). 
-# We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream. 
+# We used a 6-way LD clumping-based method to define genomic loci, using 1KG data as the LD reference for clumping. CEU, GBR, TSI, FIN and IBS were combined as the reference for the EUR population; ESN, GWD, LWK, MSL and YRI were combined as the reference for the AFR population; CHB, CHS, CDX, JPT and KHV were combined as the reference for the EAS population. We extracted all variants with M⁢A⁢F  >0.5%, and for each of the 25 traits, performed the LD clumping in the three populations using the corresponding reference panel and PLINK.
+# To include loci that reached genome-wide significance (𝑃  <5⁢E −8) only in the meta-analysis, we further performed clumping for the meta-GWAS across the three populations, using the three reference panels, respectively. For each clumping, we set the p-value threshold of the leading variant as 5E-8 (--clump-p1) and the threshold of the tagging variant as 0.05 (--clump-p2), and set the LD threshold as 0.1 (--clump-r2) and the distance threshold as 250 kb (--clump-kb).
+# We then took the union of the 6-way LD clumping results and extended the boundary of each merged region by 100 kb upstream and downstream.
 # Finally, we merged adjacent loci if the LD (𝑟2) between the leading variants was larger than 0.6 in any LD reference panel. "
 
 # The changes we made to this method: using a larger clumping window of 1Mb and then not doing the merging of loci if r2 > 0.6
@@ -126,7 +126,7 @@ plink2 \
 # fixed-N06A-EUR.human_g1k_v37.neff08_noZero.log:
 # Warning: 5001 top variant IDs in --clump file missing from main dataset.  IDs
 # written to test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.missing_id .
-# --clump: 1479 clumps formed from 29395 index candidates.  
+# --clump: 1479 clumps formed from 29395 index candidates.
 
 
 # --------------------
@@ -142,13 +142,13 @@ library(BSgenome.Hsapiens.UCSC.hg19) # seqlengths(BSgenome.Hsapiens.UCSC.hg19)
 # Read in clumps results
 clumped_data <- fread("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps")
 
-loci <- clumped_data %>% 
-  dplyr::select(CHR= `#CHROM`, POS, SNP=ID) 
+loci <- clumped_data %>%
+  dplyr::select(CHR= `#CHROM`, POS, SNP=ID)
 
 
 # grng <- data.frame(seqnames= (1:4), start=c(10, 11, 12, 13), end=c(10, 11, 12, 13)) %>%
 #   as_granges() %>%
-#   set_genome_info(genome = "37") 
+#   set_genome_info(genome = "37")
 
 # grng %>%
 #   stretch(30)
@@ -167,7 +167,7 @@ chr_upper_limits <- genome[paste0("chr", 1:22)]
 # Extend each locus by 100 kb upstream and downstream
 loci <- loci %>%
          mutate(BP_END = POS + 100000,  # 100 kb upstream
-                BP_START = pmax(1, POS - 100000)) %>% # 100 kb downstream (ensure it doesn't go below 1) 
+                BP_START = pmax(1, POS - 100000)) %>% # 100 kb downstream (ensure it doesn't go below 1)
          mutate(BP_END = pmin(BP_END, chr_upper_limits[paste0("chr", CHR)])) %>% # Ensure BP_END does not exceed the chromosome's upper limit
          mutate(WIDTH = BP_END - BP_START + 1) %>% # get region size (not difference)
          arrange(CHR, BP_START) %>%
@@ -184,7 +184,7 @@ loci <- loci %>%
 #
 
 # Reduce ranges to collapse overlapping or nearby regions
-loci_reduced <- as_granges(loci, 
+loci_reduced <- as_granges(loci,
                         seqnames = CHR,
                         start = BP_START,
                         end = BP_END,
@@ -226,10 +226,10 @@ start=`date +%s`
 tail -n +2 "$CLUMP_RANGES_FILE" | while IFS=$'\t' read -r line; do
     # Get CHR, BP_START, BP_END by using awk to match column names indices
     # Really important we put these cols in the correct order in the R scripts making the "loci" object
-    CHR=$(echo "$line" | awk '{print $1+0}')  
+    CHR=$(echo "$line" | awk '{print $1+0}')
     BP_START=$(echo "$line" | awk '{print $2+0}')
     BP_END=$(echo "$line" | awk '{print $3+0}')
-    
+
     echo "Processing CHR: $CHR, BP_START: $BP_START, BP_END: $BP_END"
 
     ../SuSiEx/bin/SuSiEx \
@@ -283,7 +283,7 @@ library(susiexR)
 path_to_susiex_results <- "fineMapping/results/"
 results <- format_results(path_to_susiex_results)
 
-# Check that each processed file type has the same number of fine mapped regions 
+# Check that each processed file type has the same number of fine mapped regions
 nrow(results$summary) == length(results$cs) && length(results$cs) == length(results$snp)
 
 
@@ -296,7 +296,7 @@ png("fineMapping/plots/length_purity_maxPIP.png", width = 1000, height = 600, re
   plotPurityPIP(results$summary)
 dev.off()
 
-# ---- Plot the probability the top SNP in the credible set is causal in each ancestry 
+# ---- Plot the probability the top SNP in the credible set is causal in each ancestry
 # ----------------
 # Determine which ancestries were used in the fine mapping,
 # do this by seeing where NA occurs in eg. -LOG10P col
@@ -326,11 +326,11 @@ dev.off()
 
 # ------
 # To get the p-values for all the SNPs we need to load in the gwas sumstats
-# Note not all these SNPs were included in the fine mapping, 
+# Note not all these SNPs were included in the fine mapping,
 # perhaps indicate the SNPs that were included on the plot
 # test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-AFR.human_g1k_v37.neff08_noZero.txt,test/fixed-N06A-SAS.human_g1k_v37.neff08_noZero.txt
 sumstats <- lapply(ancestries, function(ancestry){ # change input to actual path in nextflow process
-  fread(paste0("test/fixed-N06A-",ancestry,".human_g1k_v37.neff08_noZero.txt")) 
+  fread(paste0("test/fixed-N06A-",ancestry,".human_g1k_v37.neff08_noZero.txt"))
   })
 names(sumstats) <- ancestries
 
@@ -338,5 +338,12 @@ names(sumstats) <- ancestries
 # This is not yet in the susiexR package as it needs simplifying
 source("fine_mapping_plots.R")
 
-# Notes:
-# topr adds it's own gene annotations to locus zoom plots
+# Check number of plots saved is the same length of results$cs
+list.files("fineMapping/plots", pattern = "region_plot")
+
+lapply(results$cs, function(x){
+  x %>%
+  dplyr::select(CHR, BP_START) %>%
+  slice(1)
+  }) %>% do.call(rbind,.)
+
