@@ -324,6 +324,17 @@ names(sumstats) <- ancestries
 # This is not yet in the susiexR package as it needs simplifying
 source("fine_mapping_plots.R")
 
+for( i in 1:length(results$cs) ){
+  main_plot <- mainPlot(cs_results = results$cs[[i]], 
+                      snp_results = results$snp[[i]],
+                      sumstats = sumstats,
+                      ancestries = ancestries)
+
+  png(paste0("fineMapping/plots/region_plot_", main_plot$region, ".png"), width = 2300, height = 2300, res = 300)
+  print(main_plot$plot)
+  dev.off()
+}
+
 # Check number of plots saved is the same length of results$cs
 list.files("fineMapping/plots", pattern = "region_plot")
 

@@ -1,12 +1,11 @@
-# Loop over each fine mapped region
-for(i in 1:length(results$cs)){
+mainPlot <- function(cs_results, snp_results, sumstats, ancestries){
   tryCatch({  
-  cs <- results$cs[[i]] %>%
+  cs <- cs_results %>%
               rename(CHROM = CHR, POS = BP) %>%
               separate(`-LOG10P`, into = paste0("logP_", ancestries), sep = ",") %>%
               mutate(P = as.numeric(logP_EUR))
 
-  snp <- results$snp[[i]]
+  snp <- snp_results
 
   # Get CHR:BP:BP for the fine mapped region
   CHR <- unique(cs$CHR)
@@ -223,13 +222,14 @@ for(i in 1:length(results$cs)){
     geom_hline(yintercept = 0.8, color = "red", linetype = "dashed")
 
 
-  png(paste0("fineMapping/plots/region_plot_", region, ".png"), width = 2300, height = 2300, res = 300)
-  print(cowplot::plot_grid(plotlist = align_plots(plotlist = c(main_plots, list(pip_plot, gene_plot)), align = 'hv'), ncol = 1))
-  dev.off()
+  plot <- cowplot::plot_grid(plotlist = align_plots(plotlist = c(main_plots, list(pip_plot, gene_plot)), align = 'hv'), ncol = 1)
 
   }, error = function(e) {
-    cat("Error in fine map region ID:", i, "., For region: ", region, "\n")
+    cat("Error in fine map for region: ", region, "\n")
     cat("Error message:", e$message, "\n")
   })
 
+  return(list(region = region, plot = plot))
+
 }
+
