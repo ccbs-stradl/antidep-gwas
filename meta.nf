@@ -4,64 +4,96 @@ nextflow.enable.dsl=2
     Meta analyse GWASVCF files
 */
 
-params.vcf = "vcf/*.vcf.gz"
+params.vcf = "vcf/gwas/GRCh38/*.{vcf.gz,vcf.gz.tbi,csv}"
+params.metasets = "metasets/*.csv"
 params.ref = "reference/all_hg38.{pgen,psam,pvar.zst}"
 params.genes = "reference/glist_ensgid_hg38_v40_symbol_gene_names.txt"
 
 workflow {
+  /*
+      Inputs
+  */
+  
+    // sumstats, filenames as COHORT-PHENO-CLUSTER-VERSION
     VCF_CH = Channel
-        .fromPath(params.vcf) 
+      .fromFilePairs(params.vcf, size: 3)
+      .map { it -> [it[0].split("-")].plus(it) }
+      .map { it -> [[cohort: it[0][0], pheno: it[0][1], cluster: it[0][2], version: it[0][3]], it[1], it[2]] }
+      
+    
+    // dataset lists for each meta-analysis
+    METASET_CH = Channel
+      .fromPath(params.metasets)
+      .map { it -> [it.baseName, it.splitCsv(header: true)] }
+      .transpose()
+      .map { it -> it[1].plus([metaset: it[0]]) }
 
     REF_CH = Channel
         .fromFilePairs(params.ref, size: 3)
 
     GENES_CH = Channel
         .fromPath(params.genes)
+        
+    /*
+      Pre-processing
+    */
+      
+      // select datasets that are used by a metaset
+      // key to cohort and version
+      VCF_CV_CH = VCF_CH
+        .map { it -> [it[0].cohort, it[0].version].plus(it) }
+      METASET_CV_CH = METASET_CH
+        .map { it -> [it.cohort, it.version].plus(it) }
+        
+      // merge datasets with metasets, then gather distinct datasets
+      VCF_IN_METASET_CH = METASET_CV_CH
+        .combine(VCF_CV_CH, by: [0, 1])
+        .map { it -> [it[3], it[4], it[5], it[2]]}
+        .groupTuple(by: [0, 1, 2])
+        
     /*
         MR-MEGA
         https://genomics.ut.ee/en/tools
     */
-
-    // key to phenotype
-    MEGA_VCF_CH = VCF_CH
-		.map { it -> [it.baseName.split("-")[1], it] }
-
-    // conduct meta-analysis if there are at least 4 cohorts
-    MEGA_IN_CH = MEGA_IN(MEGA_VCF_CH)
-        .groupTuple()
-		.filter { it -> it[1].size() >= 4 }
-	
-    MEGA_CH = MEGA(MEGA_IN_CH)
     
-    MEGA_POST_CH = MEGA_POST(MEGA_CH)
+      // process for input into MR-MEGA
+      // group by phenotype and metaset
+      // conduct meta-analysis if there are at least 4 cohorts
+      MEGA_IN_CH = MEGA_IN(VCF_IN_METASET_CH)
+        .transpose(by: 4)
+        .map { it -> [[metaset: it[4].metaset, pheno: it[0].pheno]].plus(it) }
+        .groupTuple(by: 0)
+        .filter { it -> it[1].size() >= 4 }
+      
+	
+      MEGA_CH = MEGA(MEGA_IN_CH)
+     
+      MEGA_POST_CH = MEGA_POST(MEGA_CH)
 
-    MEGA_ASSOC_CH = MEGA_POST_CH
-        .map { it -> it[1] }
-        .flatten()
+      MEGA_ASSOC_CH = MEGA_POST_CH
+          .map { it -> it[2] }
+          .flatten()
 
     /*
-        Fixed effects (PLINK)
-        https://www.cog-genomics.org/plink/1.9/postproc#meta_analysis
+        Fixed effects (polars)
     */
-
-    // key to phenotype and cluster
-    FIXED_VCF_CH = VCF_CH
-        .map { it -> [ it.simpleName.split("-"), it ] }
-        .map { it -> [ ["pheno": it[0][1], "cluster": it[0][2]], it[1] ] }
-
-    // conduct meta-analysis if there are at least 2 cohorts
-    FIXED_IN_CH = FIXED_IN(FIXED_VCF_CH)
-        .groupTuple()
-        .filter { it -> it[1].size() >= 2 }
     
+    // process for input into fixed-effects analysis
+    // group by phenotype, cluster, and metaset
+    // conduct meta-analysis if there are at least 2 cohorts
+    FIXED_IN_CH = FIXED_IN(VCF_IN_METASET_CH)
+      .transpose(by: 4)
+      .map { it -> [[metaset: it[4].metaset, pheno: it[0].pheno, cluster: it[0].cluster]].plus(it) }
+      .groupTuple(by: 0)
+      .filter { it -> it[1].size() >= 2 }
+      
     FIXED_CH = FIXED(FIXED_IN_CH)
     
     FIXED_POST_CH = FIXED_POST(FIXED_CH)
 
     FIXED_ASSOC_CH = FIXED_POST_CH
-        .map { it -> it[1] }
+        .map { it -> it[2] }
          .flatten()
-    
 
     /* 
         Post analysis
@@ -102,18 +134,18 @@ workflow {
     10) POSITION - position of marker
 */
 process MEGA_IN {
-    tag "${vcf}"
+    tag "${dataset}"
     label 'tools'
 
-    cpus = 2
+    cpus = 1
     memory = 1.GB
     time = '30m'
 
     input:
-    tuple val(pheno), path(vcf)
+    tuple val(details), val(dataset), path(vcf), val(metasets)
 
     output:
-    tuple val(pheno), path("${vcf.simpleName}.txt.gz")
+    tuple val(details), val(dataset), path("${dataset}.txt.gz"), path("${dataset}.csv", includeInputs: true), val(metasets)
 
     script:
     """
@@ -123,20 +155,20 @@ process MEGA_IN {
     bcftools query \
     -i 'FORMAT/AF >= 0.005 & FORMAT/AF <= 0.995 & (FORMAT/SI >= 0.4 | FORMAT/SI = ".")' \
 	-f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%AF]\\t[%SS]\\t[%NC]\\t[%NE]\\t%CHROM\\t%POS\\n" \
-	${vcf} | awk '{if(\$1 == ".") \$1 = \$9":"\$10; print \$0}' > ${vcf.simpleName}.query.txt
+	${dataset}.vcf.gz | awk '{if(\$1 == ".") \$1 = \$9":"\$10; print \$0}' > ${dataset}.query.txt
 
     # header
-    echo "" | awk 'OFS = "\\t" {print "MARKERNAME", "EA", "NEA", "OR", "OR_95L", "OR_95U", "EAF", "N", "CHROMOSOME", "POSITION"}' > ${vcf.simpleName}.txt
+    echo "" | awk 'OFS = "\\t" {print "MARKERNAME", "EA", "NEA", "OR", "OR_95L", "OR_95U", "EAF", "N", "CHROMOSOME", "POSITION"}' > ${dataset}.txt
 
     # reformat
     # remove "chr" from chromosome names
     # turn beta effect size back into OR
     # calculate N as effective sample size
-    cat ${vcf.simpleName}.query.txt | awk \
-    'OFS = "\\t" {gsub("chr", "", \$10); print \$1, \$2, \$3, exp(\$4), exp(\$4-1.96*\$5), exp(\$4+1.96*\$5), \$6, \$9, \$10, \$11}' >> ${vcf.simpleName}.txt
+    cat ${dataset}.query.txt | awk \
+    'OFS = "\\t" {gsub("chr", "", \$10); print \$1, \$2, \$3, exp(\$4), exp(\$4-1.96*\$5), exp(\$4+1.96*\$5), \$6, \$9, \$10, \$11}' >> ${dataset}.txt
 
     # compress
-    gzip ${vcf.simpleName}.txt
+    gzip ${dataset}.txt
     """
 /*
     column numbers of bcf query
@@ -155,7 +187,7 @@ process MEGA_IN {
 }
 
 process MEGA {
-    tag "${pheno}"
+    tag "${meta.metaset}-${meta.pheno}"
 
     publishDir "meta", pattern: "*.log", mode: "copy"
 
@@ -164,10 +196,10 @@ process MEGA {
     time = '3h'
 
     input:
-    tuple val(pheno), path(gwas)
+    tuple val(meta), val(details), val(datasets), path(gwas), path(csv), val(metaset)
 
     output:
-    tuple path("*.result"), path("*.log")
+    tuple val("${meta.metaset}-mrmega-${meta.pheno}"), path("*.result"), path("*.log"), path(csv, includeInputs: true)
 
     script:
     """
@@ -175,7 +207,7 @@ process MEGA {
 
     MR-MEGA --filelist mrmega.in \
     --pc ${[gwas.size() - 3, 3].min()} \
-    --out mrmega-${pheno}
+    --out ${meta.metaset}-mrmega-${meta.pheno}
     """
 }
 
@@ -183,26 +215,31 @@ process MEGA_POST {
     tag "${result}"
     label 'analysis'
 
-    publishDir "meta", pattern: "*.gz", mode: 'copy'
+    publishDir "meta", pattern: "*.{gz,csv}", mode: 'copy'
 
     cpus = 2
     memory = 32.GB
     time = '30m'
 
     input:
-    tuple path(result), path(log)
+    tuple val(meta), path(result), path(log), path(datasets)
 
     output:
-    tuple path("${result}.gz"), path("*.assoc")
+    tuple path("${meta}.gz"), path("${meta}.csv"), path("*.assoc")
 
     script:
     """
     #!Rscript
-	library(dplyr)
-	library(readr)
-	library(stringr)
+    library(dplyr)
+    library(readr)
+    library(stringr)
 	
-	mega <- read_tsv("${result}")
+    # meta-analysis
+	  mega <- read_tsv("${result}")
+    # datasets info
+    dataset_files <- str_split("${datasets}", pattern = " ")
+    datasets <- bind_rows(lapply(dataset_files, read_csv)) |>
+      arrange(cohort, cluster)
 
     # recalculate P-values to allow for smaller values
     mega_p <- mega |>
@@ -229,11 +266,12 @@ process MEGA_POST {
                    CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
 
-    write_tsv(mega_p, "${result}.gz")
+    write_tsv(mega_p, "${meta}.gz")
+    write_csv(datasets, "${meta}.csv")
 
-    write_tsv(mega_assoc, "${result}.assoc")
-    write_tsv(mega_ancestry, "${result}.ancestry.assoc")
-    write_tsv(mega_residual, "${result}.residual.assoc")
+    write_tsv(mega_assoc, "${meta}.assoc")
+    write_tsv(mega_ancestry, "${meta}.ancestry.assoc")
+    write_tsv(mega_residual, "${meta}.residual.assoc")
     """
 
 }
@@ -242,28 +280,29 @@ process MEGA_POST {
 /* Query VCF to text input file 
 */
 process FIXED_IN {
-    tag "${vcf}"
+    tag "${dataset}"
     label 'tools'
 
-    cpus = 2
+    cpus = 1
     memory = 1.GB
     time = '30m'
 
     input:
-    tuple val(dataset), path(vcf)
+    tuple val(details), val(dataset), path(vcf), val(metasets)
 
     output:
-    tuple val(dataset), path("${vcf.simpleName}.query.txt")
+    tuple val(details), val(dataset), path("${dataset}.query.txt"), path("${dataset}.csv", includeInputs: true), val(metasets)
 
     script:
     """
     # bcf query to get required columns
     # remove variants with MAF < 0.5%, INFO < 0.4
     # rename missing variants names to CPID
+    bcftools norm -m- ${dataset}.vcf.gz |\
     bcftools query -HH \
     -i 'FORMAT/AF >= 0.005 & FORMAT/AF <= 0.995 & (FORMAT/SI >= 0.4 | FORMAT/SI = ".")' \
-	  -f "%CHROM\\t%POS\\t%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SI]\\t[%AFCAS]\\t[%AFCON]\\t[%SS]\\t[%NC]\\t[%NE]\\n" \
-	  ${vcf} | awk '{if(\$1 == ".") \$1 = \$13":"\$14; print \$0}' > ${vcf.simpleName}.query.txt
+	  -f "%CHROM\\t%POS\\t%ID\\t%ALT\\t%REF\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SI]\\t[%AFCAS]\\t[%AFCON]\\t[%SS]\\t[%NC]\\t[%NE]\\n" |\
+    awk '{if(\$1 == ".") \$1 = \$13":"\$14; print \$0}' > ${dataset}.query.txt
     """
 /*
     columns of bcf query
@@ -288,7 +327,7 @@ process FIXED_IN {
 // Effect sizes weighted by inverse variance
 // Sample information that is weighted by N
 process FIXED {
-    tag "${dataset.pheno}-${dataset.cluster}"
+    tag "${meta.metaset}-${meta.pheno}-${meta.cluster}"
     label 'analysis'
 
     cpus = 4
@@ -296,10 +335,10 @@ process FIXED {
     time = '30m'
 
     input:
-    tuple val(dataset), path(gwas)
+    tuple val(meta), val(details), val(datasets), path(gwas), path(csv), val(metaset)
 
     output:
-    tuple val(dataset), path("meta.tsv")
+    tuple val("${meta.metaset}-fixed-${meta.pheno}-${meta.cluster}"), path("meta.tsv"), path(csv, includeInputs: true)
 
     script:
     """
@@ -405,20 +444,20 @@ process FIXED {
 
 // Fixed effects postprocessing
 process FIXED_POST {
-    tag "${meta}"
+    tag "${dataset}"
     label 'analysis'
 
-    publishDir "meta", pattern: "*.gz", mode: 'copy'
+    publishDir "meta", pattern: "*.{gz,csv}", mode: 'copy'
 
     cpus = 2
     memory = 24.GB
     time = '30m'
 
     input:
-    tuple val(dataset), path(meta)
+    tuple val(dataset), path(meta), path(datasets)
 
     output:
-    tuple path("${meta}.gz"), path("*.assoc")
+    tuple path("${dataset}.gz"), path("${dataset}.csv"), path("*.assoc")
 
     script:
     """
@@ -429,6 +468,11 @@ process FIXED_POST {
 
     meta_col_types <- cols(CHROM = col_character(), POS = col_integer())
     meta <- read_table("${meta}", col_types = meta_col_types)
+    
+    # datasets info
+    dataset_files <- str_split("${datasets}", pattern = " ")
+    datasets <- bind_rows(lapply(dataset_files, read_csv)) |>
+      arrange(cohort)
 
     # calculate p values
     meta_p <- meta |>
@@ -450,9 +494,10 @@ process FIXED_POST {
                 A1 = ALT, A2 = REF, P = QP, BETA, ESS=NEFF,
                 CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
-    write_tsv(meta_p, "${meta}.gz")
-    write_tsv(assoc, "${meta.baseName}.assoc")
-    write_tsv(het, "${meta.baseName}.het.assoc")
+    write_tsv(meta_p, "${dataset}.gz")
+    write_csv(datasets, "${dataset}.csv")
+    write_tsv(assoc, "${dataset}.assoc")
+    write_tsv(het, "${dataset}.het.assoc")
     """
 }
 

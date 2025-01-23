@@ -1,0 +1,41 @@
+---
+title: Antidepressant exposure GWAS meta-analysis sets
+output: github_document
+---
+
+Sets of input summary statistics to group for meta-analysis.
+
+```{r library}
+library(readr)
+library(dplyr)
+```
+
+```{r datsets}
+datasets <- read_csv("datasets.csv")
+datasets |> distinct(cohort, version)
+```
+
+```{r metasets}
+metaset_2408_list <- list(
+  list(cohort = "AllOfUs", version = "v7_2408"),
+  list(cohort = "GenScot", version = "rmUKBB_2309"),
+  list(cohort = "BBJ",     version = "SK2020"),
+  list(cohort = "FinnGen", version = "R9"),
+  list(cohort = "UKB",     version = "21007_2309")
+)
+metaset_2408 <- bind_rows(lapply(metaset_2408_list, as_tibble))
+
+metaset_2501_list <- list(
+  list(cohort = "AllOfUs", version = "v7_2411"),
+  list(cohort = "GenScot", version = "rmUKBB_2309"),
+  list(cohort = "BBJ",     version = "SK2020"),
+  list(cohort = "FinnGen", version = "R12"),
+  list(cohort = "UKB",     version = "21007_2309")
+)
+metaset_2501 <- bind_rows(lapply(metaset_2408_list, as_tibble))
+
+dir.create("metasets")
+write_csv(metaset_2408, "metasets/antidep-2408.csv")
+write_csv(metaset_2501, "metasets/antidep-2501.csv")
+```
+
