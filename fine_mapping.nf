@@ -1,159 +1,85 @@
 nextflow.enable.dsl=2
 
 /*
-  Fine-mapping of GWAS meta using SuSiEx
+  Fine-mapping of GWAS meta using SuSiEx (hg19 only)
+
+  Summary of processes and inputs for each process:
+    * make bim, bed, fam files for each ancestry:
+      - pfile (output from make-pgen_hg19.sh)
+      - IDs where for each ancestry (output from make-pgen.sh)
+    * calculate effective sample size for each meta-analysis sumstats:
+      - meta/metaset-method-phenotype-cluster.csv (output from format_meta.nf) 
+    * process meta sumstats into correct format:
+      - meta-analysed sumstats: meta/metaset-method-phenotype-cluster.csv (output from format_meta.nf)
+      - neff_threshold?
+    * clumping to identify regions for fine mapping:
+      - processed sumstats (from previous process in current script)
+      - pfile (output from make-pgen_hg19.sh)
+    * load clumping results into R and determine region boundaries:
+      - output from clumping process (from previous process in current script)
+    * run SuSiEx:
+      - output from R determining region boundaries (from previous process in current script)
+      - processed sumstats (from process above)
+    * explore results:
+      - use susiexR package in R to format and plot output from SuSiEx
+
 */
 
-// genotyype build parameters
-// first define which options are available
-def valid_builds = ['hg19', 'hg38']
-
-// default to hg19 if not provided
-params.build = params.build ?: 'hg19'
-
-// validate that the provided build is one of the valid options
-if (!(params.build in valid_builds)) {
-    error "Invalid value for --build. Please specify one of: ${valid_builds.join(', ')}"
-}
-
-// assign labels for process MA based on build:
-def processMALabel = (params.build == 'hg19') ? 'tools' : (params.build == 'hg38') ? 'rscript' : null
-
-def mapsDuplicatesDir = (params.build == 'hg19') ? 'maps_hg19_duplicates' : (params.build == 'hg38') ? 'maps_hg38_duplicates' : null
-
-def mapsDir = (params.build == 'hg19') ? 'maps_hg19' : (params.build == 'hg38') ? 'maps_hg38' : null
-
-// input files dependent on genotype build type:
-if (params.build == 'hg19') {
-  // files for hg19 build
-  // input meta-analysis sumstats
-  params.meta = "liftover/fixed-*.vcf.gz"
-
-  // ld reference BED files */
-  // Edit this to read in multiple different ancestries:
-  params.ref = "reference/ukb_imp_v3.qc_ancestry.{pgen,psam,pvar.zst}"
-
-} else if (params.build == 'hg38') {
-  // files for hg38 build
-  // input meta-analysis sumstats
-  params.meta = "meta/fixed-*.meta.gz"
-
-  // ld reference BED files */
-  // params.ref = "reference/all_hg38.{pgen,psam,pvar.zst}"
-  // Insert command to stop nextflow pipeline if 'hg38' is chosen
-  // as separate LD BED files for each ancestry are not yet in "reference/"
-
-}
-
-// effective sample size QC parameter
-params.neff_pct = 0.8
+params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc'
+params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id'
+params.cluster = 'EUR'
+params.chr = 21
 
 workflow {
 
-  // sumstats from fixed effects meta 
-  META_CH = Channel.fromPath(params.meta)
-    .map { it -> [it.simpleName.split("-"), it] }
-    .map { it -> [it[0][2], it[0][0], it[0][1], it[1]] }
+  PFILE_CH = Channel.of(params.pfile)          
+  IDS_CH = Channel.fromPath(params.ancestry_ids)
+  CLUSTER_CH = Channel.of(params.cluster)      
+  CHR_CH = Channel.of(params.chr)    
 
-  // QC parameters
-  NEFF_CH = Channel.of(params.neff_pct)
+  REF_CH = PFILE_CH
+    .combine(IDS_CH)
+    .combine(CLUSTER_CH)
+    .combine(CHR_CH)
 
-  // format sumstats to .ma
-  MA_CH = MA(META_CH, NEFF_CH)
-
-  // run SuSiEx on all outputs of MA_CH when MA_CH is complete
+  BFILE_CH = MAKE_BFILE(REF_CH)
 
 }
 
-/* Reformat to .ma for GCTA input 
-  exclude SNPs with low relative NEFF
-*/
-process MA {
-  tag "${sumstats}"
-  label processMALabel
+process MAKE_BFILE {
+  tag "$cluster:chr$chr"
 
   cpus = 1
-  memory = 16.GB
-  time = '30m'
+  memory = 8.GB
+  time = '1h'
 
-  input: 
-  tuple val(pop), val(meta), val(pheno), path(sumstats)
-  each neff_pct
+  input:
+    tuple val(pfile), path(ancestry_ids), val(cluster), val(chr)
 
   output:
-  tuple val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma")
-
+    path "ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"
+ 
   script:
-  if (params.build == 'hg19') {
-    shell:
-      """
-    echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > ${sumstats.simpleName}.ma
-    bcftools query \
-      -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
-      ${sumstats} | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10, \$11}' >> ${sumstats.simpleName}.ma
-      """
-  } else if (params.build == 'hg38') {
-    """
-    #!Rscript
-    if( !require('readr') ){
-    install.packages('readr', repos = "https://cloud.r-project.org/")
-    }
-    library(readr)
+  """
+  plink2 \
+    --pfile  ${pfile} \
+    --keep-col-match ${ancestry_ids} ${cluster} \
+    --chr ${chr} \
+    --geno 0.02 \
+    --maf 0.005 \
+    --make-pgen 'vzs' \
+    --out ukb_imp_v3.qc.geno02_${cluster}_${chr} \
+    --threads 4
 
-    if( !require('dplyr') ){
-    install.packages('dplyr', repos = "https://cloud.r-project.org/")
-    }
-    library(dplyr)
-
-    if( !require('stringr') ){
-    install.packages('stringr', repos = "https://cloud.r-project.org/")
-    }
-    library(stringr)
-
-    sumstats <- read_tsv("${sumstats}")
-
-    ma <- sumstats |>
-      filter(NEFF >= ${neff_pct} * NEFF) |>
-      transmute(SNP, A1, A2, freq = AFCON, BETA = log(OR), SE, P, N = NEFF,
-          str_remove(CHR, "chr"), BP)
-    
-    write_tsv(ma, "${sumstats.simpleName}.ma")
-    """
-  }
-}
-
-/* Run SuSiEx 
-  for fine mapping
-*/
-process FINEMAPPING {
-
-  label susiex
-
-  SuSiEx \
-    --sst_file=EUR.sumstats.txt,AFR.sumstats.txt,SAS.sumstats.txt \
-    --n_gwas=50000,50000 \
-    --ref_file=EUR,AFR,SAS \
-    --ld_file=EUR,AFR,SAS \
-    --out_dir=./ \
-    --out_name=SuSiEx.EUR.AFR.SAS.output.cs95 \
-    --level=0.95 \
-    --pval_thresh=1e-5 \
-    --maf=0.005
-    --snp_col=1,1,1 \
-    --chr_col=9,9,9 \
-    --bp_col=10,10,10 \
-    --a1_col=2,2,2 \
-    --a2_col=3,3,3 \
-    --eff_col=5,5,5 \
-    --se_col=6,6,6 \
-    --pval_col=7,7,7 \
-    --plink=./gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2 \
-    --mult-step=True \
-    --keep-ambig=True \
-    --threads=16
+    plink2 \
+    --pfile ukb_imp_v3.qc.geno02_${cluster}_${chr} 'vzs' \
+    --mind 0.02 \
+    --make-bed \
+    --out ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr} \
+    --threads 4
+  """
 
 }
-
 
 
 
