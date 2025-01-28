@@ -12,6 +12,5 @@
     "eaf_col": 10,
     "imp_info_col": 11,
     "delimiter": "\t",
-    "header": true,
-    "build": "GRCh38"
+    "header": true
 }
