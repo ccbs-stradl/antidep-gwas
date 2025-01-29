@@ -240,3 +240,150 @@ process CLUMP {
   """
 }
 
+process CHECK_NEFF {
+  tag "json"
+  
+  cpus = 1
+  memory = 8.GB
+  time = '10m'
+
+  input:
+  val(jsonData)
+
+  output:
+  stdout
+
+  script:
+  """
+  echo "The effective sample size is ${jsonData.neff}"
+
+  # Check output from this by checking the directory:
+  # nextflow log fabulous_ampere -f hash,process,tag
+  # cat ../../ad/work/2c/1bc695013dc56de81a4fd7fa5fd453/.command.out 
+  """
+
+}
+
+
+process CLUMP_POST {
+  tag "${result}"
+  label 'analysis'
+
+  cpus = 1
+  memory = 32.GB
+  time = '30m'
+
+  input:
+    tuple val(pop), val(meta), val(pheno), path(ma), path(clumps), path(log)
+
+  output:
+
+
+  script:
+  """
+  #!Rscript
+  library(data.table)
+  library(dplyr)
+  library(plyranges) # reduce_ranges
+
+  # Read in clumps results
+  clumped_data <- fread("${clumps}")
+
+  # TODO:
+  # If clumped_data == NULL then skip file processing
+  #
+  #
+  #
+  #
+  #
+
+  loci <- clumped_data %>%
+    dplyr::select(CHR= `#CHROM`, POS, SNP=ID)
+
+  hg19 <- genome_info('hg19')
+  # pull out lengths manually since seqnames uses "chrN" instead of "N"
+  hg19_chr_lengths <- as_tibble(hg19) |> slice(1:23) |> pull(width)
+
+  # add genome info for autosomes and X
+  grng <- loci %>%
+            arrange(CHR) %>%
+            as_granges(seqnames = CHR,
+                          start = POS,
+                          end = POS) 
+
+  seqlevels(grng) <- as.character(1:23)
+  seqlengths(grng) <- hg19_chr_lengths
+  grng <- set_genome_info(grng, 'hg19', is_circular = rep(FALSE, 23))
+
+  # stretch each region, by 00 kb upstream and downstream, then trim back to position boundaries
+  grng_streched <- stretch(anchor_center(grng), 200000) %>% trim()
+
+  # TO DO
+  # Example code to get overlapping regions for multiple ancestries
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+
+  # Reduce ranges to collapse overlapping or nearby regions
+  grng_reduced <- grng_streched %>%
+    reduce_ranges(min.gapwidth = 5000)  %>% # What should this be set to?
+    as_tibble() %>%
+    mutate(WIDTH = end - start + 1) %>%
+    dplyr::select(CHR = seqnames, BP_START = start, BP_END = end, WIDTH)
+
+
+  # Save the table of min and max BP positions for SuSiEx
+  write.table(grng_reduced, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
+  row.names = F, quote = F, sep = "\t")
+  """
+
+}
+
+
+/*
+
+process SUSIEX {
+
+# output:
+SuSiEx.${ANCESTRY_NAMES_CONCAT}.output.cs95_${CHR}:${BP_START}:${BP_END}.log
+
+# publishDir = fineMapping
+
+# ensure SuSiEx and plink have been copied to bin folder
+
+    SuSiEx \ 
+      --sst_file= ${SUMSTAT_FILES_ORDERED_BY_ANCESTRY} \
+      --n_gwas= ${NEFF_TOTAL_ORDERED_BY_ANCESTRY} \
+      --ref_file= ${BFILE_PREFIX_ORDERED_BY_ANCESTRY, PER CHROMOSOME} \
+      --ld_file= ${PATH_TO_TMP_DIR_ORDERED_BY_ANCESTRY, PER CHROMOSOME} \
+      --out_dir=./fineMapping/results \
+      --out_name=SuSiEx.${ANCESTRY_NAMES_CONCAT}.output.cs95_${CHR}:${BP_START}:${BP_END} \
+      --level=0.95 \
+      --pval_thresh=1e-5 \
+      --chr=$CHR \
+      --bp= $BP_START,$BP_END \
+      --maf=0.005 \
+      --snp_col=1,1,1 \ REP EACH COL NUMBER BY LENGTH OF ANCESTRIES
+      --chr_col=9,9,9 \
+      --bp_col=10,10,10 \
+      --a1_col=2,2,2 \
+      --a2_col=3,3,3 \
+      --eff_col=5,5,5 \
+      --se_col=6,6,6 \
+      --pval_col=7,7,7 \
+      --mult-step=True \
+      --plink=plink \
+      --keep-ambig=True |& tee SuSiEx.${ANCESTRY_NAMES_CONCAT}.output.cs95_${CHR}:${BP_START}:${BP_END}.log
+
+
+}
+
+process SUSIEX_POST {
+
+}
+
+*/
