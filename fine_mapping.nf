@@ -43,10 +43,16 @@ params.chr = 21
 
 workflow {
 
+  // Make reference files in bfile format
   PFILE_CH = Channel.of(params.pfile)          
   IDS_CH = Channel.fromPath(params.ancestry_ids)
-  CLUSTER_CH = Channel.of(params.cluster)      
   CHR_CH = Channel.of(params.chr)    
+
+    // Create CLUSTER_CH to extract unique ancestries from the 3rd column of IDS_CH
+    CLUSTER_CH = IDS_CH
+      .splitCsv(header: false, sep: ' ') 
+      .map { it[2] }                     
+      .unique()    
 
   REF_CH = PFILE_CH
     .combine(IDS_CH)
