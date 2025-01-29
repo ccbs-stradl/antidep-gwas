@@ -94,7 +94,7 @@ process FORMAT_FIXED {
   # 18	NEFF
   # 19	NTOT
   
-  gunzip -c !{dataset}.gz | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control", "neff"} else {print $1, $2, $5, $4, $7, $8, $10, $16, $17, $15, $13, $14, $15, $18}}' > !{dataset}.txt
+  gunzip -c !{dataset}.gz | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control", "neff"} else {print $1, $2, $5, $4, $7, $8, $10, $16, $17, $3, $15, $13, $14, $15, $18}}' > !{dataset}.txt
   
   # output columns
   # chr
