@@ -5,19 +5,18 @@ nextflow.enable.dsl=2
 
   Summary of processes and inputs for each process:
     * make bim, bed, fam files for each ancestry:
-      - pfile (output from make-pgen_hg19.sh)
+      - pfile 
       - IDs where for each ancestry (output from make-pgen.sh)
     * calculate effective sample size for each meta-analysis sumstats:
-      - meta/metaset-method-phenotype-cluster.csv (output from format_meta.nf) 
+      - format/meta/GRCh38/antidep-2408-fixed-N06A-{ANCESTRY}.json (output from format_meta.nf)
     * process meta sumstats into correct format:
       - meta-analysed sumstats: meta/metaset-method-phenotype-cluster.csv (output from format_meta.nf)
-      - neff_threshold?
     * clumping to identify regions for fine mapping:
       - processed sumstats (from previous process in current script)
-      - pfile (output from make-pgen_hg19.sh)
+      - pfile, per chr and ancestry, (output from make-pgen_hg19.sh)
     * load clumping results into R and determine region boundaries:
-      - output from clumping process (from previous process in current script)
-    * run SuSiEx:
+      - output from clumping process, per chr and ancestry (from previous process in current script)
+    * run SuSiEx on each region:
       - output from R determining region boundaries (from previous process in current script)
       - processed sumstats (from process above)
     * explore results:
