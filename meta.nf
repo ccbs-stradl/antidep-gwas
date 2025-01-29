@@ -330,8 +330,8 @@ process FIXED {
     tag "${meta.metaset}-${meta.pheno}-${meta.cluster}"
     label 'analysis'
 
-    cpus = 4
-    memory = 32.GB
+    cpus = 6
+    memory = 48.GB
     time = '30m'
 
     input:
