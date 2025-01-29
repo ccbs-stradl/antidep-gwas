@@ -7,47 +7,55 @@ nextflow.enable.dsl=2
     * make bim, bed, fam files for each ancestry:
       - pfile 
       - IDs where for each ancestry (output from make-pgen.sh)
-    * calculate effective sample size for each meta-analysis sumstats:
-      - format/meta/GRCh38/antidep-2408-fixed-N06A-{ANCESTRY}.json (output from format_meta.nf)
+
     * process meta sumstats into correct format:
       - meta-analysed sumstats: meta/metaset-method-phenotype-cluster.csv (output from format_meta.nf)
+
+    * calculate effective sample size for each meta-analysis sumstats:
+      - format/meta/GRCh38/antidep-2408-fixed-N06A-{ANCESTRY}.json (output from format_meta.nf)
+
     * clumping to identify regions for fine mapping:
       - processed sumstats (from previous process in current script)
       - bfile, per chr and ancestry, (output from make-pgen_hg19.sh)
+
     * load clumping results into R and determine region boundaries:
       - output from clumping process, per chr and ancestry (from previous process in current script)
+
     * run SuSiEx on each region:
       - output from R determining region boundaries (from previous process in current script)
       - processed sumstats (from process above)
+
     * explore results:
       - use susiexR package in R to format and plot output from SuSiEx
 
 
 // nextflow log gives the dir for each process, 
-nextflow log -f hash.process 
-nextflow log -f hash.process.tag
+nextflow log fabulous_ampere -f hash,process 
+nextflow log fabulous_ampere -f hash,process,tag
 
 */
+import groovy.json.JsonSlurper
 
 // MAKE_BFILE INPUTS:
-  params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc' // {.psam, etc.}, then can use path, from FilePairs, 
-  params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id'
-  params.chr = 21
+  params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc' // prefix of the pfiles to pass to --pfile in plink 
+  params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id' // Output from script make-pgen.sh
+  params.chr = 21 // testing pipeline on a small chromosome
 
 // MA INPUTS:
-  params.meta = "liftover/fixed-*.vcf.gz"
+  params.meta = "liftover/fixed-*.vcf.gz" // load in gwas meta sumstats that have been lifted over to hg19
 
   // effective sample size QC parameter
-  params.neff_pct = 0.8
+  params.neff_pct = 0.8 // gwas is filtered by effectve sample size, threshold is 0.8
 
 // NEFF INPUTS:
-  params.neff_total = 'format/meta/GRCh38/antidep-2408-fixed-N06A-EUR.json'
-
-// CLUMP INPUTS:
-  // params.clump_file_prefix = 'reference/ukb_imp_v3.qc.geno02_'
+  params.neff_total = 'format/meta/GRCh38/antidep-2408-fixed-N06A-EUR.json' // this json contains metadata about the meta analysis gwas, eg. pheno, ancestry, sample sizes, effective sample size
 
 workflow {
 
+/*
+  MAKE_BFILE process
+  make bim, bed, fam files for each ancestry
+*/
   // Make reference files in bfile format
     PFILE_CH = Channel.of(params.pfile)          
     IDS_CH = Channel.fromPath(params.ancestry_ids) 
@@ -66,6 +74,10 @@ workflow {
 
     BFILE_CH = MAKE_BFILE(REF_CH)
 
+/*
+  MA process
+  process meta sumstats into correct format
+*/
   // Get sumstats from fixed effects meta 
   // Make a channel with contents: val(pop), val(meta), val(pheno), path(sumstats)
     META_CH = Channel.fromPath(params.meta)
@@ -78,32 +90,53 @@ workflow {
   // format sumstats to .ma
 	MA_CH = MA(META_CH, NEFF_CH)
 
+/*
+  NEFF_TOTAL process
+  calculate effective sample size for each meta-analysis sumstats
+*/
   // Effective sample size from the meta analysis for each ancestry
   // Extract neff values for each ancestry
-  // NEFF_TOTAL_CH = 
-  Channel.fromPath(params.neff_total)
-    .splitJson()
-    .filter { it -> it.key == "neff" }
-    .map { it.value }
-    .view()
-    // look at vcf.nf, jsonSlurper(), groovy library
 
-  // Clumping to identify regions for fine mapping
-      // - processed sumstats (from previous process in current script)
-      // - bfile (output from MAKE_BFILE)
+  def jsonSlurper = new JsonSlurper()
 
+  NEFF_TOTAL_CH = Channel.fromPath(params.neff_total)
+    .map { file -> jsonSlurper.parseText(file.text) }
+  
+  // TODO - write process "NEFF_TOTAL" once happy with CHECK_NEFF
+  CHECK_NEFF(NEFF_TOTAL_CH)
+
+/*
+  CLUMP process
+  clumping to identify regions for fine mapping
+*/
     // Creates channel with:
     // val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma"), path(pgen), path(psam), path(pvar)
     MA_BFILE_CH = MA_CH
       .join(BFILE_CH)
-      .map { pop, meta, pheno, ma, bfile_paths, chr ->
-        def prefix = "${bfile_paths[0].getParent()}/${bfile_paths[0].getBaseName()}" 
-        return tuple(pop, meta, pheno, ma, prefix, chr)
-      }
-
-  // MA_BFILE_CH.view()
 
   CLUMP_CH = CLUMP(MA_BFILE_CH)
+
+/*
+  CLUMP_POST process
+  load clumping results into R and determine region boundaries
+*/
+
+  CLUMP_CH.view()
+
+  // CLUMP_POST(CLUMP_CH)
+
+/*
+  SUSIEX process
+  run SuSiEx on each region  
+*/
+
+
+
+/*
+  SUSIEX_POST process
+  explore results using susiexR package
+*/
+
 
 }
 
@@ -193,12 +226,13 @@ process CLUMP {
     --clump-p2 0.05 \
     --clump-r2 0.1 \
     --clump-kb 1000 \
-    --bfile ${bfile} \
+    --bfile ${bfile_prefix} \
     --out ${ma.baseName}.${chr} \
     --threads ${task.cpus} \
 	  --memory ${task.memory.bytes.intdiv(1000000)}
   
   # Check if .clumps file exists; if not, create the file with content "NULL"
+  # This is needed otherwise nextflow exits with an error because plink has not made a .clumps file (because there are no clumps in the gwas for that chromosome)
     if [ ! -f "${ma.baseName}.${chr}.clumps" ]; then
         echo "NULL" > "${ma.baseName}.${chr}.clumps"
     fi
