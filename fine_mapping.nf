@@ -151,7 +151,7 @@ process MAKE_BFILE {
     tuple val(pfile), path(ancestry_ids), val(cluster), val(chr)
 
   output:
-    tuple val(cluster), path("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"), val(chr) // edit this so that the prefix is also outputted as a val, eg. val("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}")
+    tuple val(cluster), val("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}"), path("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"), val(chr)
  
   script:
   """
@@ -211,7 +211,7 @@ process CLUMP {
   time = '10m'
 
   input:
-    tuple val(pop), val(meta), val(pheno), path(ma), val(bfile), val(chr)
+    tuple val(pop), val(meta), val(pheno), path(ma), val(bfile_prefix), path(bfiles), val(chr)
 
   output:
     tuple val(pop), val(meta), val(pheno), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log")
