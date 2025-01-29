@@ -6,6 +6,7 @@
 reference/
 .nextflow*
 hail-*.log
+trace-*.txt
 work/
 vendor/
 bin/
