@@ -13,7 +13,7 @@ nextflow.enable.dsl=2
       - meta-analysed sumstats: meta/metaset-method-phenotype-cluster.csv (output from format_meta.nf)
     * clumping to identify regions for fine mapping:
       - processed sumstats (from previous process in current script)
-      - pfile, per chr and ancestry, (output from make-pgen_hg19.sh)
+      - bfile, per chr and ancestry, (output from make-pgen_hg19.sh)
     * load clumping results into R and determine region boundaries:
       - output from clumping process, per chr and ancestry (from previous process in current script)
     * run SuSiEx on each region:
@@ -22,10 +22,15 @@ nextflow.enable.dsl=2
     * explore results:
       - use susiexR package in R to format and plot output from SuSiEx
 
+
+// nextflow log gives the dir for each process, 
+nextflow log -f hash.process 
+nextflow log -f hash.process.tag
+
 */
 
 // MAKE_BFILE INPUTS:
-  params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc'
+  params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc' // {.psam, etc.}, then can use path, from FilePairs, 
   params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id'
   params.chr = 21
 
@@ -39,7 +44,7 @@ nextflow.enable.dsl=2
   params.neff_total = 'format/meta/GRCh38/antidep-2408-fixed-N06A-EUR.json'
 
 // CLUMP INPUTS:
-  params.clump_file_prefix = 'reference/ukb_imp_v3.qc.geno02_'
+  // params.clump_file_prefix = 'reference/ukb_imp_v3.qc.geno02_'
 
 workflow {
 
@@ -81,6 +86,7 @@ workflow {
     .filter { it -> it.key == "neff" }
     .map { it.value }
     .view()
+    // look at vcf.nf, jsonSlurper(), groovy library
 
   // Clumping to identify regions for fine mapping
       // - processed sumstats (from previous process in current script)
@@ -112,7 +118,7 @@ process MAKE_BFILE {
     tuple val(pfile), path(ancestry_ids), val(cluster), val(chr)
 
   output:
-    tuple val(cluster), path("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"), val(chr)
+    tuple val(cluster), path("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"), val(chr) // edit this so that the prefix is also outputted as a val, eg. val("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}")
  
   script:
   """
