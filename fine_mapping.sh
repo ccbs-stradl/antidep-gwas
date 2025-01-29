@@ -123,6 +123,18 @@ plink2 \
   --out test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero \
   --threads 8
 
+# Can we clump on bfile per CHR, which is the output from make-bed_hg19.sh?
+plink2 \
+  --clump test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.txt \
+  --clump-id-field SNP \
+  --clump-p-field P \
+  --clump-p1 5e-8 \
+  --clump-p2 0.05 \
+  --clump-r2 0.1 \
+  --clump-kb 1000 \
+  --bfile reference/ukb_imp_v3.qc.geno02.mind02_EUR_1 \
+  --out test/fixed-N06A-EUR.human_g1k_v37.neff08_EUR_1
+
 # fixed-N06A-EUR.human_g1k_v37.neff08_noZero.log:
 # Warning: 5001 top variant IDs in --clump file missing from main dataset.  IDs
 # written to test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps.missing_id .
