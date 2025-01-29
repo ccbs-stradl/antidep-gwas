@@ -61,6 +61,44 @@ workflow {
 
   BFILE_CH = MAKE_BFILE(REF_CH)
 
+  // Get sumstats from fixed effects meta 
+  // Make a channel with contents: val(pop), val(meta), val(pheno), path(sumstats)
+    META_CH = Channel.fromPath(params.meta)
+      .map { it -> [it.simpleName.split("-"), it] }
+      .map { it -> [it[0][2], it[0][0], it[0][1], it[1]] }
+
+	// QC parameters
+	NEFF_CH = Channel.of(params.neff_pct)
+
+  // format sumstats to .ma
+	MA_CH = MA(META_CH, NEFF_CH)
+
+  // Effective sample size from the meta analysis for each ancestry
+  // Extract neff values for each ancestry
+  // NEFF_TOTAL_CH = 
+  Channel.fromPath(params.neff_total)
+    .splitJson()
+    .filter { it -> it.key == "neff" }
+    .map { it.value }
+    .view()
+
+  // Clumping to identify regions for fine mapping
+      // - processed sumstats (from previous process in current script)
+      // - bfile (output from MAKE_BFILE)
+
+    // Creates channel with:
+    // val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma"), path(pgen), path(psam), path(pvar)
+    MA_BFILE_CH = MA_CH
+      .join(BFILE_CH)
+      .map { pop, meta, pheno, ma, bfile_paths, chr ->
+        def prefix = "${bfile_paths[0].getParent()}/${bfile_paths[0].getBaseName()}" 
+        return tuple(pop, meta, pheno, ma, prefix, chr)
+      }
+
+  // MA_BFILE_CH.view()
+
+  CLUMP_CH = CLUMP(MA_BFILE_CH)
+
 }
 
 process MAKE_BFILE {
@@ -74,7 +112,7 @@ process MAKE_BFILE {
     tuple val(pfile), path(ancestry_ids), val(cluster), val(chr)
 
   output:
-    path "ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"
+    tuple val(cluster), path("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"), val(chr)
  
   script:
   """
@@ -86,18 +124,79 @@ process MAKE_BFILE {
     --maf 0.005 \
     --make-pgen 'vzs' \
     --out ukb_imp_v3.qc.geno02_${cluster}_${chr} \
-    --threads 4
+    --threads ${task.cpus} \
+	  --memory ${task.memory.bytes.intdiv(1000000)}
 
     plink2 \
     --pfile ukb_imp_v3.qc.geno02_${cluster}_${chr} 'vzs' \
     --mind 0.02 \
     --make-bed \
     --out ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr} \
-    --threads 4
+    --threads ${task.cpus} \
+	  --memory ${task.memory.bytes.intdiv(1000000)}
+  """
+
+}
+
+process MA {
+	tag "${sumstats}"
+	label 'tools'
+
+	cpus = 1
+	memory = 16.GB
+	time = '30m'
+
+	input: 
+	tuple val(pop), val(meta), val(pheno), path(sumstats)
+	each neff_pct
+
+	output:
+	tuple val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma")
+
+	script:
+	  """
+		echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > ${sumstats.simpleName}.ma
+		bcftools query \
+	    -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
+	    ${sumstats} | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10, \$11}' >> ${sumstats.simpleName}.ma
   """
 
 }
 
 
+process CLUMP {
+  tag "${ma}"
+  
+  cpus = 1
+  memory = 8.GB
+  time = '10m'
 
+  input:
+    tuple val(pop), val(meta), val(pheno), path(ma), val(bfile), val(chr)
+
+  output:
+    tuple val(pop), val(meta), val(pheno), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log")
+ 
+  script:
+  """
+  plink2 \
+    --clump ${ma} \
+    --clump-id-field SNP \
+    --clump-p-field P \
+    --clump-p1 5e-8 \
+    --clump-p2 0.05 \
+    --clump-r2 0.1 \
+    --clump-kb 1000 \
+    --bfile ${bfile} \
+    --out ${ma.baseName}.${chr} \
+    --threads ${task.cpus} \
+	  --memory ${task.memory.bytes.intdiv(1000000)}
+  
+  # Check if .clumps file exists; if not, create the file with content "NULL"
+    if [ ! -f "${ma.baseName}.${chr}.clumps" ]; then
+        echo "NULL" > "${ma.baseName}.${chr}.clumps"
+    fi
+
+  """
+}
 
