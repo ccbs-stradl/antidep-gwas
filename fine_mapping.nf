@@ -24,10 +24,22 @@ nextflow.enable.dsl=2
 
 */
 
+// MAKE_BFILE INPUTS:
 params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc'
 params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id'
-params.cluster = 'EUR'
 params.chr = 21
+
+// MA INPUTS:
+  params.meta = "liftover/fixed-*.vcf.gz"
+
+  // effective sample size QC parameter
+  params.neff_pct = 0.8
+
+// NEFF INPUTS:
+  params.neff_total = 'format/meta/GRCh38/antidep-2408-fixed-N06A-EUR.json'
+
+// CLUMP INPUTS:
+  params.clump_file_prefix = 'reference/ukb_imp_v3.qc.geno02_'
 
 workflow {
 
