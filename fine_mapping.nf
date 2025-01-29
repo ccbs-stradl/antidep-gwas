@@ -25,9 +25,9 @@ nextflow.enable.dsl=2
 */
 
 // MAKE_BFILE INPUTS:
-params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc'
-params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id'
-params.chr = 21
+  params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc'
+  params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id'
+  params.chr = 21
 
 // MA INPUTS:
   params.meta = "liftover/fixed-*.vcf.gz"
@@ -44,9 +44,9 @@ params.chr = 21
 workflow {
 
   // Make reference files in bfile format
-  PFILE_CH = Channel.of(params.pfile)          
-  IDS_CH = Channel.fromPath(params.ancestry_ids)
-  CHR_CH = Channel.of(params.chr)    
+    PFILE_CH = Channel.of(params.pfile)          
+    IDS_CH = Channel.fromPath(params.ancestry_ids) 
+    CHR_CH = Channel.of(params.chr)    
 
     // Create CLUSTER_CH to extract unique ancestries from the 3rd column of IDS_CH
     CLUSTER_CH = IDS_CH
@@ -54,12 +54,12 @@ workflow {
       .map { it[2] }                     
       .unique()    
 
-  REF_CH = PFILE_CH
-    .combine(IDS_CH)
-    .combine(CLUSTER_CH)
-    .combine(CHR_CH)
+    REF_CH = PFILE_CH
+      .combine(IDS_CH)
+      .combine(CLUSTER_CH)
+      .combine(CHR_CH)
 
-  BFILE_CH = MAKE_BFILE(REF_CH)
+    BFILE_CH = MAKE_BFILE(REF_CH)
 
   // Get sumstats from fixed effects meta 
   // Make a channel with contents: val(pop), val(meta), val(pheno), path(sumstats)
@@ -159,7 +159,7 @@ process MA {
 		bcftools query \
 	    -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
 	    ${sumstats} | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10, \$11}' >> ${sumstats.simpleName}.ma
-  """
+	  """
 
 }
 
