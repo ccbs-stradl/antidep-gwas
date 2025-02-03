@@ -31,7 +31,7 @@ nextflow.enable.dsl=2
 
 // nextflow log gives the dir for each process, 
 nextflow log fabulous_ampere -f hash,process 
-nextflow log fabulous_ampere -f hash,process,tag
+nextflow log drunk_lagrange -f hash,process,tag
 
 */
 import groovy.json.JsonSlurper
@@ -130,6 +130,8 @@ workflow {
   CLUMP_CLUSTER_CH = CLUMP_CH
     .collect(flat : false)
 
+  CLUMP_CLUSTER_CH.view()
+
   CLUMP_POST(CLUMP_CLUSTER_CH)
 
 /*
@@ -216,7 +218,7 @@ process MA {
 }
 
 process CLUMP {
-  tag "${ma}"
+  tag "${chr}.${ma}"
   
   cpus = 1
   memory = 8.GB
@@ -226,7 +228,7 @@ process CLUMP {
     tuple val(cluster), val(meta), val(pheno), path(ma), val(bfile_prefix), path(bfiles), val(chr)
 
   output:
-    tuple val(cluster), val(meta), val(pheno), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log")
+    tuple val(cluster), val(meta), val(pheno), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log"), val(chr)
  
   script:
   """
@@ -254,7 +256,6 @@ process CLUMP {
 
 
 process CLUMP_POST {
-  tag "${cluster}"
   label 'analysis'
 
   cpus = 1
@@ -265,119 +266,14 @@ process CLUMP_POST {
     val(nested_clumps)
 
   output:
-    stdout
+    tuple path("*.finemapRegions"), val(chr)
 
   script:
   """
-  #!Rscript
-  library(stringr)
-  library(data.table)
-  library(dplyr)
-
-  if (!require("BiocManager", quietly = TRUE)) {
-    install.packages("BiocManager")
-  }
-
-  if (!require("plyranges", quietly = TRUE)) {
-    BiocManager::install("plyranges")
-  }
-
-  library(plyranges) # reduce_ranges
-
-  nested_clumps <- '${nested_clumps}'
-
-  #nested_clumps <- "[['EUR', 'fixed', 'N06A', /exports/eddie/scratch/aedmond3/ad/work/09/4ddc574331d8c5e3f925da19bd6f31/fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/09/4ddc574331d8c5e3f925da19bd6f31/fixed-N06A-EUR.21.clumps, /exports/eddie/scratch/aedmond3/ad/work/09/4ddc574331d8c5e3f925da19bd6f31/fixed-N06A-EUR.21.log], ['AFR', 'fixed', 'N06A', /exports/eddie/scratch/aedmond3/ad/work/91/05d7a9a15f560d1fa022a300dc4fb0/fixed-N06A-AFR.ma, /exports/eddie/scratch/aedmond3/ad/work/91/05d7a9a15f560d1fa022a300dc4fb0/fixed-N06A-AFR.21.clumps, /exports/eddie/scratch/aedmond3/ad/work/91/05d7a9a15f560d1fa022a300dc4fb0/fixed-N06A-AFR.21.log], ['SAS', 'fixed', 'N06A', /exports/eddie/scratch/aedmond3/ad/work/40/44653856ae051891168255951c8b61/fixed-N06A-SAS.ma, /exports/eddie/scratch/aedmond3/ad/work/40/44653856ae051891168255951c8b61/fixed-N06A-SAS.21.clumps, /exports/eddie/scratch/aedmond3/ad/work/40/44653856ae051891168255951c8b61/fixed-N06A-SAS.21.log]]"
-
-  nested_clumps_trim <- str_remove_all(nested_clumps, "\\[\\[|\\]\\]")
-
-  nested_clumps_list <- as.list(unlist(str_split(nested_clumps_trim, "\\], \\[")))
-
-  nested_clumps_clean <- lapply(nested_clumps_list, function(l){
-                        str_split(l, ",") %>%
-                        unlist() %>%
-                        str_trim() %>%
-                        str_remove_all(., "\\'")
-                      })
-
-  ##################
-  # start lapply here over nested_clumps_clean
-
-  granges_list <- lapply(nested_clumps_clean, function(nested_clump_clean){
-
-    # Read in clumps results
-    clumped_data <- fread(nested_clump_clean[5]) # index 5 is the .clumps file (see order in output from CLUMP process)
-
-    if(nrow(clumped_data) == 0){
-      # skip this and go to next element in lapply
-      return() # returns NULL
-    } else {
-
-      loci <- clumped_data %>%
-        dplyr::select(CHR= `#CHROM`, POS, SNP=ID)
-
-      hg19 <- genome_info('hg19')
-      # pull out lengths manually since seqnames uses "chrN" instead of "N"
-      hg19_chr_lengths <- as_tibble(hg19) |> slice(1:23) |> pull(width)
-
-      # add genome info for autosomes and X
-      grng <- loci %>%
-                arrange(CHR) %>%
-                as_granges(seqnames = CHR,
-                              start = POS,
-                              end = POS) 
-
-      seqlevels(grng) <- as.character(1:23)
-      seqlengths(grng) <- hg19_chr_lengths
-      grng <- set_genome_info(grng, 'hg19', is_circular = rep(FALSE, 23))
-
-      # stretch each region, by 100 kb upstream and downstream, then trim back to position boundaries
-      grng_stretched <- stretch(anchor_center(grng), 200000) %>% trim()
-
-      return(grng_stretched)
-    }
-
-  })
-
-
-  # Reduce list of granges into one granges object, then reduce any overlapping regions (from different ancestries)
-  grng_streched <- do.call(c, granges_list) %>%
-                    reduce()
-
-
-  # Reduce ranges to collapse overlapping or nearby regions
-  grng_reduced <- grng_streched %>%
-    reduce_ranges(min.gapwidth = 5000)  %>% # What should this be set to?
-    as_tibble() %>%
-    mutate(WIDTH = end - start + 1) %>%
-    dplyr::select(CHR = seqnames, BP_START = start, BP_END = end, WIDTH)
-  
-
-
-
-
-  # Save a table of min and max BP positions for SuSiEx
-  write.table(grng_reduced, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
-  row.names = F, quote = F, sep = "\t")
-
+  Rscript ${baseDir}/fine_mapping_clump_post.R "${nested_clumps}"
   """
 
 }
-
-/*
-// # Collecting inputs as vectors
-  clumps_files <- c(${clumps.collect { "\"${it}\"" }.join(", ")})
-  ma_basenames <- c(${ma.collect { "\"${it.baseName}\"" }.join(", ")})
-
-  clumps_files
-  ma_basenames
-
-  grng_reduced <- data.frame(CHR = 1, BP_START = 111111, BP_END = 111112, WIDTH = 2)
-  write.table(grng_reduced, paste0("${ma.baseName}", ".finemappRegions"), row.names = F, quote = F, sep = "\t")
-
-//tuple val(cluster), val(meta), val(pheno), path(ma), path(clumps), path(log)
-
-path("*.finemapRegions")
-*/
 
 
 /*
