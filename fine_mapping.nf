@@ -302,105 +302,46 @@ process CLUMP_POST {
   ##################
   # start lapply here over nested_clumps_clean
 
-  granges_list <- lapply(
-  list("test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps",
-  "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumps"), function(test){
+  granges_list <- lapply(nested_clumps_clean, function(nested_clump_clean){
 
-  # Read in clumps results
-  #clumped_data <- fread(nested_clumps_clean[[1]][5]) # index 5 is the .clumps file (see order in output from CLUMP process)
-  clumped_data <- fread(test)
+    # Read in clumps results
+    clumped_data <- fread(nested_clump_clean[5]) # index 5 is the .clumps file (see order in output from CLUMP process)
 
-  if(nrow(clumped_data) == 0){
-    # skip this and go to next element in lapply
-    # return()
-  } else {
+    if(nrow(clumped_data) == 0){
+      # skip this and go to next element in lapply
+      return() # returns NULL
+    } else {
 
-    loci <- clumped_data %>%
-      dplyr::select(CHR= `#CHROM`, POS, SNP=ID)
+      loci <- clumped_data %>%
+        dplyr::select(CHR= `#CHROM`, POS, SNP=ID)
 
-    hg19 <- genome_info('hg19')
-    # pull out lengths manually since seqnames uses "chrN" instead of "N"
-    hg19_chr_lengths <- as_tibble(hg19) |> slice(1:23) |> pull(width)
+      hg19 <- genome_info('hg19')
+      # pull out lengths manually since seqnames uses "chrN" instead of "N"
+      hg19_chr_lengths <- as_tibble(hg19) |> slice(1:23) |> pull(width)
 
-    # add genome info for autosomes and X
-    grng <- loci %>%
-              arrange(CHR) %>%
-              as_granges(seqnames = CHR,
-                            start = POS,
-                            end = POS) 
+      # add genome info for autosomes and X
+      grng <- loci %>%
+                arrange(CHR) %>%
+                as_granges(seqnames = CHR,
+                              start = POS,
+                              end = POS) 
 
-    seqlevels(grng) <- as.character(1:23)
-    seqlengths(grng) <- hg19_chr_lengths
-    grng <- set_genome_info(grng, 'hg19', is_circular = rep(FALSE, 23))
+      seqlevels(grng) <- as.character(1:23)
+      seqlengths(grng) <- hg19_chr_lengths
+      grng <- set_genome_info(grng, 'hg19', is_circular = rep(FALSE, 23))
 
-    # stretch each region, by 100 kb upstream and downstream, then trim back to position boundaries
-    grng_stretched <- stretch(anchor_center(grng), 200000) %>% trim()
+      # stretch each region, by 100 kb upstream and downstream, then trim back to position boundaries
+      grng_stretched <- stretch(anchor_center(grng), 200000) %>% trim()
 
-    return(grng_stretched)
-  }
+      return(grng_stretched)
+    }
 
   })
 
 
-# Reduce list of granges into one granges object, then reduce any overlapping regions (from different ancestries)
-granges <- do.call(c, granges_list) %>%
-  reduce()
-
-
-# Test code to get overlapping regions for multiple ancestries
-
-gr1 <- GRanges(
-  seqnames = "1", 
-  ranges = IRanges(start = 100, end = 200), 
-  strand = "*", 
-  SNP = "rs111111"
-)
-
-gr2 <- GRanges(
-  seqnames = "1", 
-  ranges = IRanges(start = 100, end = 200), 
-  strand = "*", 
-  SNP = "rs111112"
-)
-
-# Example 2: Non-Overlapping Ranges
-gr3 <- GRanges(
-  seqnames = "1", 
-  ranges = IRanges(start = 300, end = 400), 
-  strand = "*", 
-  SNP = "rs222222"
-)
-
-gr4 <- GRanges(
-  seqnames = "1", 
-  ranges = IRanges(start = 500, end = 600), 
-  strand = "*", 
-  SNP = "rs222223"
-)
-
-# Example 3: Partly Overlapping Ranges
-gr5 <- GRanges(
-  seqnames = "1", 
-  ranges = IRanges(start = 150, end = 250), 
-  strand = "*", 
-  SNP = "rs333333"
-)
-
-gr6 <- GRanges(
-  seqnames = "1", 
-  ranges = IRanges(start = 180, end = 280), 
-  strand = "*", 
-  SNP = "rs333334"
-)
-
-# Combine the GRanges objects into a list
-granges_list <- list(gr1, gr2, gr3, gr4, gr5, gr6)
-
-
-do.call(c, granges_list) %>%
-  reduce()
-
-  ####################
+  # Reduce list of granges into one granges object, then reduce any overlapping regions (from different ancestries)
+  grng_streched <- do.call(c, granges_list) %>%
+                    reduce()
 
 
   # Reduce ranges to collapse overlapping or nearby regions
