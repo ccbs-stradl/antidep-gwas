@@ -85,7 +85,6 @@ workflow {
 		.combine(JSON_CH)
 		.map { it -> it.plus(JsonOutput.toJson(it[3].plus([build: it[2].build]))) }
 
-
 	// subset sumstats and references file to each chromosome
 	// using pattern to get sequence names (usually 'chr#' or '#')
 	CHR_CH = Channel.of(1..22, 'X')
@@ -130,7 +129,7 @@ workflow {
 // QC sumstats for duplicate variants
 process QC {
 	tag "${dataset}"
-  label 'rscript'
+  	label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
@@ -140,7 +139,7 @@ process QC {
 	tuple val(dataset), path(gwas), val(meta), val(json), val(params)
 	
 	output:
-	tuple val(dataset), val(meta), val(params), path("${dataset}-qc.txt"), path("${dataset}.csv", includeInputs: true)
+	tuple val(dataset), val(meta), val(params), path("${dataset}-qc.txt"), path("${dataset}.{csv,json}", includeInputs: true)
 	
 	script:
 	"""
@@ -213,7 +212,7 @@ process VCF {
 
 	cpus = 1
 	memory = 16.GB
-	time = '3h'
+	time = '6h'
 
 	input:
 	tuple val(dataset), val(chr), val(meta), val(params), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(gwas2vcf)
@@ -378,7 +377,7 @@ process HARMONISE {
 // add annotations to GWASVCF
 process ANNOTATE {
 	tag "${dataset}"
-  label 'tools'
+  	label 'tools'
 
 	publishDir params.publish, mode: "copy"
 
