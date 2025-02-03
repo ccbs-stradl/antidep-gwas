@@ -120,9 +120,15 @@ workflow {
   load clumping results into R and determine region boundaries
 */
 
-  CLUMP_CH.view()
+  // Combine all the ancestries clumping results into one channel,
+  // as we need all ancestries in the R script together to 
+  // find overlapping regions between ancestries.
 
-  // CLUMP_POST(CLUMP_CH)
+
+  CLUMP_CLUSTER_CH = CLUMP_CH
+    .collect(flat : false)
+
+  CLUMP_POST(CLUMP_CLUSTER_CH)
 
 /*
   SUSIEX process
@@ -239,108 +245,60 @@ process CLUMP {
   """
 }
 
-process CHECK_NEFF {
-  tag "json"
-  
-  cpus = 1
-  memory = 8.GB
-  time = '10m'
-
-  input:
-  val(jsonData)
-
-  output:
-  stdout
-
-  script:
-  """
-  echo "The effective sample size is ${jsonData.neff}"
-
-  # Check output from this by checking the directory:
-  # nextflow log fabulous_ampere -f hash,process,tag
-  # cat ../../ad/work/2c/1bc695013dc56de81a4fd7fa5fd453/.command.out 
-  """
-
-}
-
 
 process CLUMP_POST {
-  tag "${result}"
+  tag "${cluster}"
   label 'analysis'
 
   cpus = 1
-  memory = 32.GB
-  time = '30m'
+  memory = 8.GB
+  time = '5m'
 
   input:
-    tuple val(cluster), val(meta), val(pheno), path(ma), path(clumps), path(log)
+    val(nested_clumps)
 
   output:
-
+    stdout
 
   script:
   """
   #!Rscript
-  library(data.table)
-  library(dplyr)
-  library(plyranges) # reduce_ranges
+  library(stringr)
 
-  # Read in clumps results
-  clumped_data <- fread("${clumps}")
+  nested_clumps <- '${nested_clumps}'
 
-  # TODO:
-  # If clumped_data == NULL then skip file processing
-  #
-  #
-  #
-  #
-  #
+#nested_clumps <- "[['EUR', 'fixed', 'N06A', /exports/eddie/scratch/aedmond3/ad/work/09/4ddc574331d8c5e3f925da19bd6f31/fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/09/4ddc574331d8c5e3f925da19bd6f31/fixed-N06A-EUR.21.clumps, /exports/eddie/scratch/aedmond3/ad/work/09/4ddc574331d8c5e3f925da19bd6f31/fixed-N06A-EUR.21.log], ['AFR', 'fixed', 'N06A', /exports/eddie/scratch/aedmond3/ad/work/91/05d7a9a15f560d1fa022a300dc4fb0/fixed-N06A-AFR.ma, /exports/eddie/scratch/aedmond3/ad/work/91/05d7a9a15f560d1fa022a300dc4fb0/fixed-N06A-AFR.21.clumps, /exports/eddie/scratch/aedmond3/ad/work/91/05d7a9a15f560d1fa022a300dc4fb0/fixed-N06A-AFR.21.log], ['SAS', 'fixed', 'N06A', /exports/eddie/scratch/aedmond3/ad/work/40/44653856ae051891168255951c8b61/fixed-N06A-SAS.ma, /exports/eddie/scratch/aedmond3/ad/work/40/44653856ae051891168255951c8b61/fixed-N06A-SAS.21.clumps, /exports/eddie/scratch/aedmond3/ad/work/40/44653856ae051891168255951c8b61/fixed-N06A-SAS.21.log]]"
 
-  loci <- clumped_data %>%
-    dplyr::select(CHR= `#CHROM`, POS, SNP=ID)
+nested_clumps_trim <- str_remove_all(nested_clumps, "\\[\\[|\\]\\]$")
 
-  hg19 <- genome_info('hg19')
-  # pull out lengths manually since seqnames uses "chrN" instead of "N"
-  hg19_chr_lengths <- as_tibble(hg19) |> slice(1:23) |> pull(width)
+nested_clumps_list <- as.list(unlist(str_split(nested_clumps_trim, "\\], \\[")))
 
-  # add genome info for autosomes and X
-  grng <- loci %>%
-            arrange(CHR) %>%
-            as_granges(seqnames = CHR,
-                          start = POS,
-                          end = POS) 
+nested_clumps_clean <- lapply(nested_clumps_list, function(l){
+                        str_split(l, ",") %>%
+                        unlist() %>%
+                        str_trim() %>%
+                        str_remove_all(., "\\'")
+                      })
 
-  seqlevels(grng) <- as.character(1:23)
-  seqlengths(grng) <- hg19_chr_lengths
-  grng <- set_genome_info(grng, 'hg19', is_circular = rep(FALSE, 23))
-
-  # stretch each region, by 00 kb upstream and downstream, then trim back to position boundaries
-  grng_streched <- stretch(anchor_center(grng), 200000) %>% trim()
-
-  # TO DO
-  # Example code to get overlapping regions for multiple ancestries
-  #
-  #
-  #
-  #
-  #
-  #
-  #
-
-  # Reduce ranges to collapse overlapping or nearby regions
-  grng_reduced <- grng_streched %>%
-    reduce_ranges(min.gapwidth = 5000)  %>% # What should this be set to?
-    as_tibble() %>%
-    mutate(WIDTH = end - start + 1) %>%
-    dplyr::select(CHR = seqnames, BP_START = start, BP_END = end, WIDTH)
-
-
-  # Save the table of min and max BP positions for SuSiEx
-  write.table(grng_reduced, "test/fixed-N06A-EUR.human_g1k_v37.neff08_noZero.clumpRanges",
-  row.names = F, quote = F, sep = "\t")
   """
 
 }
+
+/*
+// # Collecting inputs as vectors
+  clumps_files <- c(${clumps.collect { "\"${it}\"" }.join(", ")})
+  ma_basenames <- c(${ma.collect { "\"${it.baseName}\"" }.join(", ")})
+
+  clumps_files
+  ma_basenames
+
+  grng_reduced <- data.frame(CHR = 1, BP_START = 111111, BP_END = 111112, WIDTH = 2)
+  write.table(grng_reduced, paste0("${ma.baseName}", ".finemappRegions"), row.names = F, quote = F, sep = "\t")
+
+//tuple val(cluster), val(meta), val(pheno), path(ma), path(clumps), path(log)
+
+path("*.finemapRegions")
+*/
 
 
 /*
