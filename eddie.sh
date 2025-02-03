@@ -110,4 +110,5 @@ nextflow run txt.nf -resume \
 # Run SuSiEx on build hg19
 nextflow run fine_mapping.nf -resume \
 -work-dir /exports/eddie/scratch/${USER}/ad/work \
--c eddie.config
+-c eddie.config \
+-with-dag
