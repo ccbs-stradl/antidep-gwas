@@ -56,6 +56,8 @@ workflow {
 /*
   MAKE_BFILE process
   make bim, bed, fam files for each ancestry/cluster
+  this only needs to happen for chromosomes that will be fine mapped, 
+  is there a way to get this from the sumstats?
 */
   // Make reference files in bfile format
     PFILE_CH = Channel.of(params.pfile)          
