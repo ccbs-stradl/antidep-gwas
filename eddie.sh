@@ -77,18 +77,6 @@ nextflow run vcf.nf -resume \
 ### Run downstream analyses
 ###
 
-# Run mBAT-combo on build hg19/GRCh37
-nextflow run genes.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work_hg19 \
--c eddie.config \
---build 'hg19'
-
-# Run mBAT-combo on build hg38/GRCh38
-nextflow run genes.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work_hg38 \
--c eddie.config \
---build 'hg38'
-
 nextflow run metavcf.nf -resume \
 -work-dir /exports/eddie/scratch/${USER}/ad/work \
 -c eddie.config \
@@ -102,7 +90,24 @@ nextflow run liftover.nf -resume \
 --destination "reference/human_g1k_v37.{fasta,fasta.fai}" \
 --chain reference/hg38ToHg19.over.chain.gz
 
+# Run mBAT-combo on build hg19/GRCh37
+nextflow run genes.nf -resume \
+-work-dir /exports/eddie/scratch/${USER}/ad/work_hg19 \
+-c eddie.config \
+--build 'hg19'
+
+# Run mBAT-combo on build hg38/GRCh38
+nextflow run genes.nf -resume \
+-work-dir /exports/eddie/scratch/${USER}/ad/work_hg38 \
+-c eddie.config \
+--build 'hg38'
+
 nextflow run txt.nf -resume \
 -work-dir /exports/eddie/scratch/${USER}/ad/work \
 -c eddie.config \
 --sumstats "liftover/*.{vcf.gz,vcf.gz.tbi}"
+
+# Run SuSiEx on build hg19
+nextflow run fine_mapping.nf -resume \
+-work-dir /exports/eddie/scratch/${USER}/ad/work \
+-c eddie.config
