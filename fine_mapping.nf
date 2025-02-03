@@ -54,7 +54,7 @@ workflow {
 
 /*
   MAKE_BFILE process
-  make bim, bed, fam files for each ancestry
+  make bim, bed, fam files for each ancestry/cluster
 */
   // Make reference files in bfile format
     PFILE_CH = Channel.of(params.pfile)          
@@ -79,7 +79,7 @@ workflow {
   process meta sumstats into correct format
 */
   // Get sumstats from fixed effects meta 
-  // Make a channel with contents: val(pop), val(meta), val(pheno), path(sumstats)
+  // Make a channel with contents: val(cluster), val(meta), val(pheno), path(sumstats)
     META_CH = Channel.fromPath(params.meta)
       .map { it -> [it.simpleName.split("-"), it] }
       .map { it -> [it[0][2], it[0][0], it[0][1], it[1]] }
@@ -94,7 +94,7 @@ workflow {
   NEFF_TOTAL process
   calculate effective sample size for each meta-analysis sumstats
 */
-  // Effective sample size from the meta analysis for each ancestry
+  // Effective sample size from the meta analysis for each ancestry/cluster
   // Extract neff values for each ancestry
 
   def jsonSlurper = new JsonSlurper()
@@ -102,15 +102,14 @@ workflow {
   NEFF_TOTAL_CH = Channel.fromPath(params.neff_total)
     .map { file -> jsonSlurper.parseText(file.text) }
   
-  // TODO - write process "NEFF_TOTAL" once happy with CHECK_NEFF
-  CHECK_NEFF(NEFF_TOTAL_CH)
+  NEFF_TOTAL(NEFF_TOTAL_CH)
 
 /*
   CLUMP process
   clumping to identify regions for fine mapping
 */
     // Creates channel with:
-    // val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma"), path(pgen), path(psam), path(pvar)
+    // val(cluster), val(meta), val(pheno), path("${sumstats.simpleName}.ma"), path(pgen), path(psam), path(pvar)
     MA_BFILE_CH = MA_CH
       .join(BFILE_CH)
 
@@ -186,11 +185,11 @@ process MA {
 	time = '30m'
 
 	input: 
-	tuple val(pop), val(meta), val(pheno), path(sumstats)
+	tuple val(cluster), val(meta), val(pheno), path(sumstats)
 	each neff_pct
 
 	output:
-	tuple val(pop), val(meta), val(pheno), path("${sumstats.simpleName}.ma")
+	tuple val(cluster), val(meta), val(pheno), path("${sumstats.simpleName}.ma")
 
 	script:
 	  """
@@ -211,10 +210,10 @@ process CLUMP {
   time = '10m'
 
   input:
-    tuple val(pop), val(meta), val(pheno), path(ma), val(bfile_prefix), path(bfiles), val(chr)
+    tuple val(cluster), val(meta), val(pheno), path(ma), val(bfile_prefix), path(bfiles), val(chr)
 
   output:
-    tuple val(pop), val(meta), val(pheno), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log")
+    tuple val(cluster), val(meta), val(pheno), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log")
  
   script:
   """
@@ -274,7 +273,7 @@ process CLUMP_POST {
   time = '30m'
 
   input:
-    tuple val(pop), val(meta), val(pheno), path(ma), path(clumps), path(log)
+    tuple val(cluster), val(meta), val(pheno), path(ma), path(clumps), path(log)
 
   output:
 
