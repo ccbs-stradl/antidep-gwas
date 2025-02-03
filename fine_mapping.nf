@@ -35,6 +35,7 @@ nextflow log fabulous_ampere -f hash,process,tag
 
 */
 import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
 
 // MAKE_BFILE INPUTS:
   params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc' // prefix of the pfiles to pass to --pfile in plink 
@@ -91,8 +92,7 @@ workflow {
 	MA_CH = MA(META_CH, NEFF_CH)
 
 /*
-  NEFF_TOTAL process
-  calculate effective sample size for each meta-analysis sumstats
+  Extract effective sample size for each meta-analysis sumstats
 */
   // Effective sample size from the meta analysis for each ancestry/cluster
   // Extract neff values for each ancestry
@@ -101,8 +101,8 @@ workflow {
 
   NEFF_TOTAL_CH = Channel.fromPath(params.neff_total)
     .map { file -> jsonSlurper.parseText(file.text) }
-  
-  NEFF_TOTAL(NEFF_TOTAL_CH)
+
+  // ${NEFF_TOTAL_CH.neff}, ancestry = ${NEFF_TOTAL_CH.cluster}
 
 /*
   CLUMP process
@@ -135,6 +135,12 @@ workflow {
   run SuSiEx on each region  
 */
 
+
+/*
+  Join all the variables needed for SuSiEx by ancestry key
+  Cross with each fine map region 
+  Each element in the channel is for a fine mapping region
+*/
 
 
 /*
@@ -206,7 +212,6 @@ process MA {
 	  """
 
 }
-
 
 process CLUMP {
   tag "${ma}"
