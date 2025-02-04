@@ -130,8 +130,6 @@ workflow {
   CLUMP_CLUSTER_CH = CLUMP_CH
     .collect(flat : false)
 
-  CLUMP_CLUSTER_CH.view()
-
   CLUMP_POST(CLUMP_CLUSTER_CH)
 
 /*
@@ -266,7 +264,7 @@ process CLUMP_POST {
     val(nested_clumps)
 
   output:
-    tuple path("*.finemapRegions"), val(chr)
+    tuple path("*.finemapRegions"), path("chr.txt")
 
   script:
   """

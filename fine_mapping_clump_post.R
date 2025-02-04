@@ -12,7 +12,15 @@
 
   library(plyranges) # reduce_ranges
 
-  nested_clumps <- '${nested_clumps}'
+  # Get command-line arguments
+  args <- commandArgs(trailingOnly = TRUE)
+
+  # The first argument is the nested_clumps string
+  nested_clumps <- args[1]
+
+  nested_clumps <- "[[EUR, fixed, N06A, /exports/eddie/scratch/aedmond3/ad/work/ca/f5a554f9730a7e45262a0815630bbf/fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/ca/f5a554f9730a7e45262a0815630bbf/fixed-N06A-EUR.3.clumps, /exports/eddie/scratch/aedmond3/ad/work/ca/f5a554f9730a7e45262a0815630bbf/fixed-N06A-EUR.3.log, 3], [AFR, fixed, N06A, /exports/eddie/scratch/aedmond3/ad/work/69/2731963a60ec1c8d7c77acddd5b7b4/fixed-N06A-AFR.ma, /exports/eddie/scratch/aedmond3/ad/work/69/2731963a60ec1c8d7c77acddd5b7b4/fixed-N06A-AFR.3.clumps, /exports/eddie/scratch/aedmond3/ad/work/69/2731963a60ec1c8d7c77acddd5b7b4/fixed-N06A-AFR.3.log, 3], [SAS, fixed, N06A, /exports/eddie/scratch/aedmond3/ad/work/a1/56c1329b83ed8e0edf449a317ca361/fixed-N06A-SAS.ma, /exports/eddie/scratch/aedmond3/ad/work/a1/56c1329b83ed8e0edf449a317ca361/fixed-N06A-SAS.3.clumps, /exports/eddie/scratch/aedmond3/ad/work/a1/56c1329b83ed8e0edf449a317ca361/fixed-N06A-SAS.3.log, 3]]"
+
+  cat(nested_clumps)
 
   nested_clumps_trim <- str_remove_all(nested_clumps, "\\[\\[|\\]\\]")
 
@@ -26,7 +34,7 @@
                       })
 
   # Get details on CHR
-  chr <- unique ( sapply(nested_clumps_clean, function(l){ l[[7]] }) )
+  chr <- unique ( sapply(nested_clumps_clean, function(l){ l[7] }) )
 
   # start lapply here over nested_clumps_clean
   granges_list <- lapply(nested_clumps_clean, function(nested_clump_clean){
@@ -65,14 +73,69 @@
 
   })
 
+  granges_list
+
   if (all(sapply(granges_list, is.null))) {
     # If the list is all NULL, create a file with NULL content
-    writeLines("NULL", paste0(, ".finemapRegions"))
+    writeLines("NULL", paste0(chr, ".finemapRegions"))
   } else {
 
+
+# # Test code to get overlapping regions for multiple ancestries
+# gr1 <- GRanges(
+#   seqnames = "1", 
+#   ranges = IRanges(start = 100, end = 200), 
+#   strand = "*", 
+#   SNP = "rs111111"
+# )
+# gr2 <- GRanges(
+#   seqnames = "1", 
+#   ranges = IRanges(start = 100, end = 200), 
+#   strand = "*", 
+#   SNP = "rs111112"
+# )
+# # Example 2: Non-Overlapping Ranges
+# gr3 <- GRanges(
+#   seqnames = "1", 
+#   ranges = IRanges(start = 300, end = 400), 
+#   strand = "*", 
+#   SNP = "rs222222"
+# )
+# gr4 <- GRanges(
+#   seqnames = "1", 
+#   ranges = IRanges(start = 500, end = 600), 
+#   strand = "*", 
+#   SNP = "rs222223"
+# )
+# # Example 3: Partly Overlapping Ranges
+# gr5 <- GRanges(
+#   seqnames = "1", 
+#   ranges = IRanges(start = 150, end = 250), 
+#   strand = "*", 
+#   SNP = "rs333333"
+# )
+# gr6 <- GRanges(
+#   seqnames = "1", 
+#   ranges = IRanges(start = 180, end = 280), 
+#   strand = "*", 
+#   SNP = "rs333334"
+# )
+# # Combine the GRanges objects into a list
+# granges_list_test <- list(gr1, gr2, gr3, gr4, gr5, gr6, NULL)
+
+
   # Reduce list of granges into one granges object, then reduce any overlapping regions (from different ancestries)
-  grng_streched <- do.call(c, granges_list) %>%
+  if(inherits(do.call(c, granges_list),  "GRanges")){
+    grng_streched <- do.call(c, granges_list) %>%
                     reduce()
+  }else{
+    grng_streched <- do.call(c, granges_list)[[1]] %>%
+                    reduce()
+  }
+
+  # If the above throws an error look into this further, as with test data the following works:
+    # do.call(c, granges_list_test) %>%
+    #                 reduce()
 
 
   # Reduce ranges to collapse overlapping or nearby regions
@@ -84,9 +147,11 @@
   
 
   # Save a table of min and max BP positions for SuSiEx, per chr
-  write.table(grng_reduced, paste0(chr, ".finemapRegions"), row.names = F, quote = F, sep = "\t")
+  write.table(grng_reduced, paste0("chr", chr, ".finemapRegions"), row.names = F, quote = F, sep = "\t")
   }
 
-  # capture the chr
-  cat(chr)
+
+# Output chr
+writeLines(chr, "chr.txt")
+  
   
