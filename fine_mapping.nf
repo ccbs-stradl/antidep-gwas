@@ -36,20 +36,15 @@ nextflow log drunk_lagrange -f hash,process,tag
 */
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
+import java.nio.file.Paths
 
 // MAKE_BFILE INPUTS:
   params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc' // prefix of the pfiles to pass to --pfile in plink 
   params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id' // Output from script make-pgen.sh
   params.chr = 3 // testing pipeline on chromosome I know there are results for, so i dont have to deal with NULL clumping file
 
-// MA INPUTS:
-  params.meta = "liftover/fixed-*.vcf.gz" // load in gwas meta sumstats that have been lifted over to hg19
-
   // effective sample size QC parameter
   params.neff_pct = 0.8 // gwas is filtered by effectve sample size, threshold is 0.8
-
-// NEFF INPUTS:
-  params.neff_total = 'format/meta/GRCh38/antidep-2408-fixed-N06A-EUR.json' // this json contains metadata about the meta analysis gwas, eg. pheno, ancestry, sample sizes, effective sample size
 
 workflow {
 
@@ -83,12 +78,19 @@ workflow {
 */
   // Get sumstats from fixed effects meta 
   // Make a channel with contents: val(cluster), val(meta), val(pheno), path(sumstats)
-    META_CH = Channel.fromPath(params.meta)
+
+  // MA INPUTS:
+    // load in gwas meta sumstats that have been lifted over to hg19 and match ancestries in CLUSTER_CH
+
+    META_CH = CLUSTER_CH 
+      .map { cluster -> "liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz" }
+      .map { pathStr -> Paths.get(pathStr) }
       .map { it -> [it.simpleName.split("-"), it] }
       .map { it -> [it[0][2], it[0][0], it[0][1], it[1]] }
 
 	// QC parameters
 	NEFF_CH = Channel.of(params.neff_pct)
+
 
   // format sumstats to .ma
 	MA_CH = MA(META_CH, NEFF_CH)
