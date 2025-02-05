@@ -101,23 +101,50 @@ workflow {
   // Effective sample size from the meta analysis for each ancestry/cluster
   // Extract neff values for each ancestry
 
+
+  // NEFF INPUTS:
+   // json contains metadata about the meta analysis gwas, eg. pheno, ancestry, sample sizes, effective sample size
+
   def jsonSlurper = new JsonSlurper()
 
-  NEFF_TOTAL_CH = Channel.fromPath(params.neff_total)
-    .map { file -> jsonSlurper.parseText(file.text) }
+  NEFF_TOTAL_CH = CLUSTER_CH
+    .map { cluster -> "format/meta/GRCh38/antidep-2501-fixed-N06A-${cluster}.json" } // this line needs editing, not ideal to have "antidep-2501-fixed-N06A-" hard coded here
+    .map { path -> 
+        def jsonFile = new File(path)
+        jsonSlurper.parseText(jsonFile.text)
+    }
+    .map { json_obj -> 
+        [json_obj.cluster, json_obj.neff] 
+    }
 
-  // ${NEFF_TOTAL_CH.neff}, ancestry = ${NEFF_TOTAL_CH.cluster}
+
+/*
+  Combine ancestry/cluster, with MA (path to sumstats), and total NEFF
+  eg. channel will have the first element as a list of ancestries,
+  second element will be path to sumstats (in same order as ancestries in first element)
+  third element will be effective sample size (in same order as ancestries in first element)
+  these will all be string values that are comma separated (with no spaces around commas, else susiex throws an error)
+
+*/
+
+
+ CLUSTER_CH.view()
+ MA_CH.view()
+ NEFF_TOTAL_CH.view()
+
 
 /*
   CLUMP process
   clumping to identify regions for fine mapping
 */
-    // Creates channel with:
-    // val(cluster), val(meta), val(pheno), path("${sumstats.simpleName}.ma"), path(pgen), path(psam), path(pvar)
-    MA_BFILE_CH = MA_CH
-      .join(BFILE_CH)
+
+  // Creates channel with:
+  // val(cluster), val(meta), val(pheno), path("${sumstats.simpleName}.ma"), path(pgen), path(psam), path(pvar)
+  MA_BFILE_CH = MA_CH
+    .join(BFILE_CH)
 
   CLUMP_CH = CLUMP(MA_BFILE_CH)
+
 
 /*
   CLUMP_POST process
@@ -132,7 +159,9 @@ workflow {
   CLUMP_CLUSTER_CH = CLUMP_CH
     .collect(flat : false)
 
-  CLUMP_POST(CLUMP_CLUSTER_CH)
+  CLUMP_POST_CH = CLUMP_POST(CLUMP_CLUSTER_CH)
+
+  
 
 /*
   SUSIEX process
@@ -151,6 +180,7 @@ workflow {
   SUSIEX_POST process
   explore results using susiexR package
 */
+
 
 
 }
