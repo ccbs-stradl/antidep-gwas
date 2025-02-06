@@ -332,47 +332,40 @@ process CLUMP_POST {
   Rscript ${baseDir}/fine_mapping_clump_post.R "${nested_clumps}"
   """
 
-}
+} // Warning: if edits are made to this script nextflow won't know to re-run it if output is already cached
+
+
+process SUSIEX {
+  cpus = 1
+  memory = 8.GB
+  time = '5m'
+
+  publishDir 'fineMapping', mode: 'copy'
+
+  input:
+    tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
+
+  output:
+    path '*.log'
+
+  script:
+  """
+  # Pass the variables to the script via environment variables
+  export finemapRegions=${finemapRegions}
+  export chr=${chr}
+  export ancestries=${ancestries}
+  export maPaths=${maPaths}
+  export neff=${neff}
+  export bfile=${bfile}
+
+  bash ${baseDir}/fine_mapping_susiex_process.sh 
+  """
+
+} // Warning: if edits are made to this script nextflow won't know to re-run it if output is already cached
+
 
 
 /*
-
-process SUSIEX {
-
-# output:
-SuSiEx.${ANCESTRY_NAMES_CONCAT}.output.cs95_${CHR}:${BP_START}:${BP_END}.log
-
-# publishDir = fineMapping
-
-# ensure SuSiEx and plink have been copied to bin folder
-
-    SuSiEx \ 
-      --sst_file= ${SUMSTAT_FILES_ORDERED_BY_ANCESTRY} \
-      --n_gwas= ${NEFF_TOTAL_ORDERED_BY_ANCESTRY} \
-      --ref_file= ${BFILE_PREFIX_ORDERED_BY_ANCESTRY, PER CHROMOSOME} \
-      --ld_file= ${PATH_TO_TMP_DIR_ORDERED_BY_ANCESTRY, PER CHROMOSOME} \
-      --out_dir=./fineMapping/results \
-      --out_name=SuSiEx.${ANCESTRY_NAMES_CONCAT}.output.cs95_${CHR}:${BP_START}:${BP_END} \
-      --level=0.95 \
-      --pval_thresh=1e-5 \
-      --chr=$CHR \
-      --bp= $BP_START,$BP_END \
-      --maf=0.005 \
-      --snp_col=1,1,1 \ REP EACH COL NUMBER BY LENGTH OF ANCESTRIES
-      --chr_col=9,9,9 \
-      --bp_col=10,10,10 \
-      --a1_col=2,2,2 \
-      --a2_col=3,3,3 \
-      --eff_col=5,5,5 \
-      --se_col=6,6,6 \
-      --pval_col=7,7,7 \
-      --mult-step=True \
-      --plink=plink \
-      --keep-ambig=True |& tee SuSiEx.${ANCESTRY_NAMES_CONCAT}.output.cs95_${CHR}:${BP_START}:${BP_END}.log
-
-
-}
-
 process SUSIEX_POST {
 
 }
