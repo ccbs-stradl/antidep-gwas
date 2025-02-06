@@ -316,9 +316,9 @@ process CLUMP {
 process CLUMP_POST {
   label 'analysis'
 
-  cpus = 1
-  memory = 8.GB
-  time = '5m'
+  cpus = 8
+  memory = 32.GB
+  time = '30m'
 
   input:
     val(nested_clumps)
