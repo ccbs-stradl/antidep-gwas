@@ -344,9 +344,6 @@ process SUSIEX {
   input:
     tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
 
-  output:
-    path '*.cs'
-
   script:
   """
 
@@ -365,8 +362,8 @@ process SUSIEX {
      --sst_file=${maPaths} \
      --n_gwas=${neff} \
      --ref_file=${bfile} \
-     --ld_file=\$(echo "${ancestries}" | tr ',' '\n' | sed "s|^|${task.workDir}/|; s|\$|.\${chr}|" | paste -sd ',') \
-     --out_dir=${task.workDir} \
+     --ld_file=\$(echo "${ancestries}" | tr ',' '\n' | sed "s|^|\${PWD}/ld/|; s|\$|.\${chr}|" | paste -sd ',') \
+     --out_dir=\${PWD}/fineMapping \
      --out_name=SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END} \
      --level=0.95 \
      --pval_thresh=1e-5 \
@@ -383,9 +380,7 @@ process SUSIEX {
      --pval_col=7,7,7 \
      --mult-step=True \
      --plink=plink \
-     --keep-ambig=True |& tee SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
-
-    ls -lh ${task.workDir}
+     --keep-ambig=True |& tee fineMapping/SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
 
     break
 
@@ -393,7 +388,7 @@ process SUSIEX {
 
   """
 
-} 
+} // using break to test first itteration of loop
 
 
 
