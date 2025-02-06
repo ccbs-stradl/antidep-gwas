@@ -184,7 +184,9 @@ workflow {
 
   CLUMP_POST_CH = CLUMP_POST(CLUMP_CLUSTER_CH)
 
-  
+  JOINED_SUSIEX_CH = CLUMP_POST_CH
+    .map { it ->  [it[0], file(it[1]).text.trim()] } // read value of chr.txt
+    .combine(JOINED_CH)
 
 /*
   SUSIEX process
