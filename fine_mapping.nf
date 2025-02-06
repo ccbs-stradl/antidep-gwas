@@ -123,6 +123,7 @@ workflow {
   eg. channel will have the first element as a list of ancestries,
   second element will be path to sumstats (in same order as ancestries in first element)
   third element will be effective sample size (in same order as ancestries in first element)
+  fourth element will be bfile prefix
   these will all be string values that are comma separated (with no spaces around commas, else susiex throws an error)
 
   #########
@@ -148,10 +149,12 @@ workflow {
   JOINED_CH = MA_CH
     .join(NEFF_TOTAL_CH) // joined based on ancestry/cluster value (first element of channel)
     .map { it -> [it[0], it[3], it[4]] } // keep only ancestry/cluster value, path to MA and neff total.
-    .collate(3)
+    .join(BFILE_CH.map { it -> [it[0], it[1]] }) // keep only ancestry/cluster value and prefix of bfile
+    .collate(4)
     .transpose()
     .map { it.join(',') } 
     .collect()
+
 
 /*
   CLUMP process
