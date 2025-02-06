@@ -125,13 +125,33 @@ workflow {
   third element will be effective sample size (in same order as ancestries in first element)
   these will all be string values that are comma separated (with no spaces around commas, else susiex throws an error)
 
+  #########
+  Test code: 
+  JOINED_CH = Channel.of(
+    ['EUR', 'PATH1', '100'],
+    ['AFR', 'PATH2', '200'],
+    ['SAS', 'PATH3', '300'] 
+  )
+
+  JOINED_CH
+    .collate(3)
+    .transpose()
+    .map { it.join(',') } 
+    .collect()
+    .view()
+
+  Outputs: ['EUR,AFR,SAS', 'PATH1,PATH2,PATH3', '100,200,300']
+  #########
+
 */
 
-
- CLUSTER_CH.view()
- MA_CH.view()
- NEFF_TOTAL_CH.view()
-
+  JOINED_CH = MA_CH
+    .join(NEFF_TOTAL_CH) // joined based on ancestry/cluster value (first element of channel)
+    .map { it -> [it[0], it[3], it[4]] } // keep only ancestry/cluster value, path to MA and neff total.
+    .collate(3)
+    .transpose()
+    .map { it.join(',') } 
+    .collect()
 
 /*
   CLUMP process
