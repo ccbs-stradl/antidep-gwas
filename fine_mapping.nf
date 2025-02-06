@@ -83,7 +83,7 @@ workflow {
     // load in gwas meta sumstats that have been lifted over to hg19 and match ancestries in CLUSTER_CH
 
     META_CH = CLUSTER_CH 
-      .map { cluster -> "liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz" }
+      .map { cluster -> "liftover/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz" } // edit this line so path is not hard coded
       .map { pathStr -> Paths.get(pathStr) }
       .map { it -> [it.simpleName.split("-"), it] }
       .map { it -> [it[0][2], it[0][0], it[0][1], it[1]] }
@@ -108,7 +108,7 @@ workflow {
   def jsonSlurper = new JsonSlurper()
 
   NEFF_TOTAL_CH = CLUSTER_CH
-    .map { cluster -> "format/meta/GRCh38/antidep-2501-fixed-N06A-${cluster}.json" } // this line needs editing, not ideal to have "antidep-2501-fixed-N06A-" hard coded here
+    .map { cluster -> "format/meta/GRCh38/antidep-2501-fixed-N06A-${cluster}.json" } // edit this line so path is not hard coded
     .map { path -> 
         def jsonFile = new File(path)
         jsonSlurper.parseText(jsonFile.text)
