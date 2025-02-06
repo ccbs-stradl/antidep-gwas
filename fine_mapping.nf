@@ -149,12 +149,13 @@ workflow {
   JOINED_CH = MA_CH
     .join(NEFF_TOTAL_CH) // joined based on ancestry/cluster value (first element of channel)
     .map { it -> [it[0], it[3], it[4]] } // keep only ancestry/cluster value, path to MA and neff total.
-    .join(BFILE_CH.map { it -> [it[0], it[1]] }) // keep only ancestry/cluster value and prefix of bfile
+    .join(BFILE_CH.map { it -> [it[0], "${file(it[2][0]).parent}/${file(it[2][0]).baseName}" ] }) // keep only ancestry/cluster value and bfile (without file extension)
     .collate(4)
     .transpose()
     .map { it.join(',') } 
     .collect()
 
+    JOINED_CH.view()
 
 /*
   CLUMP process
