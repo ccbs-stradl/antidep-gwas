@@ -193,6 +193,10 @@ workflow {
   run SuSiEx on each region  
 */
 
+  JOINED_SUSIEX_CH.view()
+
+  SUSIEX(JOINED_SUSIEX_CH)
+
 
 /*
   Join all the variables needed for SuSiEx by ancestry key
