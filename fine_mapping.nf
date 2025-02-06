@@ -31,7 +31,7 @@ nextflow.enable.dsl=2
 
 // nextflow log gives the dir for each process, 
 nextflow log fabulous_ampere -f hash,process 
-nextflow log drunk_lagrange -f hash,process,tag
+nextflow log elated_noether -f hash,process,tag
 
 */
 import groovy.json.JsonSlurper
@@ -83,17 +83,17 @@ workflow {
     // load in gwas meta sumstats that have been lifted over to hg19 and match ancestries in CLUSTER_CH
 
     META_CH = CLUSTER_CH 
-      .map { cluster -> "vcf/meta/GRCh37/fixed-N06A-${cluster}.human_g1k_v37.vcf.gz" } // edit this line so path is not hard coded
+      .map { cluster -> "vcf/meta/GRCh37/antidep-2501-fixed-N06A-${cluster}.human_g1k_v37.vcf.gz" } // edit this line so path is not hard coded
       .map { pathStr -> Paths.get(pathStr) }
       .map { it -> [it.simpleName.split("-"), it] }
-      .map { it -> [it[0][2], it[0][0], it[0][1], it[1]] }
+      .map { it -> [it[0][4], it[0][2], it[0][3], it[1]] }
 
 	// QC parameters
 	NEFF_CH = Channel.of(params.neff_pct)
 
 
   // format sumstats to .ma
-	MA_CH = MA(META_CH, NEFF_CH)
+	MA_CH = MA(META_CH, NEFF_CH) // .ma files are empty except for header
 
 /*
   Extract effective sample size for each meta-analysis sumstats
@@ -155,8 +155,6 @@ workflow {
     .map { it.join(',') } 
     .collect()
 
-    JOINED_CH.view()
-
 /*
   CLUMP process
   clumping to identify regions for fine mapping
@@ -168,6 +166,8 @@ workflow {
     .join(BFILE_CH)
 
   CLUMP_CH = CLUMP(MA_BFILE_CH)
+
+  CLUMP_CH.view()
 
 
 /*
@@ -339,10 +339,11 @@ process SUSIEX {
   memory = 8.GB
   time = '5m'
 
-  publishDir 'fineMapping', mode: 'copy'
-
   input:
     tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
+
+//  output:
+  //  tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary")
 
   script:
   """
@@ -362,8 +363,8 @@ process SUSIEX {
      --sst_file=${maPaths} \
      --n_gwas=${neff} \
      --ref_file=${bfile} \
-     --ld_file=\$(echo "${ancestries}" | tr ',' '\n' | sed "s|^|\${PWD}/ld/|; s|\$|.\${chr}|" | paste -sd ',') \
-     --out_dir=\${PWD}/fineMapping \
+     --ld_file=\$(echo "${ancestries}" | tr ',' '\n' | sed "s|^|./|; s|\$|.\${chr}|" | paste -sd ',') \
+     --out_dir=. \
      --out_name=SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END} \
      --level=0.95 \
      --pval_thresh=1e-5 \
@@ -380,7 +381,7 @@ process SUSIEX {
      --pval_col=7,7,7 \
      --mult-step=True \
      --plink=plink \
-     --keep-ambig=True |& tee fineMapping/SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
+     --keep-ambig=True |& tee SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
 
     break
 
