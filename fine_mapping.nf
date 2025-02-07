@@ -335,7 +335,7 @@ process SUSIEX {
   memory = 32.GB
   time = '30m'
 
-  publishDir "fineMapping", mode: "copy"
+  publishDir "fineMapping/output", mode: "copy"
 
   input:
     tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
