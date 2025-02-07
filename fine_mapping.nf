@@ -30,8 +30,7 @@ nextflow.enable.dsl=2
 
 
 // nextflow log gives the dir for each process, 
-nextflow log fabulous_ampere -f hash,process 
-nextflow log elated_noether -f hash,process,tag
+nextflow log condescending_swartz -f hash,process,tag
 
 */
 import groovy.json.JsonSlurper
