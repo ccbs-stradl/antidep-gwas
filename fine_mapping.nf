@@ -306,6 +306,8 @@ process CLUMP {
 
 
 process CLUMP_POST {
+  // would be good to tag with chromosome, but nervous to change the input to this process as it was fidly to get right
+
   label 'analysis'
 
   cpus = 1
