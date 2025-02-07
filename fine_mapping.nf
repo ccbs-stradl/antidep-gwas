@@ -375,13 +375,11 @@ process SUSIEX {
      --plink=plink \
      --keep-ambig=True |& tee SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
 
-    break
-
   done 
 
   """
 
-} // using break to test first itteration of loop
+} 
 
 
 
