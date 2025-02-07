@@ -306,7 +306,7 @@ process CLUMP {
 process CLUMP_POST {
   label 'analysis'
 
-  cpus = 8
+  cpus = 1
   memory = 32.GB
   time = '30m'
 
@@ -326,14 +326,14 @@ process CLUMP_POST {
 
 process SUSIEX {
   cpus = 1
-  memory = 8.GB
-  time = '5m'
+  memory = 32.GB
+  time = '30m'
 
   input:
     tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
 
-//  output:
-  //  tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary")
+  output:
+    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary")
 
   script:
   """
