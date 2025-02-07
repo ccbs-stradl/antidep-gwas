@@ -353,7 +353,7 @@ process SUSIEX {
      --sst_file=${maPaths} \
      --n_gwas=${neff} \
      --ref_file=${bfile} \
-     --ld_file=\$(echo "${ancestries}" | tr ',' '\n' | sed "s|^|./|; s|\$|.\${chr}|" | paste -sd ',') \
+     --ld_file=${ancestries} \
      --out_dir=. \
      --out_name=SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END} \
      --level=0.95 \
