@@ -83,16 +83,16 @@ workflow {
 
     META_CH = CLUSTER_CH 
       .map { cluster -> "vcf/meta/GRCh37/antidep-2501-fixed-N06A-${cluster}.vcf.gz" } // edit this line so path is not hard coded
-      .map { pathStr -> Paths.get(pathStr) }
+      .map { pathStr -> Paths.get(pathStr) } // can this be replaced with a nextflow command?
       .map { it -> [it.simpleName.split("-"), it] }
-      .map { it -> [it[0][4], it[0][2], it[0][3], it[1]] }
+      .map { it -> [it[0][4], it[0][2], it[0][3], it[1]] } // pull out sections of file name: [4] = ancestry/cluster, [2] = fixed, [3] = N06A.
 
 	// QC parameters
 	NEFF_CH = Channel.of(params.neff_pct)
 
 
   // format sumstats to .ma
-	MA_CH = MA(META_CH, NEFF_CH) // .ma files are empty except for header
+	MA_CH = MA(META_CH, NEFF_CH)
 
 /*
   Extract effective sample size for each meta-analysis sumstats
@@ -327,9 +327,13 @@ process CLUMP_POST {
 
 
 process SUSIEX {
-  cpus = 1
+  tag "chr:${chr}"
+
+  cpus = 4
   memory = 32.GB
   time = '30m'
+
+  publishDir "fineMapping", mode: "copy"
 
   input:
     tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
