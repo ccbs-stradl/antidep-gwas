@@ -78,7 +78,7 @@ granges_list <- lapply(nested_clumps_clean, function(nested_clump_clean){
 # First deal with all NULLs (ie. no clumps data, and no regions to fine map for all ancestries)
 if (all(sapply(granges_list, is.null))) {
   # If the list is all NULL, create a file with NULL content
-  writeLines("NULL", paste0(chr, ".finemapRegions"))
+  writeLines("NULL", paste0("chr",chr, ".finemapRegions"))
 } else {
 
 # If the first item in granges_list is a GRanges object then the following code runs:
