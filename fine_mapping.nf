@@ -126,7 +126,7 @@ workflow {
   these will all be string values that are comma separated (with no spaces around commas, else susiex throws an error)
 
   #########
-  Test code: 
+  Example code: 
   JOINED_CH = Channel.of(
     ['EUR', 'PATH1', '100'],
     ['AFR', 'PATH2', '200'],
@@ -166,9 +166,6 @@ workflow {
 
   CLUMP_CH = CLUMP(MA_BFILE_CH)
 
-  CLUMP_CH.view()
-
-
 /*
   CLUMP_POST process
   load clumping results into R and determine region boundaries
@@ -193,15 +190,9 @@ workflow {
   run SuSiEx on each region  
 */
 
-  SUSIEX(JOINED_SUSIEX_CH)
+  SUSIEX_CH = SUSIEX(JOINED_SUSIEX_CH)
 
-
-/*
-  Join all the variables needed for SuSiEx by ancestry key
-  Cross with each fine map region 
-  Each element in the channel is for a fine mapping region
-*/
-
+  SUSIEX_CH.view()
 
 /*
   SUSIEX_POST process
