@@ -192,14 +192,17 @@ workflow {
 
   SUSIEX_CH = SUSIEX(JOINED_SUSIEX_CH)
 
-  SUSIEX_CH.view()
-
 /*
   SUSIEX_POST process
   explore results using susiexR package
 */
 
+  SUSIEX_PROCESSED_CH = SUSIEX_CH
+                          .map { it -> [ file(it[0][0]).parent , it[4], it[5] ]}
 
+  SUSIEX_PROCESSED_CH.view()
+
+  SUSIEX_POST_CH = SUSIEX_POST(SUSIEX_PROCESSED_CH)
 
 }
 
@@ -341,7 +344,7 @@ process SUSIEX {
     tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
 
   output:
-    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary")
+    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary"), val(ancestries), val(chr)
 
   script:
   """
@@ -388,13 +391,62 @@ process SUSIEX {
 } 
 
 
+process SUSIEX_POST {
+  tag "chr:${chr}"
+  label 'analysis'
+
+  cpus = 2
+  memory = 32.GB
+  time = '30m'
+
+  publishDir "fineMapping/plots", mode: "copy"
+
+  input:
+    tuple val(susiexPath), val(ancestries), val(chr)
+
+  output:
+    path("*.png"), optional: true
+
+  script:
+  """
+  #!Rscript
+  packages <- c("cowplot", "data.table", "dplyr", "ggplot2", "tidyr", "purrr", "stringr", "devtools")
+
+  lapply(packages, function(p){
+    if (!require("cowplot", quietly = TRUE)) {
+    install.packages(p)
+    }
+  })
+
+  library(cowplot)
+  library(data.table)
+  library(dplyr)
+  library(ggplot2)
+  library(tidyr)
+  library(purrr)
+  library(stringr)
+
+  if (!require("susiexr", quietly = TRUE)) {
+    devtools::install_github("ameliaes/susiexr")
+  }
+
+  library(susiexR)
+
+  # ---- Format SuSiEx results:
+  test <- "${susiexPath}"
+
+
+  """
+
+}
+
 
 /*
 
-// use file(susiex_paths).parent 
 
-process SUSIEX_POST {
+  # results <- format_results(path_to_susiex_results, ancestries = str_split("${ancestries}", ","))
 
-}
+  # Check that each processed file type has the same number of fine mapped regions
+  # nrow(results$summary) == length(results$cs) && length(results$cs) == length(results$snp)
 
 */
