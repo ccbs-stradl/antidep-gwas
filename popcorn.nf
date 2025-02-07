@@ -41,7 +41,7 @@ workflow {
     // popscorn scores
     SCORE_CH = COMPUTE(REF_REF_CH)
 
-    format and combine sumstats
+    // format and combine sumstats
     TXT_CH = TXT(VCF_CH)
     TXT_TXT_CH = TXT_CH.combine(TXT_CH)
         .filter { it -> it[0] <= it[3] && it[1] != it[4] }
@@ -109,6 +109,7 @@ process QC {
 // compute popcorn scores
 process COMPUTE {
     tag "${cluster1}-${cluster2}"
+    label "popcorn"
 
     cpus = 8
     memory = 16.GB
@@ -152,6 +153,7 @@ process TXT {
 // fit popcorn corrleations
 process FIT {
     tag "${dataset1}_${dataset2}"
+    label "popcorn"
 
     publishDir "models/popcorn", mode: "copy"
 
