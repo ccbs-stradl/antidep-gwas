@@ -432,20 +432,62 @@ process SUSIEX_POST {
   # Check that each processed file type has the same number of fine mapped regions
   nrow(results\$summary) == length(results\$cs) && length(results\$cs) == length(results\$snp)
 
-  # ---- Plot the relationship between:
-  # CS_LENGTH - number of SNPs in the credible set
-  # CS_PURITY - purity of the credible set
-  # MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set.
+  ##### THESE PLOTS SHOULD BE DONE ON ALL CHR TOGETHER #########################################
+  # ---- Plot the relationship between:                                                        #
+  # CS_LENGTH - number of SNPs in the credible set.                                            #
+  # CS_PURITY - purity of the credible set.                                                    #
+  # MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set..              #
+  #                                                                                            #
+  # png("length_purity_maxPIP.png", width = 1000, height = 600, res = 150)                     #
+  #  print(plotPurityPIP(results\$summary))                                                    #
+  # dev.off()                                                                                  #
+  #                                                                                            #
+  # ---- Plot the probability the top SNP in the credible set is causal in each ancestry.      #
+  #                                                                                            #
+  # png("POST-HOC_PROB_POP.png", width = 1000, height = 800, res = 150).                       #
+  #  print(plotAncestryCausal(results\$summary, ancestries = ancestries)).                     #
+  # dev.off()                                                                                  #
+  #                                                                                            #
+  ##############################################################################################
 
-  png("length_purity_maxPIP.png", width = 1000, height = 600, res = 150)
-    print(plotPurityPIP(results\$summary))
-  dev.off()
+  # ---- Locus zoom plots
 
-  # ---- Plot the probability the top SNP in the credible set is causal in each ancestry
-  # ----------------
-  png("POST-HOC_PROB_POP.png", width = 1000, height = 800, res = 150)
-    print(plotAncestryCausal(results\$summary, ancestries = ancestries))
-  dev.off()
+  # Loop over fine mapped regions, creating a new plot file for each containing:
+
+  # Plot a region plot of -log10(p) vs SNP for each ancestry (1 ancestry plot per row)
+  # Another option is to overlay ancestries on top of each other and not colour by R2, but that might be messy?
+  # Bottom row is PIP vs SNP plot (the PIP is the overall PIP from susieX, a combination of all ancestries)s
+
+  # Define fine mapped regions:
+  # These will be each element of results\$snp and results\$cs
+  # They should be in the same order
+
+  # ------
+  # To get the p-values for all the SNPs we need to load in the gwas sumstats
+  # Note not all these SNPs were included in the fine mapping,
+  # perhaps indicate the SNPs that were included on the plot
+  
+  sumstatsPathClean <- str_split("${sumstatsPath}", ",")[[1]]
+
+  sumstats <- lapply(sumstatsPathClean, function(sumstats_path){ 
+    fread(sumstats_path)
+    })
+
+  names(sumstats) <- ancestries
+
+  # load in function for nextflow (todo: update function in susiexR package)
+  source(paste0(${baseDir}, "/fine_mapping_plots.R"))
+
+  for( i in 1:length(results\$cs) ){
+    main_plot <- mainPlotNextflow(cs_results = results\$cs[[i]], 
+                        snp_results = results\$snp[[i]],
+                        sumstats = sumstats,
+                        ancestries = ancestries)
+
+    png(paste0("region_plot_", main_plot\$region, ".png"), width = 2300, height = 2300, res = 300)
+    print(main_plot\$plot)
+    dev.off()
+  }
 
 
 
