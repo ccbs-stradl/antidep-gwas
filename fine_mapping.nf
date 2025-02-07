@@ -148,8 +148,8 @@ workflow {
   JOINED_CH = MA_CH
     .join(NEFF_TOTAL_CH) // joined based on ancestry/cluster value (first element of channel)
     .map { it -> [it[0], it[3], it[4]] } // keep only ancestry/cluster value, path to MA and neff total.
-    .join(BFILE_CH.map { it -> [it[0], "${file(it[2][0]).parent}/${file(it[2][0]).baseName}" ] }) // keep only ancestry/cluster value and bfile (without file extension)
-    .collate(4)
+    .join(BFILE_CH.map { it -> [it[0], "${file(it[2][0]).parent}/${file(it[2][0]).baseName}", it[2] ] }) // keep only ancestry/cluster value and bfile (without file extension)
+    .collate(5)
     .transpose()
     .map { it.join(',') } 
     .collect()
@@ -185,6 +185,7 @@ workflow {
     .map { it ->  [it[0], file(it[1]).text.trim()] } // read value of chr.txt
     .combine(JOINED_CH)
 
+
 /*
   SUSIEX process
   run SuSiEx on each region  
@@ -198,13 +199,10 @@ workflow {
 */
 
   SUSIEX_PROCESSED_CH = SUSIEX_CH
-                          .map { it -> [ file(it[0][0]).parent , it[4], it[5], it[6] ]}
-
-  SUSIEX_PROCESSED_CH.view()
+                          .map { it -> [ file(it[0][0]).parent , it[4], it[5], it[6], it[7], it[8] ]}
 
   SUSIEX_POST_CH = SUSIEX_POST(SUSIEX_PROCESSED_CH)
 
-  BFILE_CH.view()
 
 }
 
@@ -343,10 +341,10 @@ process SUSIEX {
   publishDir "fineMapping/output", mode: "copy"
 
   input:
-    tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
+    tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile), val(bfile_paths)
 
   output:
-    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary"), val(maPaths), val(ancestries), val(chr)
+    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary"), val(maPaths), val(ancestries), val(chr), val(bfile), val(bfile_paths)
 
   script:
   """
@@ -404,7 +402,7 @@ process SUSIEX_POST {
   publishDir "fineMapping/plots", mode: "copy"
 
   input:
-    tuple val(susiexPath), val(sumstatsPath), val(ancestries), val(chr)
+    tuple val(susiexPath), val(sumstatsPath), val(ancestries), val(chr), val(bfile), val(bfile_paths)
 
   output:
     path("*.png"), optional: true
@@ -424,11 +422,14 @@ process SUSIEX_POST {
   library(stringr)
   library(susiexR)
 
-  # ---- Format SuSiEx results:
+  # ---- Read in variables:
   path_to_susiex_results <- "${susiexPath}"
 
   ancestries <- str_split("${ancestries}", ",")[[1]]
 
+  bfile_paths <- "${bfile_paths}"
+
+  # ---- Format SuSiEx results:
   results <- format_results(path_to_susiex_results, ancestries = ancestries)
 
   # Check that each processed file type has the same number of fine mapped regions
@@ -477,11 +478,13 @@ process SUSIEX_POST {
 
   names(sumstats) <- ancestries
 
+
+
   # load in function for nextflow (todo: update function in susiexR package)
-  source(paste0(${baseDir}, "/fine_mapping_plots.R"))
+  source(paste0( "${baseDir}" , '/fine_mapping_plots.R' ))
 
   for( i in 1:length(results\$cs) ){
-    main_plot <- mainPlotNextflow(cs_results = results\$cs[[i]], 
+    main_plot <- mainPlotNextFlow(cs_results = results\$cs[[i]], 
                         snp_results = results\$snp[[i]],
                         sumstats = sumstats,
                         ancestries = ancestries)
@@ -490,7 +493,6 @@ process SUSIEX_POST {
     print(main_plot\$plot)
     dev.off()
   }
-
 
 
   """

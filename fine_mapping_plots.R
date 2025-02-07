@@ -1,3 +1,21 @@
+
+# ---- create dataframe linking bfile path with ancestry
+  # Extract individual groups
+  bfile_groups <- str_extract_all(bfile_paths, "\\[([^\\]]+)\\]")[[1]]
+
+  # Get unique base file paths
+  bfile_list <- lapply(bfile_groups, function(bfile){
+    str_split(bfile, ",")[[1]][2] %>% 
+      str_trim() %>%
+      str_remove(., "\\.[^\\.]+$")
+  }) %>% unlist()
+
+  # Extract ancestry from file names (so they are in the same order as files)
+  ancestries_reordered <- str_extract(bfile_list, paste0(ancestries, collapse = "|"))
+
+  # Create dataframe
+  bfile_df <- data.frame(ancestry = ancestries_reordered, bfile = bfile_list, stringsAsFactors = FALSE)
+
 mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries){
   tryCatch({  
   cs <- cs_results %>%
@@ -29,10 +47,12 @@ mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries){
     # Define the path to the LD results file
     ld_results_file <- paste0("ld_results", ancestry, region, ".txt.vcor")
 
+    bfile_path <- bfile_df[bfile_df$ancestry == ancestry,]$bfile
+
     if (!file.exists(ld_results_file)) {
     system2("plink2", # edit to make this a variable for where plink2 is stored locally
             args = c(
-              "--bfile", paste0("ukb_imp_v3.qc.geno02.mind02_", ancestry ,"_", CHR),
+              "--bfile", bfile_path,
               "--r2-phased",
               "--ld-snp", snp_list[1],
               "--ld-window-kb", "1000",
