@@ -198,7 +198,7 @@ workflow {
 */
 
   SUSIEX_PROCESSED_CH = SUSIEX_CH
-                          .map { it -> [ file(it[0][0]).parent , it[4], it[5] ]}
+                          .map { it -> [ file(it[0][0]).parent , it[4], it[5], it[6] ]}
 
   SUSIEX_PROCESSED_CH.view()
 
@@ -344,7 +344,7 @@ process SUSIEX {
     tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile)
 
   output:
-    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary"), val(ancestries), val(chr)
+    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary"), val(maPaths), val(ancestries), val(chr)
 
   script:
   """
@@ -393,7 +393,7 @@ process SUSIEX {
 
 process SUSIEX_POST {
   tag "chr:${chr}"
-  label 'analysis'
+  label 'rscript'
 
   cpus = 2
   memory = 32.GB
@@ -402,7 +402,7 @@ process SUSIEX_POST {
   publishDir "fineMapping/plots", mode: "copy"
 
   input:
-    tuple val(susiexPath), val(ancestries), val(chr)
+    tuple val(susiexPath), val(sumstatsPath), val(ancestries), val(chr)
 
   output:
     path("*.png"), optional: true
@@ -410,14 +410,9 @@ process SUSIEX_POST {
   script:
   """
   #!Rscript
-  packages <- c("cowplot", "data.table", "dplyr", "ggplot2", "tidyr", "purrr", "stringr", "devtools")
 
-  lapply(packages, function(p){
-    if (!require("cowplot", quietly = TRUE)) {
-    install.packages(p)
-    }
-  })
-
+  # Ensure all R libraries are installed prior to nextflow execution for version of R loaded
+  #if (!require("susiexr", quietly = TRUE)) { devtools::install_github("ameliaes/susiexr") }
   library(cowplot)
   library(data.table)
   library(dplyr)
@@ -425,15 +420,33 @@ process SUSIEX_POST {
   library(tidyr)
   library(purrr)
   library(stringr)
-
-  if (!require("susiexr", quietly = TRUE)) {
-    devtools::install_github("ameliaes/susiexr")
-  }
-
   library(susiexR)
 
   # ---- Format SuSiEx results:
-  test <- "${susiexPath}"
+  path_to_susiex_results <- "${susiexPath}"
+
+  ancestries <- str_split("${ancestries}", ",")[[1]]
+
+  results <- format_results(path_to_susiex_results, ancestries = ancestries)
+
+  # Check that each processed file type has the same number of fine mapped regions
+  nrow(results\$summary) == length(results\$cs) && length(results\$cs) == length(results\$snp)
+
+  # ---- Plot the relationship between:
+  # CS_LENGTH - number of SNPs in the credible set
+  # CS_PURITY - purity of the credible set
+  # MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set.
+
+  png("length_purity_maxPIP.png", width = 1000, height = 600, res = 150)
+    print(plotPurityPIP(results\$summary))
+  dev.off()
+
+  # ---- Plot the probability the top SNP in the credible set is causal in each ancestry
+  # ----------------
+  png("POST-HOC_PROB_POP.png", width = 1000, height = 800, res = 150)
+    print(plotAncestryCausal(results\$summary, ancestries = ancestries))
+  dev.off()
+
 
 
   """
@@ -442,11 +455,8 @@ process SUSIEX_POST {
 
 
 /*
+  
 
 
-  # results <- format_results(path_to_susiex_results, ancestries = str_split("${ancestries}", ","))
-
-  # Check that each processed file type has the same number of fine mapped regions
-  # nrow(results$summary) == length(results$cs) && length(results$cs) == length(results$snp)
 
 */
