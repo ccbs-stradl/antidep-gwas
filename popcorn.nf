@@ -5,7 +5,6 @@
 params.vcf = "vcf/gwas/GRCh38/*.{csv,json,vcf.gz,vcf.gz.tbi}"
 params.reference = "reference/all_hg38.{pgen,psam,pvar.zst}"
 params.exclude = "https://raw.githubusercontent.com/gabraham/flashpca/refs/heads/master/exclusion_regions_hg19.txt"
-params.popcorn = "vendor/Popcorn"
 
 import groovy.json.JsonSlurper
 
@@ -39,8 +38,9 @@ workflow {
     
 
     // popscorn scores
+    
     SCORE_CH = COMPUTE(REF_REF_CH)
-
+    
     // format and combine sumstats
     TXT_CH = TXT(VCF_CH)
     TXT_TXT_CH = TXT_CH.combine(TXT_CH)
@@ -52,6 +52,7 @@ workflow {
         .first()
 
     FIT_CH = FIT(TXT_SCORE_CH)
+    
 }
 
 // get reference clusters
@@ -59,6 +60,7 @@ process REF_CLUSTERS {
     tag "${ref}"
 
     cpus = 1
+    time = '10m'
 
     input:
     tuple val(ref), path(pgen)
@@ -78,6 +80,7 @@ process QC {
 
     cpus = 1
     memory = 8.GB
+    time = '30m'
 
     input:
     tuple val(ref), path(pgen), path(exclude)
@@ -88,7 +91,7 @@ process QC {
 
     script:
     """
-      plink2 \
+    plink2 \
     --make-bed \
     --set-all-var-ids @:# \
     --pfile 'vzs' ${ref} \
@@ -101,8 +104,8 @@ process QC {
     --rm-dup 'exclude-all' \
     --exclude 'bed1' ${exclude} \
     --out ${cluster} \
-	--threads ${task.cpus} \
-	--memory ${task.memory.bytes.intdiv(1000000)}
+	  --threads ${task.cpus} \
+	  --memory ${task.memory.bytes.intdiv(1000000)}
     """
 }
 
@@ -113,6 +116,7 @@ process COMPUTE {
 
     cpus = 8
     memory = 16.GB
+    time = '6h'
 
     input:
     tuple val(cluster1), path(bed1), val(cluster2), path(bed2)
@@ -123,7 +127,15 @@ process COMPUTE {
     script:
     """
     export OMP_NUM_THREADS=${task.cpus}
-    popcorn compute -v 1 --bfile1 ${cluster1} --bfile2 ${cluster2} scores.txt
+    # give cluster2 a different name in case they are the same cluster
+    cluster2=${cluster2}
+    if [ '${cluster1}' == '${cluster2}' ]; then
+      for bfile in ${cluster1}.*; do
+        ln -s \$bfile 2-\$bfile
+      done
+      cluster2="2-${cluster1}"
+    fi
+    popcorn compute -v 1 --bfile1 ${cluster1} --bfile2 \$cluster2 scores.txt
     """
 }
 
@@ -134,6 +146,7 @@ process TXT {
   
   cpus = 1
   memory = 1.GB
+  time = '10m'
   
   input:
   tuple val(dataset), path(vcf), val(info)
@@ -159,6 +172,7 @@ process FIT {
 
     cpus = 8
     memory = 16.GB
+    time = '6h'
 
     input:
     tuple val(cluster1), val(cluster2), val(dataset1), path(sumstats1), val(dataset2), path(sumstats2), path(scores)

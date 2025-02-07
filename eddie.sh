@@ -104,7 +104,14 @@ nextflow run genes.nf -resume \
 -c eddie.config \
 --build 'hg38'
 
+# Run popcorn
+nextflow run popcorn.nf -resume \
+-work-dir /exports/eddie/scratch/${USER}/ad/work_hg38 \
+-c eddie.config
+
 nextflow run txt.nf -resume \
 -work-dir /exports/eddie/scratch/${USER}/ad/work \
 -c eddie.config \
 --sumstats "liftover/*.{vcf.gz,vcf.gz.tbi}"
+
+#
