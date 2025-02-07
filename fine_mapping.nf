@@ -82,7 +82,7 @@ workflow {
     // load in gwas meta sumstats that have been lifted over to hg19 and match ancestries in CLUSTER_CH
 
     META_CH = CLUSTER_CH 
-      .map { cluster -> "vcf/meta/GRCh37/antidep-2501-fixed-N06A-${cluster}.human_g1k_v37.vcf.gz" } // edit this line so path is not hard coded
+      .map { cluster -> "vcf/meta/GRCh37/antidep-2501-fixed-N06A-${cluster}.vcf.gz" } // edit this line so path is not hard coded
       .map { pathStr -> Paths.get(pathStr) }
       .map { it -> [it.simpleName.split("-"), it] }
       .map { it -> [it[0][4], it[0][2], it[0][3], it[1]] }
