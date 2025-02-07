@@ -204,6 +204,8 @@ workflow {
 
   SUSIEX_POST_CH = SUSIEX_POST(SUSIEX_PROCESSED_CH)
 
+  BFILE_CH.view()
+
 }
 
 process MAKE_BFILE {

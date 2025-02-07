@@ -1,4 +1,4 @@
-mainPlot <- function(cs_results, snp_results, sumstats, ancestries){
+mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries){
   tryCatch({  
   cs <- cs_results %>%
               rename(CHROM = CHR, POS = BP) %>%
@@ -20,31 +20,31 @@ mainPlot <- function(cs_results, snp_results, sumstats, ancestries){
     arrange(desc(`PIP(CS1)`)) %>%
     pull(SNP)
 
-  writeLines(snp_list, paste0("tmp/snp_list_", region, ".txt"))
+  writeLines(snp_list, paste0("snp_list_", region, ".txt"))
 
   # Per ancestry:
   region_plots <- lapply(ancestries, function(ancestry){
 
     # Add r2 column to results, conduct in PLINK
     # Define the path to the LD results file
-    ld_results_file <- paste0("tmp/ld_results", ancestry, region, ".txt.vcor")
+    ld_results_file <- paste0("ld_results", ancestry, region, ".txt.vcor")
 
     if (!file.exists(ld_results_file)) {
     system2("plink2", # edit to make this a variable for where plink2 is stored locally
             args = c(
-              "--bfile", paste0("reference/ukb_imp_v3.qc.geno02.mind02_", ancestry ,"_", CHR),
+              "--bfile", paste0("ukb_imp_v3.qc.geno02.mind02_", ancestry ,"_", CHR),
               "--r2-phased",
               "--ld-snp", snp_list[1],
               "--ld-window-kb", "1000",
               "--ld-window-r2", "0.2", # r^2 < 0.2 is filtered out
-              "--extract", paste0("tmp/snp_list_", region, ".txt"),
-              "--out", paste0("tmp/ld_results",ancestry, region, ".txt")
+              "--extract", paste0("snp_list_", region, ".txt"),
+              "--out", paste0("ld_results",ancestry, region, ".txt")
             )
     )
     }
 
     # Define the path to the LD results file
-    ld_results_file <- paste0("tmp/ld_results", ancestry, region, ".txt.vcor")
+    ld_results_file <- paste0("ld_results", ancestry, region, ".txt.vcor")
 
 
     # Check if the LD results file exists
