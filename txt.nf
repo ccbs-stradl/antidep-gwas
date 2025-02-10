@@ -4,6 +4,7 @@
 params.sumstats = null
 params.format = "cojo"
 params.merge_alleles = "reference/w_hm3.snplist"
+params.out = ""
 
 workflow {
 
@@ -29,7 +30,7 @@ process COJO {
   tag "${dataset}"
   label 'tools'
   
-  publishDir 'txt/cojo', mode: 'copy'
+  publishDir 'txt/cojo/${params.out}', mode: 'copy'
   
   input:
   tuple val(dataset), path(vcf)
@@ -53,7 +54,7 @@ process TXT {
   tag "${dataset}"
   label 'tools'
   
-  publishDir 'txt', mode: 'copy'
+  publishDir "txt/${params.out}"
   
   input:
   tuple val(dataset), path(vcf)
@@ -66,7 +67,7 @@ process TXT {
   echo "SNP\tA1\tA2\tOR\tP\tINFO\tFRQ\tN" > !{dataset}.txt
   bcftools query \
   -f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%LP]\\t[%SI]\\t[%AFCON]\\t[%NE]\\n" \
-  !{dataset}.vcf.gz | awk -v OFS='\t' '{print $1, $2, $3,  exp($4), 10^-($5), $6, $7, $8}' >> !{dataset}.txt
+  !{dataset}.vcf.gz | awk -v OFS='\t' '{if($6 == ".") $6 = 1; print $1, $2, $3,  exp($4), 10^-($5), $6, $7, $8}' >> !{dataset}.txt
   '''
 }
 
@@ -76,7 +77,7 @@ process MUNGE {
   tag "${dataset}"
   label 'ldsc'
   
-  publishDir 'txt/munged', mode: 'copy'
+  publishDir "txt/munged/${params.out}", mode: 'copy'
   
   input:
   tuple val(dataset), path(sumstats), path(merge)
