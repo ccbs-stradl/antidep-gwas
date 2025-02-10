@@ -30,3 +30,4 @@ liftover
 format/gwas/
 format/meta/
 MR-MEGA
+*.correlations.txt

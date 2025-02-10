@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python =3.10.12
+  - rust
+  - pip
+  - pip:
+    - git+https://github.com/brielin/Popcorn
+
