@@ -44,12 +44,11 @@ workflow {
     // format and combine sumstats
     TXT_CH = TXT(VCF_CH)
     TXT_TXT_CH = TXT_CH.combine(TXT_CH)
-        .filter { it -> it[0] <= it[3] && it[1] != it[4] }
+        .filter { it -> it[0] <= it[3] && it[1] < it[4] }
         .map { it -> [it[0], it[3], it[1], it[2], it[4], it[5]] }
 
     TXT_SCORE_CH = TXT_TXT_CH
         .combine(SCORE_CH, by: [0, 1])
-        .first()
 
     FIT_CH = FIT(TXT_SCORE_CH)
     
@@ -169,6 +168,8 @@ process FIT {
     label "popcorn"
 
     publishDir "models/popcorn", mode: "copy"
+
+    errorStrategy 'ignore'
 
     cpus = 8
     memory = 16.GB
