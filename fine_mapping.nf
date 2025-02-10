@@ -28,7 +28,6 @@ nextflow.enable.dsl=2
     * explore results:
       - use susiexR package in R to format and plot output from SuSiEx
 
-
 // nextflow log gives the dir for each process, 
 nextflow log condescending_swartz -f hash,process,tag
 
@@ -38,12 +37,15 @@ import groovy.json.JsonOutput
 import java.nio.file.Paths
 
 // MAKE_BFILE INPUTS:
-  params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc' // prefix of the pfiles to pass to --pfile in plink 
+  params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.{pgen,psam,pvar}' // prefix of the pfiles to pass to --pfile in plink 
   params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id' // Output from script make-pgen.sh
-  params.chr = 3 // testing pipeline on chromosome I know there are results for, so i dont have to deal with NULL clumping file
+  params.chr = [3] // testing on chr 3 = produces results, and chr 21 = should create a null file
 
   // effective sample size QC parameter
   params.neff_pct = 0.8 // gwas is filtered by effectve sample size, threshold is 0.8
+
+// MA INPUTS:
+  params.meta = 'vcf/meta/GRCh37/antidep-2501-fixed-N06A-*.{csv,json,vcf.gz,vcf.gz.tbi}'
 
 workflow {
 
@@ -54,20 +56,20 @@ workflow {
   is there a way to get this from the sumstats?
 */
   // Make reference files in bfile format
-    PFILE_CH = Channel.of(params.pfile)          
+    PFILE_CH = Channel.fromFilePairs(params.pfile, size: 3)// returns tuple: [prefix [.psam, .p...., .p... ]]          
     IDS_CH = Channel.fromPath(params.ancestry_ids) 
-    CHR_CH = Channel.of(params.chr)    
+    CHR_CH = Channel.fromList(params.chr)   
 
     // Create CLUSTER_CH to extract unique ancestries from the 3rd column of IDS_CH
     CLUSTER_CH = IDS_CH
       .splitCsv(header: false, sep: ' ') 
       .map { it[2] }                     
-      .unique()    
+      .unique()
 
     REF_CH = PFILE_CH
-      .combine(IDS_CH)
-      .combine(CLUSTER_CH)
-      .combine(CHR_CH)
+     .combine(IDS_CH)
+     .combine(CLUSTER_CH)
+     .combine(CHR_CH)
 
     BFILE_CH = MAKE_BFILE(REF_CH)
 
@@ -76,83 +78,43 @@ workflow {
   process meta sumstats into correct format
 */
   // Get sumstats from fixed effects meta 
-  // Make a channel with contents: val(cluster), val(meta), val(pheno), path(sumstats)
-
-  // MA INPUTS:
-    // load in gwas meta sumstats that have been lifted over to hg19 and match ancestries in CLUSTER_CH
-
-    META_CH = CLUSTER_CH 
-      .map { cluster -> "vcf/meta/GRCh37/antidep-2501-fixed-N06A-${cluster}.vcf.gz" } // edit this line so path is not hard coded
-      .map { pathStr -> Paths.get(pathStr) } // can this be replaced with a nextflow command?
-      .map { it -> [it.simpleName.split("-"), it] }
-      .map { it -> [it[0][4], it[0][2], it[0][3], it[1]] } // pull out sections of file name: [4] = ancestry/cluster, [2] = fixed, [3] = N06A.
-
-	// QC parameters
-	NEFF_CH = Channel.of(params.neff_pct)
-
-
-  // format sumstats to .ma
-	MA_CH = MA(META_CH, NEFF_CH)
-
-/*
-  Extract effective sample size for each meta-analysis sumstats
-*/
   // Effective sample size from the meta analysis for each ancestry/cluster
   // Extract neff values for each ancestry
 
+  // MA INPUTS:
+    // load in gwas meta sumstats that have been lifted over to hg19
 
-  // NEFF INPUTS:
-   // json contains metadata about the meta analysis gwas, eg. pheno, ancestry, sample sizes, effective sample size
+    def jsonSlurper = new JsonSlurper()
+    META_CH = Channel.fromFilePairs(params.meta, size: 4) { it -> it.simpleName }
+        .map { it -> it.plus(jsonSlurper.parseText(it[1][1].text)) } // last element is a json containing metadata about the meta analysis gwas, eg. pheno, ancestry, sample sizes, effective sample size
+      //.cross(CLUSTER_CH) // edit so that the first element is the key, ie. ancestry...? or match by json.cluster?
 
-  def jsonSlurper = new JsonSlurper()
+  META_CH.view()
 
-  NEFF_TOTAL_CH = CLUSTER_CH
-    .map { cluster -> "vcf/meta/GRCh37/antidep-2501-fixed-N06A-${cluster}.json" } // edit this line so path is not hard coded
-    .map { path -> 
-        def jsonFile = new File(path)
-        jsonSlurper.parseText(jsonFile.text)
-    }
-    .map { json_obj -> 
-        [json_obj.cluster, json_obj.neff] 
-    }
+	// QC parameters
+	NEFF_QC_CH = Channel.of(params.neff_pct)
+
+  // format sumstats to .ma
+	MA_CH = MA(META_CH, NEFF_QC_CH)
 
 
 /*
   Combine ancestry/cluster, with MA (path to sumstats), and total NEFF
-  eg. channel will have the first element as a list of ancestries,
-  second element will be path to sumstats (in same order as ancestries in first element)
-  third element will be effective sample size (in same order as ancestries in first element)
-  fourth element will be bfile prefix
-  these will all be string values that are comma separated (with no spaces around commas, else susiex throws an error)
-
-  #########
-  Example code: 
-  JOINED_CH = Channel.of(
-    ['EUR', 'PATH1', '100'],
-    ['AFR', 'PATH2', '200'],
-    ['SAS', 'PATH3', '300'] 
-  )
-
-  JOINED_CH
-    .collate(3)
-    .transpose()
-    .map { it.join(',') } 
-    .collect()
-    .view()
-
-  Outputs: ['EUR,AFR,SAS', 'PATH1,PATH2,PATH3', '100,200,300']
-  #########
-
 */
+  // keep only ancestry/cluster value and bfile (without file extension)
+   // so a list inside a tuple, when read into script is comma separated, so don't need to do join ','
+   BFILE_SUB_CH = BFILE_CH
+    .map { it -> [it[0], "${file(it[2][0]).parent}/${file(it[2][0]).baseName}", it[2] ] }
 
+// key by chromosome, and phenotype... using groupTuple rather than collate
   JOINED_CH = MA_CH
-    .join(NEFF_TOTAL_CH) // joined based on ancestry/cluster value (first element of channel)
     .map { it -> [it[0], it[3], it[4]] } // keep only ancestry/cluster value, path to MA and neff total.
-    .join(BFILE_CH.map { it -> [it[0], "${file(it[2][0]).parent}/${file(it[2][0]).baseName}", it[2] ] }) // keep only ancestry/cluster value and bfile (without file extension)
-    .collate(5)
-    .transpose()
-    .map { it.join(',') } 
-    .collect()
+    .join(BFILE_SUB_CH) 
+    //.collate(5)
+    //.transpose()
+    //.map { it.join(',') } 
+    //.collect()
+
 
 /*
   CLUMP process
@@ -214,7 +176,7 @@ process MAKE_BFILE {
   time = '1h'
 
   input:
-    tuple val(pfile), path(ancestry_ids), val(cluster), val(chr)
+    tuple val(dataset), path(pfile), path(ancestry_ids), val(cluster), val(chr)
 
   output:
     tuple val(cluster), val("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}"), path("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"), val(chr)
@@ -244,7 +206,7 @@ process MAKE_BFILE {
 }
 
 process MA {
-	tag "${sumstats}"
+	tag "${dataset}"
 	label 'tools'
 
 	cpus = 1
@@ -252,20 +214,20 @@ process MA {
 	time = '30m'
 
 	input: 
-	tuple val(cluster), val(meta), val(pheno), path(sumstats)
+	tuple val(dataset), path(vcf), val(info)
 	each neff_pct
 
 	output:
-	tuple val(cluster), val(meta), val(pheno), path("${sumstats.simpleName}.ma")
+	tuple val(info.cluster), val(dataset), path("*.ma")
 
 	script:
 	  """
-		echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > ${sumstats.simpleName}.ma
+		echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > !{dataset}.ma
 		bcftools query \
 	    -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
-	    ${sumstats} | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10, \$11}' >> ${sumstats.simpleName}.ma
+	    !{dataset}.vcf.gz | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10, \$11}' >> !{dataset}.ma
 
-    Rscript ${baseDir}/fine_mapping_ma_process.R "${sumstats.simpleName}.ma"
+    Rscript ${baseDir}/fine_mapping_ma_process.R "!{dataset}.ma"
 	  """
 
 }
@@ -278,10 +240,10 @@ process CLUMP {
   time = '10m'
 
   input:
-    tuple val(cluster), val(meta), val(pheno), path(ma), val(bfile_prefix), path(bfiles), val(chr)
+    tuple val(cluster), val(dataset), path(ma), val(bfile_prefix), path(bfiles), val(chr)
 
   output:
-    tuple val(cluster), val(meta), val(pheno), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log"), val(chr)
+    tuple val(cluster), val(dataset), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log"), val(chr)
  
   script:
   """
