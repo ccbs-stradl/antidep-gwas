@@ -75,11 +75,7 @@ workflow {
      .combine(CLUSTER_CH)
      .combine(CHR_CH)
 
-    REF_CH.view()
-
     BFILE_CH = MAKE_BFILE(REF_CH)
-
-    BFILE_CH.view()
 
 /*
   ----- MA process ---------------------------- 
@@ -106,12 +102,20 @@ workflow {
   clumping to identify regions for fine mapping
 */
 
-  MA_BFILE_CH = MA_CH
-     .combine(BFILE_CH, by: 0) // don't use .join as it will only keep one of the chr
+  // get a channel of CHRs (which have significant SNPs) and their corresponding ancestry
+  // to filter the clumping step to only happen for CHR and CLUSTERS with genome wide sig SNPs
+    SIG_CHR_CH = MA_CH
+      .map {it -> it[4]}
+      .splitCsv(header: false, sep: '\t') 
+      .map { it -> [ it[1], it[0] ] } // [CLUSTER, CHR] - by default numeric values are converted to strings
 
+  // join sumstats with bfiles ready for clumping
+    MA_BFILE_CH = BFILE_CH
+      .combine(MA_CH, by: 0) // join all chr based on ancestries
+      .map(it -> [ it[0], it[1].toString(), it[2], it[3], it[4], it[5], it[6] ]) // convert CHR to string and drop *.sig_chr
+      .join(SIG_CHR_CH, by: [0,1])
+      
   CLUMP_CH = CLUMP(MA_BFILE_CH)
-
-  CLUMP_CH.view()
 
 }
 
@@ -169,7 +173,7 @@ process MA {
   each neff_pct
 
   output:
-  tuple val(cluster), val(dataset), val(info.neff), path("*.ma")
+  tuple val(cluster), val(dataset), val(info.neff), path("*.ma"), path("*.sig_chr")
 
   script:
     """
@@ -178,7 +182,35 @@ process MA {
       -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
       ${dataset}.vcf.gz | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10, \$11}' >> ${dataset}.ma
 
-    Rscript ${baseDir}/fine_mapping_ma_process.R "${dataset}.ma" // remove duplicate SNPs
+    Rscript -e "
+      library(data.table)
+      library(dplyr)
+
+      ma_path <- '${dataset}.ma'
+
+      # Read in sumsstats and remove rows where there are duplicate SNPs
+      sumstats <- fread( ma_path ) %>%
+                    distinct(SNP, .keep_all = TRUE) # keeps first distinct SNP row; .keep_all =T returns all columns
+
+      # Rewrite sumstats with suffix 'noZero'
+      fwrite(sumstats, ma_path, sep = '\t')
+
+      # Write a csv with a CHR column, and the number of that CHR if there is a significant SNP for it
+      # if there are no significant SNPs then write an empty file
+
+      sig_chr <- sumstats %>%
+                  filter(P <= 5e-8) %>%
+                  distinct(CHR) %>%
+                  mutate(CLUSTER = '${cluster}')
+
+      if ( nrow(sig_chr) > 0 ) {
+        fwrite(sig_chr, paste0('${dataset}', '.sig_chr' ) , sep = '\t', col.names = FALSE)
+      } else {
+        # Create an empty file 
+        file.create(paste0('${dataset}', '.sig_chr'))
+      }
+
+      "
     """
 
 }
@@ -191,7 +223,7 @@ process CLUMP {
   time = '10m'
 
   input:
-    tuple val(cluster), val(dataset), val(neff), path(ma), val(chr), val(bfile_prefix), path(bfiles)
+    tuple val(cluster), val(chr), val(bfile_prefix), path(bfiles), val(dataset), val(neff), path(ma)
 
   output:
     tuple val(cluster), val(chr), val(dataset), path(ma), path("${dataset}.${chr}.clumps"), path("${dataset}.${chr}.log")
