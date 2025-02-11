@@ -1,62 +1,66 @@
 nextflow.enable.dsl=2
 
 /*
-  Fine-mapping of GWAS meta using SuSiEx (hg19 only)
+// ---------------------------------------------
+// ************ SCRIPT OVERVIEW ****************
+// ---------------------------------------------
+// Fine-mapping of GWAS meta using SuSiEx (hg19 only)
 
-  Summary of processes and inputs for each process:
+PER ANCESTRY, CHR
     * make bim, bed, fam files for each ancestry:
       - pfile 
       - IDs where for each ancestry (output from make-pgen.sh)
 
+PER ANCESTRY
     * process meta sumstats into correct format:
-      - meta-analysed sumstats: meta/metaset-method-phenotype-cluster.csv (output from format_meta.nf)
+      - meta-analysed sumstats: 'vcf/meta/GRCh37/antidep-2501-fixed-N06A-*.{csv,json,vcf.gz,vcf.gz.tbi}' (output from format_meta.nf)
+        - these are subsetted to ancestries we have LD references for
+      - json file contains meta data including the effective sample size  
 
-    * calculate effective sample size for each meta-analysis sumstats:
-      - format/meta/GRCh38/antidep-2408-fixed-N06A-{ANCESTRY}.json (output from format_meta.nf)
-
+PER ANCESTRY, CHR
     * clumping to identify regions for fine mapping:
       - processed sumstats (from previous process in current script)
       - bfile, per chr and ancestry, (output from make-pgen_hg19.sh)
 
+COMBINE ALL ANCESTRIES AND ALL CHR
     * load clumping results into R and determine region boundaries:
       - output from clumping process, per chr and ancestry (from previous process in current script)
 
+PER CHR
     * run SuSiEx on each region:
       - output from R determining region boundaries (from previous process in current script)
       - processed sumstats (from process above)
-
-    * explore results:
-      - use susiexR package in R to format and plot output from SuSiEx
-
-// nextflow log gives the dir for each process, 
-nextflow log condescending_swartz -f hash,process,tag
-
 */
-import groovy.json.JsonSlurper
-import groovy.json.JsonOutput
-import java.nio.file.Paths
 
+// -----  Import groovy functions ---------------
+import groovy.json.JsonSlurper
+
+// ----- Get params -----------------------------
 // MAKE_BFILE INPUTS:
   params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.{pgen,psam,pvar}' // prefix of the pfiles to pass to --pfile in plink 
   params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id' // Output from script make-pgen.sh
-  params.chr = [3] // testing on chr 3 = produces results, and chr 21 = should create a null file
+  params.chr = [3, 21] // testing on chr 3 = produces results, and chr 21 = should create a null file
+
+// MA INPUTS:
+  // load in gwas meta sumstats that have been lifted over to hg19
+  params.meta = 'vcf/meta/GRCh37/antidep-2501-fixed-N06A-*.{csv,json,vcf.gz,vcf.gz.tbi}'
 
   // effective sample size QC parameter
   params.neff_pct = 0.8 // gwas is filtered by effectve sample size, threshold is 0.8
 
-// MA INPUTS:
-  params.meta = 'vcf/meta/GRCh37/antidep-2501-fixed-N06A-*.{csv,json,vcf.gz,vcf.gz.tbi}'
-
+// ---------------------------------------------
+// *************** WORKFLOW ********************
+// ---------------------------------------------
 workflow {
 
 /*
-  MAKE_BFILE process
+  ----- MAKE_BFILE process ---------------------
   make bim, bed, fam files for each ancestry/cluster
   this only needs to happen for chromosomes that will be fine mapped, 
   is there a way to get this from the sumstats?
 */
   // Make reference files in bfile format
-    PFILE_CH = Channel.fromFilePairs(params.pfile, size: 3)// returns tuple: [prefix [.psam, .p...., .p... ]]          
+    PFILE_CH = Channel.fromFilePairs(params.pfile, size: 3)// returns tuple: [prefix [pfile paths]]          
     IDS_CH = Channel.fromPath(params.ancestry_ids) 
     CHR_CH = Channel.fromList(params.chr)   
 
@@ -71,105 +75,52 @@ workflow {
      .combine(CLUSTER_CH)
      .combine(CHR_CH)
 
+    REF_CH.view()
+
     BFILE_CH = MAKE_BFILE(REF_CH)
 
+    BFILE_CH.view()
+
 /*
-  MA process
-  process meta sumstats into correct format
+  ----- MA process ---------------------------- 
+  process meta sumstats into correct format, 
+  and collect effective sample size from json
 */
-  // Get sumstats from fixed effects meta 
-  // Effective sample size from the meta analysis for each ancestry/cluster
-  // Extract neff values for each ancestry
 
-  // MA INPUTS:
-    // load in gwas meta sumstats that have been lifted over to hg19
+  def jsonSlurper = new JsonSlurper()
+  META_CH = Channel.fromFilePairs(params.meta, size: 4) { it -> it.simpleName }
+    .map { it -> 
+        def metadata = jsonSlurper.parseText(it[1][1].text)  // Extract JSON metadata
+        return [metadata.cluster, it[0], it[1], metadata]  // Explicitly store ancestry as a key
+    } // last element is a json containing metadata about the meta analysis gwas, eg. pheno, ancestry, sample sizes, effective sample size
+    .join(CLUSTER_CH) // Subset META_CH so it only contains ancestry/cluster in CLUSTER_CH 
 
-    def jsonSlurper = new JsonSlurper()
-    META_CH = Channel.fromFilePairs(params.meta, size: 4) { it -> it.simpleName }
-        .map { it -> it.plus(jsonSlurper.parseText(it[1][1].text)) } // last element is a json containing metadata about the meta analysis gwas, eg. pheno, ancestry, sample sizes, effective sample size
-      //.cross(CLUSTER_CH) // edit so that the first element is the key, ie. ancestry...? or match by json.cluster?
-
-  META_CH.view()
-
-	// QC parameters
-	NEFF_QC_CH = Channel.of(params.neff_pct)
+  // QC parameters
+  NEFF_QC_CH = Channel.of(params.neff_pct)
 
   // format sumstats to .ma
-	MA_CH = MA(META_CH, NEFF_QC_CH)
-
-
-/*
-  Combine ancestry/cluster, with MA (path to sumstats), and total NEFF
-*/
-  // keep only ancestry/cluster value and bfile (without file extension)
-   // so a list inside a tuple, when read into script is comma separated, so don't need to do join ','
-   BFILE_SUB_CH = BFILE_CH
-    .map { it -> [it[0], "${file(it[2][0]).parent}/${file(it[2][0]).baseName}", it[2] ] }
-
-// key by chromosome, and phenotype... using groupTuple rather than collate
-  JOINED_CH = MA_CH
-    .map { it -> [it[0], it[3], it[4]] } // keep only ancestry/cluster value, path to MA and neff total.
-    .join(BFILE_SUB_CH) 
-    //.collate(5)
-    //.transpose()
-    //.map { it.join(',') } 
-    //.collect()
-
+  MA_CH = MA(META_CH, NEFF_QC_CH)
 
 /*
-  CLUMP process
+  ----- CLUMP process -------------------------
   clumping to identify regions for fine mapping
 */
 
-  // Creates channel with:
-  // val(cluster), val(meta), val(pheno), path("${sumstats.simpleName}.ma"), path(pgen), path(psam), path(pvar)
   MA_BFILE_CH = MA_CH
-    .join(BFILE_CH)
+     .combine(BFILE_CH, by: 0) // don't use .join as it will only keep one of the chr
 
   CLUMP_CH = CLUMP(MA_BFILE_CH)
 
-/*
-  CLUMP_POST process
-  load clumping results into R and determine region boundaries
-*/
-
-  // Combine all the ancestries clumping results into one channel,
-  // as we need all ancestries in the R script together to 
-  // find overlapping regions between ancestries.
-
-
-  CLUMP_CLUSTER_CH = CLUMP_CH
-    .collect(flat : false)
-
-  CLUMP_POST_CH = CLUMP_POST(CLUMP_CLUSTER_CH)
-
-  JOINED_SUSIEX_CH = CLUMP_POST_CH
-    .map { it ->  [it[0], file(it[1]).text.trim()] } // read value of chr.txt
-    .combine(JOINED_CH)
-
-
-/*
-  SUSIEX process
-  run SuSiEx on each region  
-*/
-
-  SUSIEX_CH = SUSIEX(JOINED_SUSIEX_CH)
-
-/*
-  SUSIEX_POST process
-  explore results using susiexR package
-*/
-
-  SUSIEX_PROCESSED_CH = SUSIEX_CH
-                          .map { it -> [ file(it[0][0]).parent , it[4], it[5], it[6], it[7], it[8] ]}
-
-  SUSIEX_POST_CH = SUSIEX_POST(SUSIEX_PROCESSED_CH)
-
+  CLUMP_CH.view()
 
 }
 
+// ---------------------------------------------
+// ************* PROCESSES *********************
+// ---------------------------------------------
+
 process MAKE_BFILE {
-  tag "$cluster:chr$chr"
+  tag "chr${chr}:${cluster}"
 
   cpus = 1
   memory = 8.GB
@@ -179,76 +130,76 @@ process MAKE_BFILE {
     tuple val(dataset), path(pfile), path(ancestry_ids), val(cluster), val(chr)
 
   output:
-    tuple val(cluster), val("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}"), path("ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr}.*"), val(chr)
+    tuple val(cluster), val(chr), val("${dataset}.geno02.mind02_${cluster}_${chr}"), path("${dataset}.geno02.mind02_${cluster}_${chr}.*")
  
   script:
   """
   plink2 \
-    --pfile  ${pfile} \
+    --pfile  ${dataset} \
     --keep-col-match ${ancestry_ids} ${cluster} \
     --chr ${chr} \
     --geno 0.02 \
     --maf 0.005 \
     --make-pgen 'vzs' \
-    --out ukb_imp_v3.qc.geno02_${cluster}_${chr} \
+    --out ${dataset}.geno02_${cluster}_${chr} \
     --threads ${task.cpus} \
-	  --memory ${task.memory.bytes.intdiv(1000000)}
+    --memory ${task.memory.bytes.intdiv(1000000)}
 
     plink2 \
-    --pfile ukb_imp_v3.qc.geno02_${cluster}_${chr} 'vzs' \
+    --pfile ${dataset}.geno02_${cluster}_${chr} 'vzs' \
     --mind 0.02 \
     --make-bed \
-    --out ukb_imp_v3.qc.geno02.mind02_${cluster}_${chr} \
+    --out ${dataset}.geno02.mind02_${cluster}_${chr} \
     --threads ${task.cpus} \
-	  --memory ${task.memory.bytes.intdiv(1000000)}
+    --memory ${task.memory.bytes.intdiv(1000000)}
   """
 
 }
 
 process MA {
-	tag "${dataset}"
-	label 'tools'
+  tag "${cluster}"
+  label 'tools'
 
-	cpus = 1
-	memory = 16.GB
-	time = '30m'
+  cpus = 1
+  memory = 16.GB
+  time = '30m'
 
-	input: 
-	tuple val(dataset), path(vcf), val(info)
-	each neff_pct
+  input: 
+  tuple val(cluster), val(dataset), path(vcf), val(info)
+  each neff_pct
 
-	output:
-	tuple val(info.cluster), val(dataset), path("*.ma")
+  output:
+  tuple val(cluster), val(dataset), val(info.neff), path("*.ma")
 
-	script:
-	  """
-		echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > !{dataset}.ma
-		bcftools query \
-	    -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
-	    !{dataset}.vcf.gz | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10, \$11}' >> !{dataset}.ma
+  script:
+    """
+    echo -e "SNP\tA1\tA2\tfreq\tBETA\tSE\tP\tN\tCHR\tBP\tNE" > ${dataset}.ma
+    bcftools query \
+      -f "%ID\\t%ALT\\t%REF\\t[%AFCON]\\t[%ES]\\t[%SE]\\t[%LP]\\t[%SS]\\t%CHROM\\t%POS\\t[%NE]" \
+      ${dataset}.vcf.gz | awk -v OFS='\\t' -v neff_threshold=!{params.neff_pct} '\$11 >= neff_threshold * \$11 {print \$1, \$2, \$3, \$4, \$5, \$6, 10^-(\$7), \$8, \$9, \$10, \$11}' >> ${dataset}.ma
 
-    Rscript ${baseDir}/fine_mapping_ma_process.R "!{dataset}.ma"
-	  """
+    Rscript ${baseDir}/fine_mapping_ma_process.R "${dataset}.ma" // remove duplicate SNPs
+    """
 
 }
 
 process CLUMP {
-  tag "${chr}.${ma}"
+  tag "chr${chr}:${cluster}"
   
   cpus = 1
   memory = 8.GB
   time = '10m'
 
   input:
-    tuple val(cluster), val(dataset), path(ma), val(bfile_prefix), path(bfiles), val(chr)
+    tuple val(cluster), val(dataset), val(neff), path(ma), val(chr), val(bfile_prefix), path(bfiles)
 
   output:
-    tuple val(cluster), val(dataset), path(ma), path("${ma.baseName}.${chr}.clumps"), path("${ma.baseName}.${chr}.log"), val(chr)
+    tuple val(cluster), val(chr), val(dataset), path(ma), path("${dataset}.${chr}.clumps"), path("${dataset}.${chr}.log")
  
   script:
   """
   plink2 \
-    --clump ${ma} \
+    --clump ${dataset}.ma \
     --clump-id-field SNP \
     --clump-p-field P \
     --clump-p1 5e-8 \
@@ -256,9 +207,9 @@ process CLUMP {
     --clump-r2 0.1 \
     --clump-kb 1000 \
     --bfile ${bfile_prefix} \
-    --out ${ma.baseName}.${chr} \
+    --out ${dataset}.${chr} \
     --threads ${task.cpus} \
-	  --memory ${task.memory.bytes.intdiv(1000000)}
+    --memory ${task.memory.bytes.intdiv(1000000)}
   
   # Check if .clumps file exists; if not, create the file with content "NULL"
   # This is needed otherwise nextflow exits with an error because plink has not made a .clumps file (because there are no clumps in the gwas for that chromosome)
@@ -268,203 +219,3 @@ process CLUMP {
 
   """
 }
-
-
-process CLUMP_POST {
-  // would be good to tag with chromosome, but nervous to change the input to this process as it was fidly to get right
-
-  label 'analysis'
-
-  cpus = 1
-  memory = 32.GB
-  time = '30m'
-
-  input:
-    val(nested_clumps)
-
-  output:
-    tuple path("*.finemapRegions"), path("chr.txt")
-
-  script:
-  """
-  Rscript ${baseDir}/fine_mapping_clump_post.R "${nested_clumps}"
-  """
-
-} // Warning: if edits are made to this script nextflow won't know to re-run it if output is already cached
-
-
-process SUSIEX {
-  tag "chr:${chr}"
-
-  cpus = 4
-  memory = 32.GB
-  time = '30m'
-
-  publishDir "fineMapping/output", mode: "copy"
-
-  input:
-    tuple path(finemapRegions), val(chr), val(ancestries), val(maPaths), val(neff), val(bfile), val(bfile_paths)
-
-  output:
-    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary"), val(maPaths), val(ancestries), val(chr), val(bfile), val(bfile_paths)
-
-  script:
-  """
-
-  CLUMP_RANGES_FILE=${finemapRegions}
-
-  tail -n +2 "\${CLUMP_RANGES_FILE}" | while IFS=\$'\\t' read -r line; do
-    # Get CHR, BP_START, BP_END by using awk to match column names indices
-    # Really important we put these cols in the correct order in the R scripts making the "loci" object
-    CHR=\$(echo "\$line" | awk '{print \$1+0}')
-    BP_START=\$(echo "\$line" | awk '{print \$2+0}')
-    BP_END=\$(echo "\$line" | awk '{print \$3+0}')
-
-    echo "Processing CHR: \$CHR, BP_START: \$BP_START, BP_END: \$BP_END"
-
-    SuSiEx \
-     --sst_file=${maPaths} \
-     --n_gwas=${neff} \
-     --ref_file=${bfile} \
-     --ld_file=${ancestries} \
-     --out_dir=. \
-     --out_name=SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END} \
-     --level=0.95 \
-     --pval_thresh=1e-5 \
-     --chr=\$CHR \
-     --bp=\$BP_START,\$BP_END \
-     --maf=0.005 \
-     --snp_col=1,1,1 \
-     --chr_col=9,9,9 \
-     --bp_col=10,10,10 \
-     --a1_col=2,2,2 \
-     --a2_col=3,3,3 \
-     --eff_col=5,5,5 \
-     --se_col=6,6,6 \
-     --pval_col=7,7,7 \
-     --mult-step=True \
-     --plink=plink \
-     --keep-ambig=True |& tee SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
-
-  done 
-
-  """
-
-} 
-
-
-process SUSIEX_POST {
-  tag "chr:${chr}"
-  label 'rscript'
-
-  cpus = 2
-  memory = 32.GB
-  time = '30m'
-
-  publishDir "fineMapping/plots", mode: "copy"
-
-  input:
-    tuple val(susiexPath), val(sumstatsPath), val(ancestries), val(chr), val(bfile), val(bfile_paths)
-
-  output:
-    path("*.png"), optional: true
-
-  script:
-  """
-  #!Rscript
-
-  # Ensure all R libraries are installed prior to nextflow execution for version of R loaded
-  #if (!require("susiexr", quietly = TRUE)) { devtools::install_github("ameliaes/susiexr") }
-  library(cowplot)
-  library(data.table)
-  library(dplyr)
-  library(ggplot2)
-  library(tidyr)
-  library(purrr)
-  library(stringr)
-  library(susiexR)
-
-  # ---- Read in variables:
-  path_to_susiex_results <- "${susiexPath}"
-
-  ancestries <- str_split("${ancestries}", ",")[[1]]
-
-  bfile_paths <- "${bfile_paths}"
-
-  # ---- Format SuSiEx results:
-  results <- format_results(path_to_susiex_results, ancestries = ancestries)
-
-  # Check that each processed file type has the same number of fine mapped regions
-  nrow(results\$summary) == length(results\$cs) && length(results\$cs) == length(results\$snp)
-
-  ##### THESE PLOTS SHOULD BE DONE ON ALL CHR TOGETHER #########################################
-  # ---- Plot the relationship between:                                                        #
-  # CS_LENGTH - number of SNPs in the credible set.                                            #
-  # CS_PURITY - purity of the credible set.                                                    #
-  # MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set..              #
-  #                                                                                            #
-  # png("length_purity_maxPIP.png", width = 1000, height = 600, res = 150)                     #
-  #  print(plotPurityPIP(results\$summary))                                                    #
-  # dev.off()                                                                                  #
-  #                                                                                            #
-  # ---- Plot the probability the top SNP in the credible set is causal in each ancestry.      #
-  #                                                                                            #
-  # png("POST-HOC_PROB_POP.png", width = 1000, height = 800, res = 150).                       #
-  #  print(plotAncestryCausal(results\$summary, ancestries = ancestries)).                     #
-  # dev.off()                                                                                  #
-  #                                                                                            #
-  ##############################################################################################
-
-  # ---- Locus zoom plots
-
-  # Loop over fine mapped regions, creating a new plot file for each containing:
-
-  # Plot a region plot of -log10(p) vs SNP for each ancestry (1 ancestry plot per row)
-  # Another option is to overlay ancestries on top of each other and not colour by R2, but that might be messy?
-  # Bottom row is PIP vs SNP plot (the PIP is the overall PIP from susieX, a combination of all ancestries)s
-
-  # Define fine mapped regions:
-  # These will be each element of results\$snp and results\$cs
-  # They should be in the same order
-
-  # ------
-  # To get the p-values for all the SNPs we need to load in the gwas sumstats
-  # Note not all these SNPs were included in the fine mapping,
-  # perhaps indicate the SNPs that were included on the plot
-  
-  sumstatsPathClean <- str_split("${sumstatsPath}", ",")[[1]]
-
-  sumstats <- lapply(sumstatsPathClean, function(sumstats_path){ 
-    fread(sumstats_path)
-    })
-
-  names(sumstats) <- ancestries
-
-
-
-  # load in function for nextflow (todo: update function in susiexR package)
-  source(paste0( "${baseDir}" , '/fine_mapping_plots.R' ))
-
-  for( i in 1:length(results\$cs) ){
-    main_plot <- mainPlotNextFlow(cs_results = results\$cs[[i]], 
-                        snp_results = results\$snp[[i]],
-                        sumstats = sumstats,
-                        ancestries = ancestries)
-
-    png(paste0("region_plot_", main_plot\$region, ".png"), width = 2300, height = 2300, res = 300)
-    print(main_plot\$plot)
-    dev.off()
-  }
-
-
-  """
-
-}
-
-
-/*
-  
-
-
-
-*/
