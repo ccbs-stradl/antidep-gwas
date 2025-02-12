@@ -39,7 +39,7 @@ import groovy.json.JsonSlurper
 // MAKE_BFILE INPUTS:
   params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.{pgen,psam,pvar}' // prefix of the pfiles to pass to --pfile in plink 
   params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id' // Output from script make-pgen.sh
-  params.chr = [3, 6, 21]
+  params.chr = [3, 6, 7, 21]
 
 // MA INPUTS:
   // load in gwas meta sumstats that have been lifted over to hg19
@@ -129,6 +129,8 @@ workflow {
 
   CLUMP_CLUSTER_CH = CLUMP_CH
     .collect(flat : false)
+
+  CLUMP_CLUSTER_CH.view()
 
   CLUMP_POST_CH = CLUMP_POST(CLUMP_CLUSTER_CH)
 
@@ -299,21 +301,24 @@ process CLUMP_POST {
 
   library(plyranges) # reduce_ranges
 
-  nested_clumps <- '${nested_clumps}'
+  nested_clumps <- "[['EUR', '6', 'antidep-2501-fixed-N06A-EUR', /exports/eddie/scratch/aedmond3/ad/work/cd/49f1a7ba52289dd304a1fd296f34ed/antidep-2501-fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/cd/49f1a7ba52289dd304a1fd296f34ed/antidep-2501-fixed-N06A-EUR.6.clumps, /exports/eddie/scratch/aedmond3/ad/work/cd/49f1a7ba52289dd304a1fd296f34ed/antidep-2501-fixed-N06A-EUR.6.log], ['EUR', '7', 'antidep-2501-fixed-N06A-EUR', /exports/eddie/scratch/aedmond3/ad/work/2d/9cc8ca26f7398e80d6ec7bc5212ff9/antidep-2501-fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/2d/9cc8ca26f7398e80d6ec7bc5212ff9/antidep-2501-fixed-N06A-EUR.7.clumps, /exports/eddie/scratch/aedmond3/ad/work/2d/9cc8ca26f7398e80d6ec7bc5212ff9/antidep-2501-fixed-N06A-EUR.7.log], ['EUR', '3', 'antidep-2501-fixed-N06A-EUR', /exports/eddie/scratch/aedmond3/ad/work/29/f113e3ed618600cabb908a670c512a/antidep-2501-fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/29/f113e3ed618600cabb908a670c512a/antidep-2501-fixed-N06A-EUR.3.clumps, /exports/eddie/scratch/aedmond3/ad/work/29/f113e3ed618600cabb908a670c512a/antidep-2501-fixed-N06A-EUR.3.log], ['AFR', '7', 'antidep-2501-fixed-N06A-AFR', /exports/eddie/scratch/aedmond3/ad/work/c8/45f8f6cfaa436ad5f7b88c33c9ccdd/antidep-2501-fixed-N06A-AFR.ma, /exports/eddie/scratch/aedmond3/ad/work/c8/45f8f6cfaa436ad5f7b88c33c9ccdd/antidep-2501-fixed-N06A-AFR.7.clumps, /exports/eddie/scratch/aedmond3/ad/work/c8/45f8f6cfaa436ad5f7b88c33c9ccdd/antidep-2501-fixed-N06A-AFR.7.log]]"
+
+  nested_clumps <- "${nested_clumps}"
 
   # Remove the inner and outer "[[" and "]]"
-  nested_clumps_trim <- str_remove_all(nested_clumps, "\\[\\[|\\]\\]")
+  nested_clumps_trim <- gsub("[[", "", nested_clumps, fixed = TRUE) %>%
+                          gsub("]]", "", ., fixed = TRUE)
 
   # Create a list of the collected channels, so each item in the list is a channel before they were collected here:  CLUMP_CLUSTER_CH = CLUMP_CH.collect(flat : false)
   # each item in the list corresponds to a different ancestry
-  nested_clumps_list <- as.list(unlist(str_split(nested_clumps_trim, "\\], \\[")))
+  nested_clumps_list <- as.list(unlist(str_split(nested_clumps_trim, stringr::fixed("], [") )))
 
   # clean up white space and spit each item in the list by "," into a vector
   nested_clumps_clean <- lapply(nested_clumps_list, function(l){
                         str_split(l, ",") %>%
                         unlist() %>%
                         str_trim() %>%
-                        str_remove_all(., "\\'")
+                        gsub("'", "", ., fixed = TRUE)
                       })
 
   # Get details on CHR (2nd item in channel "CLUMP_CH" - this code will break if the output order of CLUMP_CH changes)
