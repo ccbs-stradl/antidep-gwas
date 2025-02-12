@@ -301,8 +301,6 @@ process CLUMP_POST {
 
   library(plyranges) # reduce_ranges
 
-  nested_clumps <- "[['EUR', '6', 'antidep-2501-fixed-N06A-EUR', /exports/eddie/scratch/aedmond3/ad/work/cd/49f1a7ba52289dd304a1fd296f34ed/antidep-2501-fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/cd/49f1a7ba52289dd304a1fd296f34ed/antidep-2501-fixed-N06A-EUR.6.clumps, /exports/eddie/scratch/aedmond3/ad/work/cd/49f1a7ba52289dd304a1fd296f34ed/antidep-2501-fixed-N06A-EUR.6.log], ['EUR', '7', 'antidep-2501-fixed-N06A-EUR', /exports/eddie/scratch/aedmond3/ad/work/2d/9cc8ca26f7398e80d6ec7bc5212ff9/antidep-2501-fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/2d/9cc8ca26f7398e80d6ec7bc5212ff9/antidep-2501-fixed-N06A-EUR.7.clumps, /exports/eddie/scratch/aedmond3/ad/work/2d/9cc8ca26f7398e80d6ec7bc5212ff9/antidep-2501-fixed-N06A-EUR.7.log], ['EUR', '3', 'antidep-2501-fixed-N06A-EUR', /exports/eddie/scratch/aedmond3/ad/work/29/f113e3ed618600cabb908a670c512a/antidep-2501-fixed-N06A-EUR.ma, /exports/eddie/scratch/aedmond3/ad/work/29/f113e3ed618600cabb908a670c512a/antidep-2501-fixed-N06A-EUR.3.clumps, /exports/eddie/scratch/aedmond3/ad/work/29/f113e3ed618600cabb908a670c512a/antidep-2501-fixed-N06A-EUR.3.log], ['AFR', '7', 'antidep-2501-fixed-N06A-AFR', /exports/eddie/scratch/aedmond3/ad/work/c8/45f8f6cfaa436ad5f7b88c33c9ccdd/antidep-2501-fixed-N06A-AFR.ma, /exports/eddie/scratch/aedmond3/ad/work/c8/45f8f6cfaa436ad5f7b88c33c9ccdd/antidep-2501-fixed-N06A-AFR.7.clumps, /exports/eddie/scratch/aedmond3/ad/work/c8/45f8f6cfaa436ad5f7b88c33c9ccdd/antidep-2501-fixed-N06A-AFR.7.log]]"
-
   nested_clumps <- "${nested_clumps}"
 
   # Remove the inner and outer "[[" and "]]"
@@ -320,9 +318,6 @@ process CLUMP_POST {
                         str_trim() %>%
                         gsub("'", "", ., fixed = TRUE)
                       })
-
-  # Get details on CHR (2nd item in channel "CLUMP_CH" - this code will break if the output order of CLUMP_CH changes)
-  chr <- unique ( sapply(nested_clumps_clean, function(l){ l[2] }) ) # index counting starts from 1 not 0 in R
 
   # start lapply here over nested_clumps_clean, get a list of GRanges for each ancestry
   # return NULL if there is no GRanges object
@@ -362,11 +357,19 @@ process CLUMP_POST {
 
   })
 
+  # For the regions that are to be fine mapped make a note of which chr they come from
+  chr <- sapply(granges_list, function(l){ 
+            as.data.frame(l)[["seqnames"]] %>% 
+              unique() %>% 
+              as.numeric() }) %>%
+         unique() %>%
+         list()
+
   # Reduce list of granges into one granges object, then reduce any overlapping regions (from different ancestries)
   # First deal with all NULLs (ie. no clumps data, and no regions to fine map for all ancestries)
   if (all(sapply(granges_list, is.null))) {
     # If the list is all NULL, create a file with NULL content
-    writeLines("NULL", paste0("chr",chr, ".finemapRegions"))
+    writeLines("NULL", paste0("chr.finemapRegions"))
   } else {
 
   # If the first item in granges_list is a GRanges object then the following code runs:
@@ -395,12 +398,11 @@ process CLUMP_POST {
 
 
   # Save a table of min and max BP positions for SuSiEx, per chr
-  write.table(grng_reduced, paste0("chr", chr, ".finemapRegions"), row.names = F, quote = F, sep = "\t")
+  write.table(grng_reduced, paste0("chr.finemapRegions"), row.names = F, quote = F, sep = "\t")
   }
 
-  # Save chr as output too
-  writeLines(chr, "chr.txt")
-
+  # Save chr as tab separated file
+  fwrite(chr, 'chr.txt' , sep = '\t', col.names = FALSE)
   """
 } 
 
