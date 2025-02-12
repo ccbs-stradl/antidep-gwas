@@ -1,255 +1,81 @@
+# Plot summary and locus zoom plots from SuSiEx output
 
-# ---- create dataframe linking bfile path with ancestry
-  # Extract individual groups
-  bfile_groups <- str_extract_all(bfile_paths, "\\[([^\\]]+)\\]")[[1]]
+#if (!require("susiexr", quietly = TRUE)) { devtools::install_github("ameliaes/susiexr") }
+library(cowplot)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(stringr)
+#library(susiexR)
 
-  # Get unique base file paths
-  bfile_list <- lapply(bfile_groups, function(bfile){
-    str_split(bfile, ",")[[1]][2] %>% 
-      str_trim() %>%
-      str_remove(., "\\.[^\\.]+$")
-  }) %>% unlist()
+# ---- Read in variables:
+plotsDir <- "fineMapping/plots/"
 
-  # Extract ancestry from file names (so they are in the same order as files)
-  ancestries_reordered <- str_extract(bfile_list, paste0(ancestries, collapse = "|"))
+path_to_susiex_results <- "fineMapping/output"
 
-  # Create dataframe
-  bfile_df <- data.frame(ancestry = ancestries_reordered, bfile = bfile_list, stringsAsFactors = FALSE)
+ancestries <- fread('reference/ukb-ld-ref_ancestry.id') %>%
+                pull(3) %>%
+                unique()
 
-mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries){
-  tryCatch({  
-  cs <- cs_results %>%
-              rename(CHROM = CHR, POS = BP) %>%
-              separate(`-LOG10P`, into = paste0("logP_", ancestries), sep = ",") %>%
-              mutate(P = as.numeric(logP_EUR))
+bfile_paths <- path_to_susiex_results
 
-  snp <- snp_results
+sumstats_path <- path_to_susiex_results
 
-  # Get CHR:BP:BP for the fine mapped region
-  CHR <- unique(cs$CHR)
-  BP_START <- unique(cs$BP_START)
-  BP_END <- unique(cs$BP_END)
-  region <- paste0(CHR, ":", BP_START, ":", BP_END)
+sumstatsPathClean <- list.files(sumstats_path, pattern = ".ma$", full_path = T)
 
-  # Region plot -log10(p) vs snp requires R^2 between SNPs
-  # Get a list of SNPs that were included in the fine mapping
-  # arrange by PIP so the first row is the SNP with highest PIP
-  snp_list <- snp %>%
-    arrange(desc(`PIP(CS1)`)) %>%
-    pull(SNP)
-
-  writeLines(snp_list, paste0("snp_list_", region, ".txt"))
-
-  # Per ancestry:
-  region_plots <- lapply(ancestries, function(ancestry){
-
-    # Add r2 column to results, conduct in PLINK
-    # Define the path to the LD results file
-    ld_results_file <- paste0("ld_results", ancestry, region, ".txt.vcor")
-
-    bfile_path <- bfile_df[bfile_df$ancestry == ancestry,]$bfile
-
-    if (!file.exists(ld_results_file)) {
-    system2("plink2", # edit to make this a variable for where plink2 is stored locally
-            args = c(
-              "--bfile", bfile_path,
-              "--r2-phased",
-              "--ld-snp", snp_list[1],
-              "--ld-window-kb", "1000",
-              "--ld-window-r2", "0.2", # r^2 < 0.2 is filtered out
-              "--extract", paste0("snp_list_", region, ".txt"),
-              "--out", paste0("ld_results",ancestry, region, ".txt")
-            )
-    )
-    }
-
-    # Define the path to the LD results file
-    ld_results_file <- paste0("ld_results", ancestry, region, ".txt.vcor")
-
-
-    # Check if the LD results file exists
-    if (file.exists(ld_results_file)) {
-      # If the file exists, load the LD results
-      ld_results <- fread(ld_results_file)
-      
-      if(nrow(ld_results) > 0){
-      # Perform the usual joining logic
-      joined_results <- snp %>%
-        left_join(., ld_results, by = c("SNP" = "ID_B")) %>%
-        left_join(., sumstats[[ancestry]], by = "SNP") %>%
-        dplyr::select(-ends_with(".y")) %>%
-        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        left_join(cs, by = "SNP") %>%
-        dplyr::select(-ends_with(".y")) %>%
-        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        dplyr::select(SNP, 
-                      CHROM = CHR,
-                      POS = BP,
-                      P,
-                      R2 = PHASED_R2,
-                      PIP_CS1 = `PIP(CS1)`,
-                      OVRL_PIP,
-                      CS_PIP) %>%
-        mutate(R2 = ifelse(SNP == snp_list[1], 1, R2)) 
-      } else {
-        joined_results <- snp %>%
-        left_join(., sumstats[[ancestry]], by = "SNP") %>%
-        dplyr::select(-ends_with(".y")) %>%
-        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        left_join(cs, by = "SNP") %>%
-        dplyr::select(-ends_with(".y")) %>%
-        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        dplyr::select(SNP, 
-                      CHROM = CHR,
-                      POS = BP,
-                      P,
-                      PIP_CS1 = `PIP(CS1)`,
-                      OVRL_PIP,
-                      CS_PIP)
-      }
-    } else {
-      # If the file does not exist, create a default joined_results with R2 set to NA for all rows
-      joined_results <- snp %>%
-        left_join(., sumstats[[ancestry]], by = "SNP") %>%
-        dplyr::select(-ends_with(".y")) %>%
-        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        left_join(cs, by = "SNP") %>%
-        dplyr::select(-ends_with(".y")) %>%
-        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        dplyr::select(SNP, 
-                      CHROM = CHR,
-                      POS = BP,
-                      P,
-                      PIP_CS1 = `PIP(CS1)`,
-                      OVRL_PIP,
-                      CS_PIP)
-    }
-
-    # If there is LD data then do a locus zoom plot
-    # else do a region plot instead
-
-    if ( file.exists(ld_results_file) && 
-        (("R2" %in% colnames(joined_results)) && 
-         nrow(joined_results %>% filter(R2 == 1) %>% drop_na()) > 0) &&
-        (exists("ld_results") && nrow(ld_results) > 0) ) {
-
-        # Region plot (one per ancestry):
-        region_plot <- topr::locuszoom(
-          df = joined_results,
-          chr = CHR,
-          xmin = BP_START,
-          xmax = BP_END,
-          log_trans_p = TRUE,
-          build = 37,
-          alpha = 0.5,
-          extract_plots = TRUE,
-          title = ancestry,
-          legend_text_size = 8)
-
-    }else{
-      region_plot <- topr::regionplot(
-        df = joined_results,
-        region = paste0(CHR, ":", BP_START, "-", BP_END),
-        chr = CHR,
-      xmin = BP_START,
-      xmax = BP_END,
-      color = "grey",
-       build = 37,
-      alpha = 0.5,
-      extract_plots = TRUE
-      )
-
-      region_plot$main_plot <- region_plot$main_plot +
-                                  ggtitle(ancestry)
-
-    }
-
-    return(region_plot)
+sumstats <- lapply(sumstatsPathClean, function(sumstats_path){ 
+  fread(sumstats_path)
   })
 
-
-  # get all the main locus zoom plots
-  main_plots <- lapply(region_plots, function(x) x$main_plot)
-
-  # get a gene plot for one of them
-  gene_plot <- region_plots[[1]]$gene_plot 
-  
-  gene_plot_clean <- gene_plot
-  gene_plot_clean$layers <- gene_plot_clean$layers[-1]
-
-  # Get the x-axis limits and breaks from one of the main plots
-  x_axis_limits <- ggplot_build(main_plots[[1]])$layout$panel_params[[1]]$x.range
-  # Round limits to the nearest multiples of 50,000
-  rounded_min <- floor(x_axis_limits[1] / 50000) * 50000
-  rounded_max <- ceiling(x_axis_limits[2] / 50000) * 50000
-
-  # Generate custom breaks at multiples of 50,000
-  x_axis_breaks <- seq(from = rounded_min, to = rounded_max, by = 50000)
-
-  # Check all the data is available for the gene_plot to be created
-  if (all(c("gene_symbol", "y", "gene_start", "biotype") %in% colnames(gene_plot_clean$data) )) {
-    tryCatch({
-      gene_plot <- gene_plot_clean +
-        ggrepel::geom_text_repel(
-          aes(
-            label = gene_symbol, 
-            y = y, 
-            x = gene_start,
-            family = biotype
-          ),
-          nudge_y = 0.25, 
-          nudge_x = 0.25
-        )
-    }, error = function(e) {
-      message("An error occurred while creating the gene_plot: ", e$message)
-      gene_plot <- NULL
-    })
-  } else {
-    message('Required columns ("gene_symbol", "y", "gene_start", "biotype") are missing in the gene_plot data. This probably means there are no genes in the region plotted.')
-    gene_plot <- gene_plot + 
-      scale_x_continuous(limits = x_axis_limits, breaks = x_axis_breaks, expand=c(.01,.01))
-  }
-   
-
-  # PIP plot (one for all ancestries):
-  PIP_results <- snp %>%
-        left_join(cs, by = "SNP") %>%
-        dplyr::select(-ends_with(".y")) %>%
-        rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        dplyr::select(SNP, 
-                      CHROM = CHR,
-                      POS = BP,
-                      PIP_CS1 = `PIP(CS1)`,
-                      OVRL_PIP,
-                      CS_PIP) %>%
-        mutate(PIP_color = case_when(
-          PIP_CS1 == OVRL_PIP ~ TRUE,   # If condition is TRUE, set to TRUE
-          is.na(PIP_CS1 == OVRL_PIP) ~ FALSE  # If NA set to FALSE
-        )) %>%
-        filter(PIP_color)
-
-  pip_plot <- ggplot(PIP_results) +
-    geom_point(aes(x = POS, y = PIP_CS1))+
-    scale_x_continuous(limits = c(BP_START, BP_END),
-                       expand=c(.01,.01)) +
-    scale_y_continuous(limits = c(-0.01, 1.01)) +
-    labs(x = "",
-    y = "PIP") +
-    theme_bw()+
-    theme(axis.title.x=element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank())+
-    geom_hline(yintercept = 0.8, color = "red", linetype = "dashed")
+names(sumstats) <- ancestries
 
 
-  plot <- cowplot::plot_grid(plotlist = align_plots(plotlist = c(main_plots, list(pip_plot, gene_plot)), align = 'hv'), ncol = 1)
+# ---- Read in susiex results
+results <- format_results(path_to_susiex_results, ancestries = ancestries)
 
-  }, error = function(e) {
-    cat("Error in fine map for region: ", region, "\n")
-    cat("Error message:", e$message, "\n")
-  })
+# Check that each processed file type has the same number of fine mapped regions
+nrow(results$summary) == length(results$cs) && length(results$cs) == length(results$snp)
 
-  return(list(region = region, plot = plot))
+# ---- Plot the relationship between:                                                       
+# CS_LENGTH - number of SNPs in the credible set.                                            
+# CS_PURITY - purity of the credible set.                                                    
+# MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set..              
+                                                                                          
+png(paste0( plotsDir , "length_purity_maxPIP.png"), width = 1000, height = 600, res = 150)                     
+print(plotPurityPIP(results$summary))                                                    
+dev.off()                                                                                  
+                                                                                          
+# ---- Plot the probability the top SNP in the credible set is causal in each ancestry.                                                                                                  
+png(paste0( plotsDir , "POST-HOC_PROB_POP.png"), width = 1000, height = 800, res = 150)                       
+print(plotAncestryCausal(results$summary, ancestries = ancestries))                     
+dev.off()                                                                                  
+                                                                                          
+# ---- Locus zoom plots
+# Loop over fine mapped regions, creating a new plot file for each containing:
+# Plot a region plot of -log10(p) vs SNP for each ancestry (1 ancestry plot per row)
+# Another option is to overlay ancestries on top of each other and not colour by R2, but that might be messy?
+# Bottom row is PIP vs SNP plot (the PIP is the overall PIP from susieX, a combination of all ancestries)s
 
+# Define fine mapped regions:
+# These will be each element of results$snp and results$cs
+# They should be in the same order
+
+# load in function for nextflow (todo: update function in susiexR package)
+source( 'mainPlotNextFlow.R' )
+
+for( i in 1:length(results$cs) ){
+  main_plot <- mainPlotNextFlow(cs_results = results$cs[[i]], 
+                      snp_results = results$snp[[i]],
+                      sumstats = sumstats,
+                      ancestries = ancestries,
+                      plink2_path="plink2", 
+                      bfile_path = bfile_path
+                      )
+
+  png(paste0("region_plot_", main_plot$region, ".png"), width = 2300, height = 2300, res = 300)
+  print(main_plot$plot)
+  dev.off()
 }
 
