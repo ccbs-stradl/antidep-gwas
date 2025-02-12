@@ -8,7 +8,7 @@ library(ggplot2)
 library(tidyr)
 library(purrr)
 library(stringr)
-#library(susiexR)
+library(susiexR)
 
 # ---- Read in variables:
 plotsDir <- "fineMapping/plots/"
@@ -23,7 +23,7 @@ bfile_paths <- path_to_susiex_results
 
 sumstats_path <- path_to_susiex_results
 
-sumstatsPathClean <- list.files(sumstats_path, pattern = ".ma$", full_path = T)
+sumstatsPathClean <- list.files(sumstats_path, pattern = ".ma$", full.names = TRUE)
 
 sumstats <- lapply(sumstatsPathClean, function(sumstats_path){ 
   fread(sumstats_path)
@@ -33,7 +33,7 @@ names(sumstats) <- ancestries
 
 
 # ---- Read in susiex results
-results <- format_results(path_to_susiex_results, ancestries = ancestries)
+results <- susiexR::format_results(path_to_susiex_results, ancestries)
 
 # Check that each processed file type has the same number of fine mapped regions
 nrow(results$summary) == length(results$cs) && length(results$cs) == length(results$snp)
@@ -71,10 +71,10 @@ for( i in 1:length(results$cs) ){
                       sumstats = sumstats,
                       ancestries = ancestries,
                       plink2_path="plink2", 
-                      bfile_path = bfile_path
+                      bfile_paths = bfile_paths
                       )
 
-  png(paste0("region_plot_", main_plot$region, ".png"), width = 2300, height = 2300, res = 300)
+  png(paste0(plotsDir, "region_plot_", main_plot$region, ".png"), width = 2300, height = 2300, res = 300)
   print(main_plot$plot)
   dev.off()
 }

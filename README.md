@@ -56,7 +56,7 @@ cd SuSiEx/src
 make all
 # Check installation worked:
 ../bin/SuSiEx -h
-# add bin/SuSiEx to PATH
+# copy bin/SuSiEx and utilities/plink to "antidep-gwas/bin"
 ```
 
 Prepare files:

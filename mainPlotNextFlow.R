@@ -1,37 +1,31 @@
-mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries, plink2_path="plink2", bfile_path){
+mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries, plink2_path="plink2", bfile_paths){
   tryCatch({  
 
-  get_bfile_prefixes <- function(bfile_path, ancestries) {
-  # List all files in the directory
-  files <- list.files(bfile_path, full.names = TRUE)
-  
-  # Extract unique file prefixes
-  file_prefixes <- unique(tools::file_path_sans_ext(basename(files)))
-  
-  # Check if each prefix has .bim, .bed, and .fam files
-  valid_prefixes <- file_prefixes[
-    sapply(file_prefixes, function(prefix) {
+    get_bfile_prefixes <- function(bfile_path) {
+    # List all files in the directory
+    files <- list.files(bfile_path, full.names = TRUE)
+    
+    # Extract file prefixes that have .bim, .bed, and .fam files
+    file_prefixes <- unique(tools::file_path_sans_ext(basename(files)))
+    
+    # Check that each prefix has all three required files
+    valid_prefixes <- file_prefixes[sapply(file_prefixes, function(prefix) {
       all(file.exists(file.path(bfile_path, paste0(prefix, c(".bim", ".bed", ".fam")))))
-    })
-  ]
-  
-  # Extract ancestry from file names
-  ancestries_reordered <- str_extract(valid_prefixes, paste0(ancestries, collapse = "|"))
-  
-  # Check for missing ancestry matches
-  if (any(is.na(ancestries_reordered))) {
-    stop("Error: Some bfile prefixes do not contain a valid ancestry match.")
-  }
-  
-  # Reorder to match ancestries vector
-  valid_prefixes <- valid_prefixes[match(ancestries, ancestries_reordered)]
-  
-  # Create dataframe
-  data.frame(ancestry = ancestries_reordered, bfile = valid_prefixes, stringsAsFactors = FALSE)
+    })]
+    
+    return(paste0(bfile_path, "/", valid_prefixes))
   }
 
-  # Create a dataframe matching bfile path prefixes with respective ancestry
-  bfile_df <- get_bfile_prefixes(bfile_path, ancestries)
+  bfile_list <- get_bfile_prefixes(bfile_path = bfile_paths)
+
+  # Extract ancestry from file names (so they are in the same order as files)
+  ancestries_reordered <- str_extract(bfile_list, paste0(ancestries, collapse = "|"))
+
+  # Create dataframe
+  bfile_df <- data.frame(ancestry = ancestries_reordered, bfile = bfile_list, stringsAsFactors = FALSE)
+
+  # Extract CHR from the bfile names (last part after the last underscore)
+  bfile_df$CHR <- as.numeric(sub(".*_(\\d+)$", "\\1", bfile_df$bfile))
 
   # ---- Format susiex results
   cs <- cs_results %>%
@@ -63,7 +57,7 @@ mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries, plin
     # Define the path to the LD results file
     ld_results_file <- paste0("ld_results", ancestry, region, ".txt.vcor")
 
-    bfile_path <- bfile_df[bfile_df$ancestry == ancestry,]$bfile
+    bfile_path <- bfile_df[bfile_df$ancestry == ancestry & bfile_df$CHR == CHR,]$bfile
 
     if (!file.exists(ld_results_file)) {
     system2(plink2_path,
@@ -261,7 +255,7 @@ mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries, plin
   plot <- cowplot::plot_grid(plotlist = align_plots(plotlist = c(main_plots, list(pip_plot, gene_plot)), align = 'hv'), ncol = 1)
 
   }, error = function(e) {
-    cat("Error in fine map for region: ", region, "\n")
+    cat("Error in fine map for region index: ", i, "\n")
     cat("Error message:", e$message, "\n")
   })
 

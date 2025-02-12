@@ -1,0 +1,32 @@
+PLINK v2.0.0-a.6.5LM 64-bit Intel (22 Dec 2024)
+Options in effect:
+  --make-bed
+  --memory 8589
+  --mind 0.02
+  --out ukb_imp_v3.qc.geno02.mind02_SAS_8
+  --pfile ukb_imp_v3.qc.geno02_SAS_8 vzs
+  --threads 4
+
+Hostname: node1b13.ecdf.ed.ac.uk
+Working directory: /exports/eddie/scratch/aedmond3/ad/work/77/9673bc5e2cb196f68175e6f0e94454
+Start time: Wed Feb 12 16:38:14 2025
+
+Random number seed: 1739378294
+385061 MiB RAM detected, ~353804 available; reserving 8589 MiB for main
+workspace.
+Allocated 6441 MiB successfully, after larger attempt(s) failed.
+Using up to 4 compute threads.
+7500 samples (3505 females, 3995 males; 7500 founders) loaded from
+ukb_imp_v3.qc.geno02_SAS_8.psam.
+339925 variants loaded from ukb_imp_v3.qc.geno02_SAS_8.pvar.zst.
+Note: No phenotype data present.
+Calculating sample missingness rates... done.
+17 samples removed due to missing genotype data (--mind).
+IDs written to ukb_imp_v3.qc.geno02.mind02_SAS_8.mindrem.id .
+7483 samples (3496 females, 3987 males; 7483 founders) remaining after main
+filters.
+Writing ukb_imp_v3.qc.geno02.mind02_SAS_8.fam ... done.
+Writing ukb_imp_v3.qc.geno02.mind02_SAS_8.bim ... done.
+Writing ukb_imp_v3.qc.geno02.mind02_SAS_8.bed ... done.
+
+End time: Wed Feb 12 16:38:20 2025
