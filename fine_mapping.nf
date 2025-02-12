@@ -153,6 +153,7 @@ workflow {
   FINEMAP_CH = MA_BFILE_CH
       .map(it -> [ it[1], it[0], it[6], it[5], it[2], it[3], it[4] ]) // Returns: val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), val(bfile), val(dataset) - note val(bfile) because it is a nested list, possibly could flatten one level?
       .groupTuple() // group by chr (first element = key by default)
+      .map(it -> [ it[0], it[1], it[2], it[3], it[4], it[5].flatten(), it[6] ] ) // flatten bfile so it can be path(bfile) not val(bfile)
 
   // Extract all the chr which have a region to fine map (in at least one ancestry)
   FINEMAP_CHR_CH= CLUMP_POST_CH
@@ -169,7 +170,7 @@ workflow {
   // Returns: val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), path(bfile), val(dataset), path(chr.finemapRegions)
 
   SUSIEX_CH = SUSIEX(FINEMAP_SUB_CH)
-  SUSIEX_CH.view()
+  
 }
 
 // ---------------------------------------------
@@ -445,17 +446,17 @@ process CLUMP_POST {
 process SUSIEX {
   tag "chr:${chr}"
 
-  cpus = 1
-  memory = 4.GB
-  time = '10m'
+  cpus = 4
+  memory = 32.GB
+  time = '30m'
 
   publishDir "fineMapping/output", mode: "copy"
 
   input:
-    tuple val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), val(bfile), val(dataset), path(finemapRegions)
+    tuple val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), path(bfile), val(dataset), path(finemapRegions)
 
   output:
-    tuple val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), val(bfile), val(dataset), path(finemapRegions)
+    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary")
 
   script:
   """
@@ -473,8 +474,7 @@ process SUSIEX {
     if [ "\$CHR" == "${chr}" ]; then
 
       echo "**************************************************************"
-      echo "Processing CHR: \$CHR, BP_START: \$BP_START, BP_END: \$BP_END"
-
+      
       SUMSTATS="\$(echo "${ma}" | tr ' ' ',')"
       NEFF="\$(echo "${neff}" | tr -d '[]' | tr -d ' ')"
       BFILE_PREFIX="\$(echo "${bfile_prefix}" | tr -d '[]' | tr -d ' ')"
@@ -506,10 +506,34 @@ process SUSIEX {
       echo "a2_col: \$A2_COL"
       echo "eff_col: \$EFF_COL"
       echo "se_col: \$SE_COL"
-      echo "pval_col: \$PVAL_COL"
-      
+      echo "pval_col: \$PVAL_COL"      
 
+      echo "Processing CHR: \$CHR, BP_START: \$BP_START, BP_END: \$BP_END"
       echo "-------------------- START OF SUSIEX -------------------------"
+
+      SuSiEx \
+       --sst_file=\$SUMSTATS \
+       --n_gwas=\$NEFF \
+       --ref_file=\$BFILE_PREFIX \
+       --ld_file=\$ANCESTRY_LD \
+       --out_dir=. \
+       --out_name=SuSiEx.\${ANCESTRY_FILE}.output.cs95_\${CHR}:\${BP_START}:\${BP_END} \
+       --level=0.95 \
+       --pval_thresh=1e-5 \
+       --chr=\$CHR \
+       --bp=\$BP_START,\$BP_END \
+       --maf=0.005 \
+       --snp_col=1,1,1 \
+       --chr_col=9,9,9 \
+       --bp_col=10,10,10 \
+       --a1_col=2,2,2 \
+       --a2_col=3,3,3 \
+       --eff_col=5,5,5 \
+       --se_col=6,6,6 \
+       --pval_col=7,7,7 \
+       --mult-step=True \
+       --plink=plink \
+       --keep-ambig=True |& tee SuSiEx.\${ANCESTRY_FILE}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
 
       echo "--------------------- END OF SUSIEX --------------------------"
 
@@ -522,30 +546,3 @@ process SUSIEX {
 } 
 
 
-/*
-    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary")
-
-    SuSiEx \
-     --sst_file="\$(echo "${ma}" | tr ' ' ',')" \
-     --n_gwas=${neff} \
-     --ref_file=${bfile} \
-     --ld_file=${ancestries} \
-     --out_dir=. \
-     --out_name=SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END} \
-     --level=0.95 \
-     --pval_thresh=1e-5 \
-     --chr=\$CHR \
-     --bp=\$BP_START,\$BP_END \
-     --maf=0.005 \
-     --snp_col=1,1,1 \
-     --chr_col=9,9,9 \
-     --bp_col=10,10,10 \
-     --a1_col=2,2,2 \
-     --a2_col=3,3,3 \
-     --eff_col=5,5,5 \
-     --se_col=6,6,6 \
-     --pval_col=7,7,7 \
-     --mult-step=True \
-     --plink=plink \
-     --keep-ambig=True |& tee SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
-*/
