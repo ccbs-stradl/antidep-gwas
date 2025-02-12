@@ -113,9 +113,11 @@ workflow {
     MA_BFILE_CH = BFILE_CH
       .combine(MA_CH, by: 0) // join all chr based on ancestries
       .map(it -> [ it[0], it[1].toString(), it[2], it[3], it[4], it[5], it[6] ]) // convert CHR to string and drop *.sig_chr
-      .join(SIG_CHR_CH, by: [0,1])
+
+    MA_BFILE_SIG_CHR_CH = MA_BFILE_CH
+                            .join(SIG_CHR_CH, by: [0,1])
       
-  CLUMP_CH = CLUMP(MA_BFILE_CH)
+  CLUMP_CH = CLUMP(MA_BFILE_SIG_CHR_CH)
 
 /*
   ----- CLUMP_POST process ---------------------
@@ -130,12 +132,44 @@ workflow {
   CLUMP_CLUSTER_CH = CLUMP_CH
     .collect(flat : false)
 
-  CLUMP_CLUSTER_CH.view()
-
   CLUMP_POST_CH = CLUMP_POST(CLUMP_CLUSTER_CH)
 
-  CLUMP_POST_CH.view()
+/*
+  ----- SUSIEX process ---------------------
+  process happens on each chr with a region to be fine mapped
+  process contains a loop to go over each region
+*/
 
+  // for susiex we need the following as lists (in the same order for each ancestry):
+  //  - all ancestries
+  //  - full path to sumstats
+  //  - effectivve sample size 
+  //  - full path to bfiles (per chr)
+  // also need:
+  //  - "chr.finemapRegions" file to read in BP_START, BP_END (filtered by chr during process)
+  //  - chr
+
+  // Group by chr on all ancestries so each element in channel corresponds to a chr
+  FINEMAP_CH = MA_BFILE_CH
+      .map(it -> [ it[1], it[0], it[6], it[5], it[2], it[3], it[4] ]) // Returns: val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), val(bfile), val(dataset) - note val(bfile) because it is a nested list, possibly could flatten one level?
+      .groupTuple() // group by chr (first element = key by default)
+
+  // Extract all the chr which have a region to fine map (in at least one ancestry)
+  FINEMAP_CHR_CH= CLUMP_POST_CH
+                    .map {it -> it[1]}
+                    .splitCsv(header: false, sep: '\t') 
+                    .map { it -> it[0] }
+
+  // Subset list of fine mapping to only chr which have regions to fine map
+  // Join with "chr.finemapRegions" from CLUMP_POST_CH
+  FINEMAP_SUB_CH = FINEMAP_CH 
+    .join(FINEMAP_CHR_CH)
+    .combine(CLUMP_POST_CH.map { it -> it[0] })
+
+  // Returns: val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), path(bfile), val(dataset), path(chr.finemapRegions)
+
+  SUSIEX_CH = SUSIEX(FINEMAP_SUB_CH)
+  SUSIEX_CH.view()
 }
 
 // ---------------------------------------------
@@ -361,9 +395,10 @@ process CLUMP_POST {
   chr <- sapply(granges_list, function(l){ 
             as.data.frame(l)[["seqnames"]] %>% 
               unique() %>% 
+              as.character() %>%
               as.numeric() }) %>%
          unique() %>%
-         list()
+         list() 
 
   # Reduce list of granges into one granges object, then reduce any overlapping regions (from different ancestries)
   # First deal with all NULLs (ie. no clumps data, and no regions to fine map for all ancestries)
@@ -407,3 +442,110 @@ process CLUMP_POST {
 } 
 
 
+process SUSIEX {
+  tag "chr:${chr}"
+
+  cpus = 1
+  memory = 4.GB
+  time = '10m'
+
+  publishDir "fineMapping/output", mode: "copy"
+
+  input:
+    tuple val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), val(bfile), val(dataset), path(finemapRegions)
+
+  output:
+    tuple val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), val(bfile), val(dataset), path(finemapRegions)
+
+  script:
+  """
+
+  CLUMP_RANGES_FILE=${finemapRegions}
+
+  tail -n +2 "\${CLUMP_RANGES_FILE}" | while IFS=\$'\\t' read -r line; do
+    # Get CHR, BP_START, BP_END by using awk to match column names indices
+    # Really important we put these cols in the correct order in the R scripts making the "loci" object
+    CHR=\$(echo "\$line" | awk '{print \$1+0}')
+    BP_START=\$(echo "\$line" | awk '{print \$2+0}')
+    BP_END=\$(echo "\$line" | awk '{print \$3+0}')
+
+    # Check if the CHR matches the input variable ${chr}
+    if [ "\$CHR" == "${chr}" ]; then
+
+      echo "**************************************************************"
+      echo "Processing CHR: \$CHR, BP_START: \$BP_START, BP_END: \$BP_END"
+
+      SUMSTATS="\$(echo "${ma}" | tr ' ' ',')"
+      NEFF="\$(echo "${neff}" | tr -d '[]' | tr -d ' ')"
+      BFILE_PREFIX="\$(echo "${bfile_prefix}" | tr -d '[]' | tr -d ' ')"
+      ANCESTRY_LD="\$(echo "${cluster}" | tr -d '[]' | tr -d ' ')"
+      ANCESTRY_FILE="\$(echo "${cluster}" | tr -d '[]' | tr -d ' '| tr ',' '-')"
+
+      echo "Sumstats: \$SUMSTATS"
+      echo "Effective sample sizes: \$NEFF"
+      echo "bfile prefix: \$BFILE_PREFIX"
+      echo "ancestries used for paths for '--ld_file': \$ANCESTRY_LD"
+      echo "ancestries used as part of the output file name: \$ANCESTRY_FILE"
+
+      # Column indices (for sumstats format .ma)
+      # repeated by the length of ancestry files 
+      CLUSTER_LENGTH=\$(echo \$(( \$(echo "${cluster}" | grep -o ',' | wc -l) + 1 )))
+      SNP_COL=\$(printf "1,"%.0s \$(seq 1 \$((CLUSTER_LENGTH))) | sed 's/,\$//')
+      CHR_COL=\$(printf "9,"%.0s \$(seq 1 \$((CLUSTER_LENGTH))) | sed 's/,\$//')
+      BP_COL=\$(printf "10,"%.0s \$(seq 1 \$((CLUSTER_LENGTH))) | sed 's/,\$//')
+      A1_COL=\$(printf "2,"%.0s \$(seq 1 \$((CLUSTER_LENGTH))) | sed 's/,\$//')
+      A2_COL=\$(printf "3,"%.0s \$(seq 1 \$((CLUSTER_LENGTH))) | sed 's/,\$//')
+      EFF_COL=\$(printf "5,"%.0s \$(seq 1 \$((CLUSTER_LENGTH))) | sed 's/,\$//')
+      SE_COL=\$(printf "6,"%.0s \$(seq 1 \$((CLUSTER_LENGTH))) | sed 's/,\$//')
+      PVAL_COL=\$(printf "7,"%.0s \$(seq 1 \$((CLUSTER_LENGTH))) | sed 's/,\$//')
+
+      echo "snp_col: \$SNP_COL"
+      echo "chr_col: \$CHR_COL"
+      echo "bp_col: \$BP_COL"
+      echo "a1_col: \$A1_COL"
+      echo "a2_col: \$A2_COL"
+      echo "eff_col: \$EFF_COL"
+      echo "se_col: \$SE_COL"
+      echo "pval_col: \$PVAL_COL"
+      
+
+      echo "-------------------- START OF SUSIEX -------------------------"
+
+      echo "--------------------- END OF SUSIEX --------------------------"
+
+    fi
+
+  done 
+
+  """
+
+} 
+
+
+/*
+    tuple path("*.log"), path("*.cs"), path("*.snp"), path("*.summary")
+
+    SuSiEx \
+     --sst_file="\$(echo "${ma}" | tr ' ' ',')" \
+     --n_gwas=${neff} \
+     --ref_file=${bfile} \
+     --ld_file=${ancestries} \
+     --out_dir=. \
+     --out_name=SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END} \
+     --level=0.95 \
+     --pval_thresh=1e-5 \
+     --chr=\$CHR \
+     --bp=\$BP_START,\$BP_END \
+     --maf=0.005 \
+     --snp_col=1,1,1 \
+     --chr_col=9,9,9 \
+     --bp_col=10,10,10 \
+     --a1_col=2,2,2 \
+     --a2_col=3,3,3 \
+     --eff_col=5,5,5 \
+     --se_col=6,6,6 \
+     --pval_col=7,7,7 \
+     --mult-step=True \
+     --plink=plink \
+     --keep-ambig=True |& tee SuSiEx.${ancestries}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
+*/
