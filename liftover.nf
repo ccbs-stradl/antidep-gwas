@@ -28,7 +28,8 @@ workflow {
     .combine(DEST_CH)
     .combine(CHAIN_CH)
     .combine(PLUGIN_CH)
-    
+  
+  // Perform liftover  
   LIFTED_CH = LIFTOVER(DATA_CH)
   
 }
@@ -51,11 +52,14 @@ process LIFTOVER {
   script:
   """
   export BCFTOOLS_PLUGINS="${plugins}"
-  bcftools +liftover --output-type u ${sumstats}.vcf.gz -- \
+  bcftools norm -m+ --output-type u ${sumstats}.vcf.gz |\
+  bcftools +liftover -- \
   --src-fasta-ref ${source}.fasta \
   --fasta-ref ${dest}.fasta \
   --chain ${chain} \
-  --af-tags INFO/AF,FMT/AF,FMT/AFCAS,FMT/AFCON |\
+  --af-tags INFO/AF,FMT/AF,FMT/AFCAS,FMT/AFCON \
+  --es-tags FMT/ES |\
+  bcftools norm -m- --output-type u |\
   bcftools sort --output-type z \
   --output ${sumstats}.${dest}.vcf.gz
 

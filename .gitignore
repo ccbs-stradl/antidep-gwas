@@ -33,3 +33,4 @@ MR-MEGA
 fineMapping/*
 !fineMapping/logs/
 logs/
+*.correlations.txt
