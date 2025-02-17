@@ -73,22 +73,24 @@ nextflow run vcf.nf -resume \
 -work-dir /exports/eddie/scratch/${USER}/ad/work/vcf \
 -c eddie.config -with-trace
 
+# liftover hg19 VCFs to hg38
+nextflow run liftover.nf -resume \
+--sumstats "vcf/meta/GRCh38/*.{vcf.gz,vcf.gz.tbi}" \
+--source "reference/Homo_sapiens_assembly38.{fasta,fasta.fai}" \
+--destination "reference/human_g1k_v37.{fasta,fasta.fai}" \
+--chain reference/hg38ToHg19.over.chain.gz \
+--publish liftover/meta \
+-work-dir /exports/eddie/scratch/${USER}/ad/work/liftover \
+-c eddie.config 
+
+# move lifted over file and copy sidecar files
+mv liftover/meta/*-fixed-*.human_g1k_v37.vcf.gz.* vcf/meta/GRCh37
+rename human_g1k_v37.vcf vcf vcf/meta/GRCh38/*.human_g1k_v37.vcf.*
+cp vcf/meta/GRCh37/*.csv vcf/meta/GRCh38/
+
 ###
 ### Run downstream analyses
 ###
-
-nextflow run metavcf.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work \
--c eddie.config \
---sumstats "meta/fixed-N06A-*.meta.gz"
-
-nextflow run liftover.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work \
--c eddie.config \
---sumstats "metavcf/*.{vcf.gz,vcf.gz.tbi}" \
---source "reference/Homo_sapiens_assembly38.{fasta,fasta.fai}" \
---destination "reference/human_g1k_v37.{fasta,fasta.fai}" \
---chain reference/hg38ToHg19.over.chain.gz
 
 # Run mBAT-combo on build hg19/GRCh37
 nextflow run genes.nf -resume \
@@ -101,6 +103,11 @@ nextflow run genes.nf -resume \
 -work-dir /exports/eddie/scratch/${USER}/ad/work_hg38 \
 -c eddie.config \
 --build 'hg38'
+
+# Run popcorn
+nextflow run popcorn.nf -resume \
+-work-dir /exports/eddie/scratch/${USER}/ad/work_hg38 \
+-c eddie.config
 
 nextflow run txt.nf -resume \
 -work-dir /exports/eddie/scratch/${USER}/ad/work \
@@ -115,4 +122,4 @@ nextflow run fine_mapping.nf -resume \
 # Plot results of SuSiEx
 Rscript fine_mapping_plots.R
 
-
+#
