@@ -114,4 +114,12 @@ nextflow run txt.nf -resume \
 -c eddie.config \
 --sumstats "liftover/*.{vcf.gz,vcf.gz.tbi}"
 
+# Run SuSiEx on build hg19
+nextflow run fine_mapping.nf -resume \
+-work-dir /exports/eddie/scratch/${USER}/ad/work \
+-c eddie.config -with-dag fineMapping/fine_mapping_dag.png
+
+# Plot results of SuSiEx
+Rscript fine_mapping_plots.R
+
 #
