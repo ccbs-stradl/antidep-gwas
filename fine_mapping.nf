@@ -246,7 +246,7 @@ process MA {
       sumstats <- fread( ma_path ) %>%
                     distinct(SNP, .keep_all = TRUE) # keeps first distinct SNP row; .keep_all =T returns all columns
 
-      # Rewrite sumstats with suffix 'noZero'
+      # Overwrite sumstats
       fwrite(sumstats, ma_path, sep = '\t')
 
       # Write a csv with a CHR column, and the number of that CHR if there is a significant SNP for it
