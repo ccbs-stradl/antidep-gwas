@@ -29,9 +29,7 @@ mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries, plin
 
   # ---- Format susiex results
   cs <- cs_results %>%
-              rename(CHROM = CHR, POS = BP) %>%
-              separate(`-LOG10P`, into = paste0("logP_", ancestries), sep = ",") %>%
-              mutate(P = as.numeric(logP_EUR))
+              rename(CHROM = CHR, POS = BP)
 
   snp <- snp_results
 
@@ -182,51 +180,14 @@ mainPlotNextFlow <- function(cs_results, snp_results, sumstats, ancestries, plin
   main_plots <- lapply(region_plots, function(x) x$main_plot)
 
   # get a gene plot for one of them
-  gene_plot <- region_plots[[1]]$gene_plot 
-  
-  gene_plot_clean <- gene_plot
-  gene_plot_clean$layers <- gene_plot_clean$layers[-1]
-
-  # Get the x-axis limits and breaks from one of the main plots
-  x_axis_limits <- ggplot_build(main_plots[[1]])$layout$panel_params[[1]]$x.range
-  # Round limits to the nearest multiples of 50,000
-  rounded_min <- floor(x_axis_limits[1] / 50000) * 50000
-  rounded_max <- ceiling(x_axis_limits[2] / 50000) * 50000
-
-  # Generate custom breaks at multiples of 50,000
-  x_axis_breaks <- seq(from = rounded_min, to = rounded_max, by = 50000)
-
-  # Check all the data is available for the gene_plot to be created
-  if (all(c("gene_symbol", "y", "gene_start", "biotype") %in% colnames(gene_plot_clean$data) )) {
-    tryCatch({
-      gene_plot <- gene_plot_clean +
-        ggrepel::geom_text_repel(
-          aes(
-            label = gene_symbol, 
-            y = y, 
-            x = gene_start,
-            family = biotype
-          ),
-          nudge_y = 0.25, 
-          nudge_x = 0.25
-        )
-    }, error = function(e) {
-      message("An error occurred while creating the gene_plot: ", e$message)
-      gene_plot <- NULL
-    })
-  } else {
-    message('Required columns ("gene_symbol", "y", "gene_start", "biotype") are missing in the gene_plot data. This probably means there are no genes in the region plotted.')
-    gene_plot <- gene_plot + 
-      scale_x_continuous(limits = x_axis_limits, breaks = x_axis_breaks, expand=c(.01,.01))
-  }
-   
+  gene_plot <- region_plots[[1]]$gene_plot
 
   # PIP plot (one for all ancestries):
   PIP_results <- snp %>%
         left_join(cs, by = "SNP") %>%
         dplyr::select(-ends_with(".y")) %>%
         rename_with(~ str_remove(., "\\.x$"), ends_with(".x")) %>%
-        dplyr::select(SNP, 
+        dplyr::select(SNP,
                       CHROM = CHR,
                       POS = BP,
                       PIP_CS1 = `PIP(CS1)`,
