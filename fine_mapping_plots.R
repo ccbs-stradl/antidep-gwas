@@ -29,8 +29,21 @@ sumstats <- lapply(sumstatsPathClean, function(sumstats_path){
   fread(sumstats_path)
   })
 
-names(sumstats) <- ancestries
+extract_ancestry_from_ma_path <- function(path) {
+  str_remove(path, "\\.ma$") %>% # extract everything before the .ma file extension
+    str_remove(., "^.*-") # extract the string after the last hyphen
+}
 
+ancestry_from_ma_path <- sapply(sumstatsPathClean, extract_ancestry_from_ma_path) %>%
+  unname()
+
+# check "ancestries" matches "ancestry_from_ma_path", else return error "Ancestries do not match"
+if (!setequal(ancestries, ancestry_from_ma_path)) {
+  stop("Ancestries are not defined in the file name of sumstats. 
+       Please check documentation for information on file naming of sumstats.")
+}
+
+names(sumstats) <- ancestry_from_ma_path
 
 # ---- Read in susiex results
 results <- susiexR::format_results(path_to_susiex_results, ancestries)
