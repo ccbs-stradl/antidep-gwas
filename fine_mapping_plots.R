@@ -15,33 +15,6 @@ plotsDir <- "fineMapping/plots/"
 
 path_to_susiex_results <- "fineMapping/output"
 
-# re-running susiex in nextflow means the order in which the ancestries
-# were processed may have changed, leading to duplicated regions
-# check the log to see which one was most recent and delete the others
-# - the log files don't contain a date time stamp!
-# remove the output for which there are fewest results as this will
-# likely be output from the last time i ran it
-
-list.files(path_to_susiex_results, pattern = "\\.log$", full.names = TRUE) %>%
-  str_subset(.,"SuSiEx.SAS-EUR-AFR.output")
-
-list.files(path_to_susiex_results, pattern = "\\.log$", full.names = TRUE) %>%
-  str_subset(.,"SuSiEx.SAS-AFR-EUR.output")
-
-list.files(path_to_susiex_results, pattern = "\\.log$", full.names = TRUE) %>%
-  str_subset(.,"SuSiEx.EUR-AFR-SAS.output") # largest number of files
-
-list.files(path_to_susiex_results, pattern = "\\.log$", full.names = TRUE) %>%
-  str_subset(.,"SuSiEx.EUR-SAS-AFR.output")
-
-list.files(path_to_susiex_results, pattern = "\\.log$", full.names = TRUE) %>%
-  str_subset(.,"SuSiEx.AFR-EUR-SAS.output")
-
-list.files(path_to_susiex_results, pattern = "\\.log$", full.names = TRUE) %>%
-  str_subset(.,"SuSiEx.AFR-SAS-EUR.output")
-
-
-
 ancestries <- fread('reference/ukb-ld-ref_ancestry.id') %>%
                 pull(3) %>%
                 unique()
@@ -84,7 +57,7 @@ nrow(results$summary) == length(results$cs) && length(results$cs) == length(resu
 # MAX_PIP - Maximum posterior inclusion probability (PIP) in the credible set..
 
 png(paste0( plotsDir , "length_purity_maxPIP.png"), width = 1000, height = 600, res = 150)
-print(plotPurityPIP(results$summary))
+print(susiexR::plotPurityPIP(results$summary))
 dev.off()
 
 # ---- Plot the probability the top SNP in the credible set is causal in each ancestry.
