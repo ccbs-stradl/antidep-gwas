@@ -25,8 +25,8 @@ names(mbat_output)
 # Filter table to Bonferroni corrected P values < 0.05
 pcorrect_table <- function(mbat_table){
   mbat_table %>%
-    mutate(P_mBAT_bonferroni = p.adjust(P_mBAT, method = "bonferroni")) %>%
-    filter(P_mBAT_bonferroni < 0.05) %>%
+    mutate(P_mBATcombo_bonferroni = p.adjust(P_mBATcombo, method = "bonferroni")) %>%
+    filter(P_mBATcombo_bonferroni < 0.05) %>%
     arrange(desc(Chisq_mBAT))
 }
 
@@ -71,6 +71,8 @@ overlapping <- genes_df %>%
   rowwise() %>%
   filter(sum(c_across(-gene_name)) >= 2) %>%
   ungroup()
+
+overlapping
 
 write.csv(overlapping, paste0("manuscript/tables/mBAT-combo_overlapping_genes.csv") , row.names = F, quote = F)
 
