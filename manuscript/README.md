@@ -17,6 +17,6 @@ Maybe include an .Rmd which outputs text with key numeric values, eg. sample siz
 
 | Table Name | Legend (*draft version*) | Location | Script |
 | :------: | :-------: | :----: | :----: |
-| Supplementary Table XXXX | Significant positionally mapped genes using mBAT-combo (Bonferroni corrected P < 0.05), in the European sample. African and South Asian samples returned no positionally mapped genes. | `antidep-gwas/manuscript/tables/mBAT-combo.EUR.csv`  | `antidep-gwas/manuscript/scripts/tables_mBAT-combo.R`
+| Supplementary Table XXXX | Significant positionally mapped genes using mBAT-combo (Bonferroni corrected P < 0.05), for all ancestries and antidepressant subgroups. | `antidep-gwas/manuscript/tables/mBAT-combo.csv`  | `antidep-gwas/manuscript/scripts/tables_mBAT-combo.R`
 | Supplementary Table XXXX | *Summary file output from susiex limited to significant credible set snps. Columns separated into respective ancestries.* | `antidep-gwas/manuscript/tables/susiex_significant_summary.csv` |  `antidep-gwas/manuscript/scripts/tables_susiex.R` |
 | Supplementary Table XXXX | *Credible set file output from susiex limited to significant credible set snps. Columns separated into respective ancestries.* | `antidep-gwas/manuscript/tables/susiex_significant_cs.csv` |  `antidep-gwas/manuscript/scripts/tables_susiex.R` |
