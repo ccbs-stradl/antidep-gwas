@@ -30,4 +30,7 @@ liftover
 format/gwas/
 format/meta/
 MR-MEGA
+fineMapping/*
+!fineMapping/logs/
+logs/
 *.correlations.txt

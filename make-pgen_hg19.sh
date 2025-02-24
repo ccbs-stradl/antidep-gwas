@@ -1,4 +1,4 @@
-#$ -N pgen_hg19
+#$ -N make-pgen_hg19
 #$ -l h_vmem=32G
 #$ -l rl9=true
 #$ -l h_rt=8:00:00
@@ -7,9 +7,10 @@
 #$ -cwd
 
 # Use UKBiobank genetic data for creating LD references as these are in the hg19 format
-# Subset pgen files to specific ancestries
+# Creates one pfile for all ancestries. 
+# With an extra column in the .psam file indicating the ancestry for that ID
 
-cd /exports/eddie/scratch/$USER/antidep-gwas
+cd /exports/eddie/scratch/$USER/GitRepos/antidep-gwas
 export PATH=$PATH:/gpfs/igmmfs01/eddie/GenScotDepression/amelia/packages/plink2
 
 # Create a file with columns for UKB ID (FID and IID) and a column for ancestry

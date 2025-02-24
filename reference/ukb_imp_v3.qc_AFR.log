@@ -1,0 +1,24 @@
+PLINK v1.90b7 64-bit (16 Jan 2023)
+Options in effect:
+  --bfile reference/ukb_imp_v3.qc_AFR_ref
+  --freq
+  --keep-allele-order
+  --out reference/ukb_imp_v3.qc_AFR
+
+Hostname: node2b32.ecdf.ed.ac.uk
+Working directory: /exports/eddie/scratch/aedmond3/GitRepos/antidep-gwas
+Start time: Thu Dec 12 11:52:37 2024
+
+Random number seed: 1734004357
+1030881 MB RAM detected; reserving 515440 MB for main workspace.
+Allocated 29025 MB successfully, after larger attempt(s) failed.
+4413 variants loaded from .bim file.
+7343 people (3110 males, 4233 females) loaded from .fam.
+Using 1 thread.
+Before main variant filters, 7343 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.989156.
+--freq: Allele frequencies (founders only) written to
+reference/ukb_imp_v3.qc_AFR.frq .
+
+End time: Thu Dec 12 11:52:37 2024
