@@ -1,0 +1,62 @@
+###################
+# MR-MEGA v.0.2
+###################
+
+Using following command line options:
+Input file: mrmega.in
+Output result file: antidep-2501-mrmega-N06AB.result
+Output log file: antidep-2501-mrmega-N06AB.log
+Number of PC-s in regression: 3
+Binary trait analysis (expecting columns OR, OR_95L, OR_95U)
+P-value threshold for showing cohort effect direction: 1
+No column filters set
+Column names:
+	Marker name: MARKERNAME
+	Effect allele: EA
+	Other allele: NEA
+	Effect allele frequency: EAF
+	Effect (OR): OR
+	Upper CI of effect: OR_95U
+	Lower CI of effect: OR_95L
+	Strand: STRAND
+	Sample size: N
+	Chromosome: CHROMOSOME
+	Position: POSITION
+Cohorts list:
+AllOfUs-N06AB-AFR-v7_2411.txt.gz
+AllOfUs-N06AB-AMR-v7_2411.txt.gz
+AllOfUs-N06AB-EAS-v7_2411.txt.gz
+AllOfUs-N06AB-EUR-v7_2411.txt.gz
+AllOfUs-N06AB-MID-v7_2411.txt.gz
+AllOfUs-N06AB-SAS-v7_2411.txt.gz
+GenScot-N06AB-EUR-rmUKBB_2309.txt.gz
+UKB-N06AB-AFR-21007_2309.txt.gz
+UKB-N06AB-EUR-21007_2309.txt.gz
+UKB-N06AB-MID-21007_2309.txt.gz
+UKB-N06AB-SAS-21007_2309.txt.gz
+Lambda:1.03062
+Lambda:1.07573
+Lambda:1.0737
+Lambda:1.05813
+Lambda:1.00593
+Lambda:0.995099
+Lambda:1.07552
+Lambda:0.986244
+Lambda:1.12893
+Lambda:0.8557
+Lambda:1.03387
+Principal components:
+PCs PC0 PC1 PC2
+AllOfUs-N06AB-AFR-v7_2411.txt.gz -0.147113 0.00898748 -0.0042168
+AllOfUs-N06AB-AMR-v7_2411.txt.gz 0.0217263 -0.0128277 -0.0259164
+AllOfUs-N06AB-EAS-v7_2411.txt.gz 0.022625 -0.14672 -0.0220896
+AllOfUs-N06AB-EUR-v7_2411.txt.gz 0.0562278 0.0390014 -0.016101
+AllOfUs-N06AB-MID-v7_2411.txt.gz 0.0250535 0.0355487 0.00934171
+AllOfUs-N06AB-SAS-v7_2411.txt.gz 0.0322372 -0.0303545 0.0409855
+GenScot-N06AB-EUR-rmUKBB_2309.txt.gz 0.058067 0.0402915 -0.0188242
+UKB-N06AB-AFR-21007_2309.txt.gz -0.16287 0.00880908 -0.00178792
+UKB-N06AB-EUR-21007_2309.txt.gz 0.0577382 0.0402211 -0.0184227
+UKB-N06AB-MID-21007_2309.txt.gz 0.00290984 0.0321766 0.00808959
+UKB-N06AB-SAS-21007_2309.txt.gz 0.0333976 -0.0151338 0.0489419
+
+Analysis finished.

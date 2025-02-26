@@ -1,0 +1,74 @@
+###################
+# MR-MEGA v.0.2
+###################
+
+Using following command line options:
+Input file: mrmega.in
+Output result file: antidep-2501-mrmega-N06A.result
+Output log file: antidep-2501-mrmega-N06A.log
+Number of PC-s in regression: 3
+Binary trait analysis (expecting columns OR, OR_95L, OR_95U)
+P-value threshold for showing cohort effect direction: 1
+No column filters set
+Column names:
+	Marker name: MARKERNAME
+	Effect allele: EA
+	Other allele: NEA
+	Effect allele frequency: EAF
+	Effect (OR): OR
+	Upper CI of effect: OR_95U
+	Lower CI of effect: OR_95L
+	Strand: STRAND
+	Sample size: N
+	Chromosome: CHROMOSOME
+	Position: POSITION
+Cohorts list:
+AllOfUs-N06A-AFR-v7_2411.txt.gz
+AllOfUs-N06A-AMR-v7_2411.txt.gz
+AllOfUs-N06A-EAS-v7_2411.txt.gz
+AllOfUs-N06A-EUR-v7_2411.txt.gz
+AllOfUs-N06A-MID-v7_2411.txt.gz
+AllOfUs-N06A-SAS-v7_2411.txt.gz
+BBJ-N06A-EAS-SK2020.txt.gz
+FinnGen-N06A-EUR-R9.txt.gz
+GenScot-N06A-EUR-rmUKBB_2309.txt.gz
+UKB-N06A-AFR-21007_2309.txt.gz
+UKB-N06A-AMR-21007_2309.txt.gz
+UKB-N06A-EAS-21007_2309.txt.gz
+UKB-N06A-EUR-21007_2309.txt.gz
+UKB-N06A-MID-21007_2309.txt.gz
+UKB-N06A-SAS-21007_2309.txt.gz
+Lambda:1.03672
+Lambda:1.03747
+Lambda:1.11065
+Lambda:1.07805
+Lambda:0.94928
+Lambda:1.11801
+Lambda:1.01769
+Lambda:1.3657
+Lambda:1.09616
+Lambda:1.024
+Lambda:0.923609
+Lambda:0.973648
+Lambda:1.1673
+Lambda:0.901652
+Lambda:1.01719
+Principal components:
+PCs PC0 PC1 PC2
+AllOfUs-N06A-AFR-v7_2411.txt.gz -0.111766 0.117904 -0.00551735
+AllOfUs-N06A-AMR-v7_2411.txt.gz 0.00300784 -0.0148088 -0.0329755
+AllOfUs-N06A-EAS-v7_2411.txt.gz 0.119343 0.0583698 -0.00174646
+AllOfUs-N06A-EUR-v7_2411.txt.gz -0.0216687 -0.070911 -0.00790523
+AllOfUs-N06A-MID-v7_2411.txt.gz -0.0374108 -0.0407284 0.0197508
+AllOfUs-N06A-SAS-v7_2411.txt.gz 0.0172797 -0.0150655 0.0453191
+BBJ-N06A-EAS-SK2020.txt.gz 0.125382 0.0601941 -0.00856794
+FinnGen-N06A-EUR-R9.txt.gz -0.00995119 -0.0674036 -0.0187384
+GenScot-N06A-EUR-rmUKBB_2309.txt.gz -0.0214043 -0.0733875 -0.0113453
+UKB-N06A-AFR-21007_2309.txt.gz -0.119997 0.130831 -0.00368132
+UKB-N06A-AMR-21007_2309.txt.gz 0.00208331 -0.0267518 -0.0313454
+UKB-N06A-EAS-21007_2309.txt.gz 0.117871 0.0596594 0.000406326
+UKB-N06A-EUR-21007_2309.txt.gz -0.0212983 -0.073091 -0.0109375
+UKB-N06A-MID-21007_2309.txt.gz -0.0464019 -0.0205434 0.0169217
+UKB-N06A-SAS-21007_2309.txt.gz 0.00493088 -0.0242665 0.0503624
+
+Analysis finished.
