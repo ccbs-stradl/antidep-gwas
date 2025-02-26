@@ -21,7 +21,7 @@ def processMALabel = (params.build == 'hg19') ? 'tools' : (params.build == 'hg38
 
 def mapsDuplicatesDir = (params.build == 'hg19') ? 'maps_hg19_duplicates' : (params.build == 'hg38') ? 'maps_hg38_duplicates' : null
 
-def mapsDir = (params.build == 'hg19') ? 'maps_hg19' : (params.build == 'hg38') ? 'maps_hg38' : null
+def mapsDir = (params.build == 'hg19') ? 'maps/mbat/hg19' : (params.build == 'hg38') ? 'maps/mbat/hg38' : null
 
 // input files dependent on genotype build type:
 if (params.build == 'hg19') {
