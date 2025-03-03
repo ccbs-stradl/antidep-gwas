@@ -12,6 +12,8 @@
 # positions are listed for genome builds 37 (GRCh37/hg19) and 38 (GRCh38/hg38).
 # High-confidence genes identified from finemapping, expression, or protein are also reported in the second sheet (B).
 
+library(tidyr)
+
 mdd_genes <- fread("manuscript/MDD_GWAS_supp_table_8A.csv")
 
 # ------------------------------
@@ -84,4 +86,25 @@ antidep_results <- antidep_results %>%
 
 write.csv(antidep_results, "manuscript/tables/across_methods_and_mdd_gwas.csv", row.names = F, quote = F)
 
+
+# -------------------------------------
+# Compare genes in antidep-gwas that ARE and ARE NOT in the MDD GWAS
+antidep_results %>%
+  filter_at(vars(starts_with("MDD_GWAS")), all_vars(. == FALSE)) %>%
+  nrow()
+# 97
+
+antidep_results %>%
+  filter_at(vars(starts_with("MDD_GWAS")), any_vars(. == TRUE)) %>%
+  nrow()
+# 170
+
+head(antidep_results)
+# ------------------------------
+write.csv(filter_at(antidep_results, vars(starts_with("MDD_GWAS")), all_vars(. == FALSE)) %>% relocate(Gene),
+          "manuscript/tables/across_methods_and_mdd_gwas_not_in_mdd_gwas.csv", row.names = F, quote = F)
+
+
+write.csv(filter_at(antidep_results, vars(starts_with("MDD_GWAS")), any_vars(. == TRUE)) %>% relocate(Gene) ,
+          "manuscript/tables/across_methods_and_mdd_gwas_in_mdd_gwas.csv", row.names = F, quote = F)
 
