@@ -34,7 +34,7 @@ mapped_values <- list(
                   list(
                       "antidep_gwas" = "SuSiEx",
                       "mdd_gwas" = "MDD_GWAS_Fine_mapping",
-                      "summary_table_col" = "cross-ancestry",
+                      "summary_table_col" = "cross-ancestry_N06A",
                       "summary_table_row" = "fine_mapping"
                       )
                   )
