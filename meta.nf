@@ -81,8 +81,8 @@ workflow {
       MEGA_POST_CH = MEGA_POST(MEGA_CH)
 
       MEGA_ASSOC_CH = MEGA_POST_CH
-          .map { it -> it[2] }
-          .flatten()
+        .map { it -> it[0,1,4] }
+        .transpose()
 
     /*
         Fixed effects (polars)
@@ -101,35 +101,43 @@ workflow {
       
     FIXED_CH = FIXED(FIXED_IN_CH)
     
-    // FIXED_POST_CH = FIXED_POST(FIXED_CH)
+    FIXED_POST_CH = FIXED_POST(FIXED_CH)
 
-    // FIXED_ASSOC_CH = FIXED_POST_CH
-    //     .map { it -> it[2] }
-    //      .flatten()
+    FIXED_ASSOC_CH = FIXED_POST_CH
+        .map { it -> it[0,1,4] }
+        .transpose()
 
     // /* 
     //     Post analysis
     // */
     
-    // ASSOC_CH = MEGA_ASSOC_CH
-    //      .concat(FIXED_ASSOC_CH)
+    ASSOC_CH = MEGA_ASSOC_CH
+         .concat(FIXED_ASSOC_CH)
 
-    // MANHATTAN(ASSOC_CH)
+    MANHATTAN(ASSOC_CH)
 
-    // // count number of GWsig variants
-    // // further processing of results with 1 or more loci
-    // ASSOC_GW_CH = GW(ASSOC_CH)
-	  //    .filter { it -> it[1].toInteger() > 0 }
-    //      .map { it -> it[0] }
+    // count number of GWsig variants
+    // further processing of results with 1 or more loci
+    ASSOC_GW_CH = GW(ASSOC_CH)
+      .filter { it -> it[3].toInteger() > 0 }
+      .map { it -> it[0,1,2] }
 
-    // // match association and reference SNPs with CPID
-    // REF_CPID_CH = REF_CPID(REF_CH)
+    // match association and reference SNPs with CPID
+    REF_CPID_CH = REF_CPID(REF_CH)
 
-    // ASSOC_REF_CH = ASSOC_GW_CH
-    //      .combine(REF_CPID_CH)
+    ASSOC_REF_CH = ASSOC_GW_CH
+         .combine(REF_CPID_CH)
 
-    // // clumping
-    // CLUMP_CH = CLUMP(ASSOC_REF_CH)
+    // clumping
+    CLUMP_CH = CLUMP(ASSOC_REF_CH)
+      .groupTuple(by: [0, 1])
+
+    // reports
+    POST_CH = MEGA_POST_CH
+      .concat(FIXED_POST_CH)
+      .combine(CLUMP_CH, by: [0, 1])
+    
+    //POST(POST_CH)
 	
 }
 
@@ -237,7 +245,7 @@ process MEGA_POST {
     tuple val(metaset), val(details), val(analysis), path(result), path(log), path(datasets)
 
     output:
-    tuple val(metaset), path("${analysis}.gz"), path("${analysis}.csv"), path("*.assoc")
+    tuple val(metaset), val(analysis), path("${analysis}.gz"), path("${analysis}.csv"), path("*.assoc")
 
     script:
     """
@@ -458,7 +466,7 @@ process FIXED {
 
 // Fixed effects postprocessing
 process FIXED_POST {
-    tag "${dataset}"
+    tag "${analysis}"
     label 'analysis'
 
     publishDir "meta", pattern: "*.{gz,csv}", mode: 'copy'
@@ -468,10 +476,10 @@ process FIXED_POST {
     time = '30m'
 
     input:
-    tuple val(dataset), path(meta), path(datasets)
+    tuple val(metaset), val(analysis), path(meta), path(datasets)
 
     output:
-    tuple path("${dataset}.gz"), path("${dataset}.csv"), path("*.assoc")
+    tuple val(metaset), val(analysis), path("${analysis}.gz"), path("${analysis}.csv"), path("*.assoc")
 
     script:
     """
@@ -508,10 +516,10 @@ process FIXED_POST {
                 A1 = ALT, A2 = REF, P = QP, BETA, ESS=NEFF,
                 CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
-    write_tsv(meta_p, "${dataset}.gz")
-    write_csv(datasets, "${dataset}.csv")
-    write_tsv(assoc, "${dataset}.assoc")
-    write_tsv(het, "${dataset}.het.assoc")
+    write_tsv(meta_p, "${analysis}.gz")
+    write_csv(datasets, "${analysis}.csv")
+    write_tsv(assoc, "${analysis}.assoc")
+    write_tsv(het, "${analysis}.het.assoc")
     """
 }
 
@@ -524,10 +532,10 @@ process GW {
     time = '10m'
 
     input:
-    path(assoc)
+    tuple val(metaset), val(analysis), path(assoc)
 
     output:
-    tuple path(assoc, includeInputs: true), env(GW)
+    tuple val(metaset), val(analysis), path(assoc, includeInputs: true), env(GW)
 
     script:
     """
@@ -539,7 +547,7 @@ process GW {
 /* manhattan plot */
 process MANHATTAN {
 	tag "${assoc}"
-        label 'analysis'
+  label 'analysis'
 
 	publishDir 'meta', mode: 'copy'
 	
@@ -548,7 +556,7 @@ process MANHATTAN {
 	time = '30m'
 	
 	input:
-	path(assoc)
+	tuple val(metaset), val(analysis), path(assoc)
 	
 	output:
 	path "*.png"
@@ -615,29 +623,113 @@ process CLUMP {
     time = '1h'
 
     input:
-    tuple path(assoc), path(pgen), path(psam), path(pvar)
+    tuple val(metaset), val(analysis), path(assoc), path(pgen), path(psam), path(pvar)
 
     output:
-    tuple path("${assoc.baseName}.clumps"), path("${assoc.baseName}.log")
+    tuple val(metaset), val(analysis), path("${assoc.baseName}.clumps"), path("${assoc.baseName}.log")
+
+    script:
+    if(metaset.containsKey("cluster")) {
+      """
+      plink2 \
+      --clump ${assoc} \
+      --clump-id-field CPID \
+      --clump-p1 5e-7 \
+      --clump-p2 1.0 \
+      --clump-r2 0.1 \
+      --clump-kb 1000 \
+      --keep-cat-names ${metaset.cluster} \
+      --keep-cat-pheno SuperPop \
+      --keep-founders \
+      --pgen ${pgen} \
+      --psam ${psam} \
+      --pvar ${pvar} \
+      --allow-extra-chr \
+      --out ${assoc.baseName} \
+      --threads ${task.cpus} \
+      --memory ${task.memory.bytes.intdiv(1000000)}
+      """
+    } else {
+      """
+      plink2 \
+      --clump ${assoc} \
+      --clump-id-field CPID \
+      --clump-p1 5e-7 \
+      --clump-p2 1.0 \
+      --clump-r2 0.1 \
+      --clump-kb 1000 \
+      --keep-founders \
+      --pgen ${pgen} \
+      --psam ${psam} \
+      --pvar ${pvar} \
+      --allow-extra-chr \
+      --out ${assoc.baseName} \
+      --threads ${task.cpus} \
+      --memory ${task.memory.bytes.intdiv(1000000)}
+      """
+    }
+}
+
+process POST {
+    tag "${analysis}"
+    label 'analysis'
+
+    publishDir "meta", pattern: "*.tsv", mode: 'copy'
+
+    cpus = 2
+    memory = 31.GB
+    time = '30m'
+
+    input:
+    tuple val(metaset), val(analysis), val(meta), val(datasets), path(assoc), path(clumps), path(logs)
+
+    output:
+    tuple val(metaset), val(analysis), path("${analysis}.clumps.tsv")
 
     script:
     """
-    plink2 \
-    --clump ${assoc} \
-    --clump-id-field CPID \
-    --clump-p1 0.0001 \
-    --clump-p2 1.0 \
-    --clump-r2 0.1 \
-    --clump-kb 1000 \
-    --clump-allow-overlap \
-    --pgen ${pgen} \
-    --psam ${psam} \
-    --pvar ${pvar} \
-    --allow-extra-chr \
-    --out ${assoc.baseName} \
-	  --threads ${task.cpus} \
-	  --memory ${task.memory.bytes.intdiv(1000000)}
+    #!Rscript
+    library(readr)
+    library(dplyr)
+    library(tidyr)
+    library(stringr)
+    library(plyranges)
+
+    meta <- read_tsv("${meta}")
+
+    clump_paths <- str_split("${clumps}", pattern = " ")[[1]]
+    names(clump_paths) <- clump_paths
+
+    clump_list <- lapply(clump_paths, read_table)
+    clumps <- bind_rows(clump_list, .id = "dataset") |>
+      filter(P <= 5e-8)
+
+    # deduce ranges from tagged SNPs
+    clump_ranges <- clumps |>
+      mutate(tagged = str_split(SP2, pattern = ",")) |>
+      select(dataset, seqnames = `#CHROM`, POS, ID, tagged) |>
+      unnest_longer(tagged) |>
+      separate(tagged, into = c("chr", "pos", "ref", "alt")) |>
+      mutate(pos = as.numeric(pos)) |>
+      group_by(dataset, seqnames, POS, ID) |>
+      summarize(start = min(pos), end = max(pos)) |>
+      ungroup() |>
+      mutate(start = if_else(is.na(start), true = POS, false = start),
+             end = if_else(is.na(end), true = POS, false = end))
+
+    # genomic ranges
+    clump_gr <- as_granges(clump_ranges)
+    # group into loci
+    locus_gr <- reduce_ranges(clump_gr)
+
+    clump_loci <- join_overlap_intersect(locus_gr, clump_gr) |>
+      as_tibble() |>
+      mutate(seqnames = as.numeric(as.character(seqnames)))
+
+    if(str_detect("${meta}", "mrmega")) {
+
+      meta_clumps <- meta |>
+        inner_join(clump_loci, by = c("Chromosome" = "seqnames", "Position" = "POS"))
+    }
     """
 }
-
-
