@@ -1,6 +1,7 @@
 # Create a summary table where each row has a method and the columns are the GWASs
 # Value in cell is proportion of overlap with MDD GWAS
 # ------------------------------
+library(dplyr)
 
 # Read in overlapping genes between antidep GWAS and MDD GWAS
 antidep_results <- read.csv("manuscript/tables/across_methods_and_mdd_gwas.csv")
@@ -37,6 +38,10 @@ mapped_values <- list(
                       "summary_table_row" = "fine_mapping"
                       )
                   )
+
+##################################
+### FUNCTIONS ####################
+##################################
 
 # Define function to get the proportion and % of overlaping genes with MDD GWAS
 get_cell_value <- function(antidep_col, mdd_col){
@@ -78,7 +83,7 @@ main <- function(){
   }
 
   # Write the table to a csv file
-  write.csv(summary_table, "manuscript/tables/antidep_gwas_mdd_gwas_summary_table.csv", row.names = F, quote = F)
+  write.csv(summary_table, "manuscript/tables/antidep_gwas_mdd_gwas_summary_table.csv", row.names = T, quote = F)
 
   return(summary_table)
 
