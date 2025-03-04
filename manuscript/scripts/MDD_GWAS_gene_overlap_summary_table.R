@@ -10,7 +10,7 @@ antidep_results <- read.csv("manuscript/tables/across_methods_and_mdd_gwas.csv")
 # Define a summary table with the columns: cross-ancestry, EUR_N06A, EUR_N06AA, EUR_N06AB
 # and the rows: positional_mapping, fine_mapping
 summary_table <- data.frame(matrix(ncol = 4, nrow = 2))
-colnames(summary_table) <- c("cross-ancestry", "EUR_N06A", "EUR_N06AA", "EUR_N06AB")
+colnames(summary_table) <- c("cross-ancestry_N06A", "EUR_N06A", "EUR_N06AA", "EUR_N06AB")
 rownames(summary_table) <- c("positional_mapping", "fine_mapping")
 
 
