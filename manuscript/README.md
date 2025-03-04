@@ -17,7 +17,7 @@ Maybe include an .Rmd which outputs text with key numeric values, eg. sample siz
 
 | Table Name | Legend (*draft version*) | Location | Script |
 | :------: | :-------: | :----: | :----: |
-| Table X | Overlap of anti-depressant exposure associated genes with genes identified in MDD GWAS (Adams et al. 2025). The denominator is total number of genes identified by each method in the antidepressant exposure GWAS. The numerator is the number of those genes also itentified by that method in the MDD GWAS. The columns represent the anti-depressant meta-analysis or cross-ancestry if using a multi-ancestry method.
+| Table X | Overlap of anti-depressant exposure associated genes with genes identified in MDD GWAS (Adams et al. 2025). The denominator is total number of genes identified by each method in the antidepressant exposure GWAS. The numerator is the number of those genes also itentified by that method in the MDD GWAS. The columns represent the anti-depressant meta-analysis or cross-ancestry if using a multi-ancestry method. | `antidep-gwas/manuscript/tables/antidep_gwas_mdd_gwas_summary_table.csv` | `antidep-gwas/manuscript/scripts/MDD_GWAS_gene_overlap*` |
 
 | Table Name | Legend (*draft version*) | Location | Script |
 | :------: | :-------: | :----: | :----: |
