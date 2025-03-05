@@ -4,13 +4,6 @@
 # ------------------------------
 # Read in Supplementary Table 8 from Adams et al. 2025 (Gene mapping results summarized across methods, related to STAR Methods)
 # https://www.cell.com/cell/fulltext/S0092-8674(24)01415-6
-# Trans-ancestry genome-wide study of depression identifies 697 associations implicating cell types and pharmacotherapies
-# Major Depressive Disorder Working Group of the Psychiatric Genomics Consortium1
-# Comparison of gene mapping method. Table S8A lists genes identified by at least one method.
-# There is a column for each method (Nearest_gene to PsyOPS) with TRUE if the gene was identified
-# or prioritised by a given method (FALSE otherwise). Chromosome and gene start and end
-# positions are listed for genome builds 37 (GRCh37/hg19) and 38 (GRCh38/hg38).
-# High-confidence genes identified from finemapping, expression, or protein are also reported in the second sheet (B).
 
 library(tidyr)
 
