@@ -14,7 +14,8 @@
 
 library(tidyr)
 
-mdd_genes <- fread("manuscript/MDD_GWAS_supp_table_8A.csv")
+
+mdd_genes <- fread("manuscript/MDD_GWAS_supp_table_8B.csv")
 
 # ------------------------------
 # Read in mBAT-combo results
@@ -92,12 +93,12 @@ write.csv(antidep_results, "manuscript/tables/across_methods_and_mdd_gwas.csv", 
 antidep_results %>%
   filter_at(vars(starts_with("MDD_GWAS")), all_vars(. == FALSE)) %>%
   nrow()
-# 97
+# 239
 
 antidep_results %>%
   filter_at(vars(starts_with("MDD_GWAS")), any_vars(. == TRUE)) %>%
   nrow()
-# 170
+# 28
 
 head(antidep_results)
 # ------------------------------

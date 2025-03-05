@@ -4,6 +4,7 @@
 library(dplyr)
 
 # Read in overlapping genes between antidep GWAS and MDD GWAS
+#### NOTE MDD genes are from "supp_table_8B" which are high confidence genes. ####
 antidep_results <- read.csv("manuscript/tables/across_methods_and_mdd_gwas.csv")
 
 
