@@ -8,7 +8,15 @@
 library(tidyr)
 
 
-mdd_genes <- fread("manuscript/MDD_GWAS_supp_table_8B.csv")
+mdd_genes <- fread("manuscript/MDD_GWAS_supp_table_8B.csv") %>%
+  # add prefix "MDD_GWAS_" to columns: c(Nearest_gene Fine_mapping Expression Protein fastBAT HMAGMA PsyOPS)
+  rename_with(~paste0("MDD_GWAS_", .), c(Nearest_gene, Fine_mapping, Expression, Protein, fastBAT, HMAGMA, PsyOPS)) %>%
+  # rename Chrom_b37 pos_start_b37 pos_end_b37 to Chr     Start       End
+  rename(Chr = Chrom_b37, Start = pos_start_b37, End = pos_end_b37) %>%
+  # remove cols ending in b38
+  select(-ends_with("b38")) %>%
+  mutate(across(c(Chr, Start, End), ~as.character(.)))
+
 
 # ------------------------------
 # Read in mBAT-combo results
@@ -50,32 +58,19 @@ antidep_results[antidep_results$gene_name == "WNT3", c("Gene", "Chr", "Start", "
 
 # ------------------------------
 # Join with MDD GWAS results
-antidep_results %>%
-  mutate(MDD_GWAS = ifelse(gene_name %in% mdd_genes$Gene, TRUE, FALSE))
-
-mdd_methods <- colnames(mdd_genes)[3:9]
-
-add_mdd_cols <- function(mdd_method){
-mdd_genes_tmp <- mdd_genes %>%
-  filter(!!sym(mdd_methods[i]))
-
-new_col_name <- paste0("MDD_GWAS_", mdd_methods[i])
-
 antidep_results <- antidep_results %>%
-  mutate(!!new_col_name := ifelse(gene_name %in% mdd_genes_tmp$Gene, TRUE, FALSE))
+  rename(ENSID = Gene, Gene = gene_name) %>%
+  # convert Chr, Start and End cols to numeric values
+  mutate(across(c(Chr, Start, End), ~as.character(.))) %>%
+  merge(mdd_genes, by =c("ENSID", "Gene", "Chr"), all = TRUE)
 
-return(antidep_results)
-}
-
-for(i in 1:length(mdd_methods)){
-  antidep_results <- add_mdd_cols(mdd_methods[i])
-}
-
-head(antidep_results)
+# Some discrepancies between Start.x and Start.y and End.x and End.y
+# Merge them into one col each keeping *.x if there is a difference in numeric value
+# TODO
 
 # Arrange so that genes with most methods and in MDD GWAS methods appear first
 antidep_results <- antidep_results %>%
-  arrange(desc(rowSums(.[-(1:5)])))
+  arrange(desc(rowSums(.[6:16])))
 
 
 write.csv(antidep_results, "manuscript/tables/across_methods_and_mdd_gwas.csv", row.names = F, quote = F)
@@ -83,22 +78,34 @@ write.csv(antidep_results, "manuscript/tables/across_methods_and_mdd_gwas.csv", 
 
 # -------------------------------------
 # Compare genes in antidep-gwas that ARE and ARE NOT in the MDD GWAS
+# Genes only in antidep GWAS
 antidep_results %>%
-  filter_at(vars(starts_with("MDD_GWAS")), all_vars(. == FALSE)) %>%
+  filter_at(vars(starts_with("MDD_GWAS")), all_vars(. %in% c(FALSE, NA))) %>%
   nrow()
 # 239
 
+write.csv(filter_at(antidep_results, vars(starts_with("MDD_GWAS")), all_vars(. %in% c(FALSE, NA))) ,
+          "manuscript/tables/across_methods_and_mdd_gwas_not_in_mdd_gwas.csv", row.names = F, quote = F)
+
+# Genes in both MDD GWAS and antidep GWAS
 antidep_results %>%
   filter_at(vars(starts_with("MDD_GWAS")), any_vars(. == TRUE)) %>%
+  filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), any_vars(. == TRUE)) %>%
   nrow()
 # 28
 
-head(antidep_results)
-# ------------------------------
-write.csv(filter_at(antidep_results, vars(starts_with("MDD_GWAS")), all_vars(. == FALSE)) %>% relocate(Gene),
-          "manuscript/tables/across_methods_and_mdd_gwas_not_in_mdd_gwas.csv", row.names = F, quote = F)
-
-
-write.csv(filter_at(antidep_results, vars(starts_with("MDD_GWAS")), any_vars(. == TRUE)) %>% relocate(Gene) ,
+write.csv(antidep_results %>%
+            filter_at(vars(starts_with("MDD_GWAS")), any_vars(. == TRUE)) %>%
+            filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), any_vars(. == TRUE))  ,
           "manuscript/tables/across_methods_and_mdd_gwas_in_mdd_gwas.csv", row.names = F, quote = F)
 
+# Genes in MDD GWAS but not in antidep GWAS
+antidep_results %>%
+  filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), all_vars(. %in% c(FALSE, NA))) %>%
+  nrow()
+# 280
+
+# Check that adds up
+antidep_results %>% nrow() == 239 + 28 + 280
+
+# ------------------------------
