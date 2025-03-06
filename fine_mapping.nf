@@ -427,7 +427,7 @@ process CLUMP_POST {
 
   # Reduce ranges to collapse overlapping or nearby regions
   grng_reduced <- grng_streched %>%
-    reduce_ranges(min.gapwidth = 5000)  %>% # What should this be set to?
+    reduce_ranges(min.gapwidth = 1000000)  %>% # set to 1Mb
     as_tibble() %>%
     mutate(WIDTH = end - start + 1) %>%
     dplyr::select(CHR = seqnames, BP_START = start, BP_END = end, WIDTH)
