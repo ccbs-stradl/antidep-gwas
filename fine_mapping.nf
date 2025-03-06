@@ -39,7 +39,7 @@ import groovy.json.JsonSlurper
 // MAKE_BFILE INPUTS:
   params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.{pgen,psam,pvar}' // prefix of the pfiles to pass to --pfile in plink 
   params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id' // Output from script make-pgen.sh
-  params.chr = [1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+  params.chr = (1..22).toList()
 
 // MA INPUTS:
   // load in gwas meta sumstats that have been lifted over to hg19
