@@ -50,23 +50,44 @@ get_cell_value <- function(antidep_col, mdd_col){
     filter(!!sym(antidep_col)) %>%
     nrow()
 
+  mdd_genes_n <- antidep_results %>%
+    filter(!!sym(mdd_col)) %>%
+    nrow()
+
   antidep_and_mdd_genes_n <- antidep_results %>%
     filter(!!sym(antidep_col)) %>%
     filter(!!sym(mdd_col)) %>%
     nrow()
 
+  total_genes <- 20000
+
+  # Perform pypher test to test whether the overlap between two gene sets
+  # is more than what you’d expect by chance
+  p_value <- phyper(antidep_and_mdd_genes_n - 1,
+                    mdd_genes_n,
+                    total_genes - mdd_genes_n,
+                    antidep_genes_n,
+                    lower.tail = F)
+
+  # Round the p-value to 3 decimal places
+  p_value_rounded = signif(p_value, digits = 3)
+
+  # Get the proportion and percentage of overlapping genes
   proportion_gene_overlap <- paste0( antidep_and_mdd_genes_n , "/" , antidep_genes_n)
   percentange_gene_overlap <- paste0( round(antidep_and_mdd_genes_n / antidep_genes_n * 100, 2), "%")
-  cell_value <- paste0(proportion_gene_overlap, " (", percentange_gene_overlap, ")")
+
+  cell_value <- paste0(proportion_gene_overlap, " (", percentange_gene_overlap, ") p-value=", p_value_rounded)
+
   return(cell_value)
 }
+
 
 # Convert the cell value to a dataframe with correct row name and col name
 convert_to_dataframe <- function(antidep_col, mdd_col, row_name, col_name){
   cell_value <- get_cell_value(antidep_col, mdd_col)
   cell_value_df <- as.data.frame(cell_value)
   rownames(cell_value_df) <- row_name
-  colnames(cell_value_df) <- col_name
+  colnames(cell_value_df) <- paste0(colnames(cell_value_df), "_", col_name)
   return(cell_value_df)
 }
 
