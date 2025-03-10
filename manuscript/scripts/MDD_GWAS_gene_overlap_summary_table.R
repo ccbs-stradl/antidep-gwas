@@ -59,14 +59,14 @@ get_cell_value <- function(antidep_col, mdd_col){
     filter(!!sym(mdd_col)) %>%
     nrow()
 
-  total_genes <- 20000
+  total_genes <- 19000 # x-chromosome genes excluded
 
   # Perform pypher test to test whether the overlap between two gene sets
   # is more than what you’d expect by chance
   p_value <- phyper(antidep_and_mdd_genes_n - 1,
-                    mdd_genes_n,
-                    total_genes - mdd_genes_n,
                     antidep_genes_n,
+                    total_genes - antidep_genes_n,
+                    mdd_genes_n,
                     lower.tail = F)
 
   # Round the p-value to 3 decimal places
