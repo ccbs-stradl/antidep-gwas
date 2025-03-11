@@ -3,7 +3,7 @@
 To run script:
 nextflow run drug_targetor/format_gwas_drugtar.nf -resume \
 -work-dir /exports/eddie/scratch/${USER}/ad/work \
--c eddie.config
+-c eddie.config -process.executor local
 
 */
 
@@ -52,7 +52,7 @@ process MA {
   each neff_pct
 
   output:
-  tuple val(cluster), val(dataset), val(info.neff), path("*.ma"), path("*.sig_chr")
+  tuple val(cluster), val(dataset), val(info.neff), path("*.ma")
 
   script:
     """
@@ -73,21 +73,6 @@ process MA {
 
       # Overwrite sumstats
       fwrite(sumstats, ma_path, sep = '\t')
-
-      # Write a csv with a CHR column, and the number of that CHR if there is a significant SNP for it
-      # if there are no significant SNPs then write an empty file
-
-      sig_chr <- sumstats %>%
-                  filter(P <= 5e-8) %>%
-                  distinct(CHR) %>%
-                  mutate(CLUSTER = '${cluster}')
-
-      if ( nrow(sig_chr) > 0 ) {
-        fwrite(sig_chr, paste0('${dataset}', '.sig_chr' ) , sep = '\t', col.names = FALSE)
-      } else {
-        # Create an empty file 
-        file.create(paste0('${dataset}', '.sig_chr'))
-      }
 
       "
     """
