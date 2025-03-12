@@ -61,8 +61,13 @@ print(susiexR::plotPurityPIP(results$summary))
 dev.off()
 
 # ---- Plot the probability the top SNP in the credible set is causal in each ancestry.
+# Ensure these are in the same order as specified to susiex
+ancestries_susiex_order <- list.files(path_to_susiex_results, pattern = ".summary")[1] %>% # the first one will do
+  str_extract("(?<=\\.)([A-Za-z-]+)(?=\\.)") %>% # extract the ancestry from the file name
+  str_split("-") %>% unlist()  # split the ancestry by hyphen
+
 png(paste0( plotsDir , "POST-HOC_PROB_POP.png"), width = 1000, height = 800, res = 150)
-print(plotAncestryCausal(results$summary, ancestries = ancestries))
+print(plotAncestryCausal(results$summary, ancestries = ancestries_susiex_order))
 dev.off()
 
 # ---- Locus zoom plots
