@@ -80,6 +80,9 @@ write.csv(antidep_results, "manuscript/tables/across_methods_and_mdd_gwas.csv", 
 # ------------------------------
 # Save table of genes that are in antidep GWAS and may or may not be in MDD GWAS
 write.csv(antidep_results %>%
-            filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), any_vars(. == TRUE))  ,
+            filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), any_vars(. == TRUE)) %>%
+            rename(Start = Start.x, End = End.x) %>%
+            select(-c(Start.y, End.y)) %>%
+            mutate(across(everything(), ~ replace_na(., FALSE))), # change NA to FALSE, as that meant it was not identified in MDD GWAS as a high confidence gene
           "manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv", row.names = F, quote = F)
 
