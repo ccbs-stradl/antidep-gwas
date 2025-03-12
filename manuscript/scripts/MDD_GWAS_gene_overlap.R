@@ -6,6 +6,8 @@
 # https://www.cell.com/cell/fulltext/S0092-8674(24)01415-6
 
 library(tidyr)
+library(dplyr)
+library(data.table)
 
 
 mdd_genes <- fread("manuscript/MDD_GWAS_supp_table_8B.csv") %>%
@@ -75,37 +77,9 @@ antidep_results <- antidep_results %>%
 
 write.csv(antidep_results, "manuscript/tables/across_methods_and_mdd_gwas.csv", row.names = F, quote = F)
 
-
-# -------------------------------------
-# Compare genes in antidep-gwas that ARE and ARE NOT in the MDD GWAS
-# Genes only in antidep GWAS
-antidep_results %>%
-  filter_at(vars(starts_with("MDD_GWAS")), all_vars(. %in% c(FALSE, NA))) %>%
-  nrow()
-# 239
-
-write.csv(filter_at(antidep_results, vars(starts_with("MDD_GWAS")), all_vars(. %in% c(FALSE, NA))) ,
-          "manuscript/tables/across_methods_and_mdd_gwas_not_in_mdd_gwas.csv", row.names = F, quote = F)
-
-# Genes in both MDD GWAS and antidep GWAS
-antidep_results %>%
-  filter_at(vars(starts_with("MDD_GWAS")), any_vars(. == TRUE)) %>%
-  filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), any_vars(. == TRUE)) %>%
-  nrow()
-# 28
-
-write.csv(antidep_results %>%
-            filter_at(vars(starts_with("MDD_GWAS")), any_vars(. == TRUE)) %>%
-            filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), any_vars(. == TRUE))  ,
-          "manuscript/tables/across_methods_and_mdd_gwas_in_mdd_gwas.csv", row.names = F, quote = F)
-
-# Genes in MDD GWAS but not in antidep GWAS
-antidep_results %>%
-  filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), all_vars(. %in% c(FALSE, NA))) %>%
-  nrow()
-# 280
-
-# Check that adds up
-antidep_results %>% nrow() == 239 + 28 + 280
-
 # ------------------------------
+# Save table of genes that are in antidep GWAS and may or may not be in MDD GWAS
+write.csv(antidep_results %>%
+            filter_at(vars(starts_with("mBAT_combo"), "SuSiEx"), any_vars(. == TRUE))  ,
+          "manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv", row.names = F, quote = F)
+
