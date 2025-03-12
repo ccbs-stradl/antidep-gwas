@@ -248,7 +248,6 @@ process REF_BED {
 */
 process MBAT {
     tag "${ma.baseName}-${ref}"
-    label "gcta64"
 
     cpus = 8
     memory = 32.GB
