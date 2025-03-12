@@ -137,7 +137,7 @@ workflow {
       .concat(FIXED_POST_CH)
       .combine(CLUMP_CH, by: [0, 1])
     
-    //POST(POST_CH)
+    POST(POST_CH)
 	
 }
 
@@ -719,8 +719,11 @@ process POST {
 
     # genomic ranges
     clump_gr <- as_granges(clump_ranges)
+    # MHC region
+    mhc <- tibble(seqnames = 6, start = 28510120, end = 33480577)
+    mhc_gr <- as_granges(mhc)
     # group into loci
-    locus_gr <- reduce_ranges(clump_gr)
+    locus_gr <- reduce_ranges(bind_ranges(clump_gr, mhc_gr))
 
     clump_loci <- join_overlap_intersect(locus_gr, clump_gr) |>
       as_tibble() |>
@@ -729,7 +732,10 @@ process POST {
     if(str_detect("${meta}", "mrmega")) {
 
       meta_clumps <- meta |>
-        inner_join(clump_loci, by = c("Chromosome" = "seqnames", "Position" = "POS"))
+        inner_join(clump_loci, by = c("Chromosome" = "seqnames", "Position" = "POS")) |>
+        arrange(Chromosome, Position) |>
+        group_by(Chromosome, start, end) |>
+        mutate(locus = cur_group_id())
     }
     """
 }
