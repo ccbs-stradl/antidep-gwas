@@ -268,20 +268,21 @@ process MEGA_POST {
                `P-value_ancestry_het` = pchisq(chisq_ancestry_het, ndf_ancestry_het, lower.tail=FALSE),
                `P-value_residual_het` = pchisq(chisq_residual_het, ndf_residual_het, lower.tail=FALSE)
         ) |>
-    arrange(Chromosome, Position)
+    arrange(Chromosome, Position) |>
+    mutate(CHR = if_else(Chromosome == 23, true = "X", false = as.character(Chromosome)))
 
     mega_assoc <- mega_p |>
-        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
+        transmute(CHR, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
                   P=`P-value_association`, BETA=beta_0, SE=se_0, NMISS=Nsample,
                   CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
     mega_ancestry <- mega_p |>
-        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
+        transmute(CHR, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
                    P=`P-value_ancestry_het`, BETA=beta_0, SE=se_0, NMISS=Nsample,
                    CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
     mega_residual <- mega_p |>
-        transmute(CHR=Chromosome, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
+        transmute(CHR, SNP=MarkerName, BP=Position, A1=EA, A2=NEA,
                    P=`P-value_residual_het`, BETA=beta_0, SE=se_0, NMISS=Nsample,
                    CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
 
@@ -432,6 +433,7 @@ process FIXED {
     )
     
     # heterogeneity (sum of squared deviations)
+    # remove if there is only one study
     het = (
       weights
       .join(meta, on = ["CHROM", "POS", "ID", "ALT", "REF"], how = "inner", suffix = "_bar")
@@ -453,6 +455,12 @@ process FIXED {
         pl.sum("wSQD").alias("Q"),
         pl.len().alias("studies")
       )
+      .with_columns(
+        pl.when(pl.col("studies") == 1)
+        .then(None)
+        .otherwise(pl.col("Q"))
+        .alias("Q")
+      )
     )
     
     meta_het = (
@@ -460,7 +468,7 @@ process FIXED {
       .collect()
     )
     
-    meta_het.write_csv("meta.tsv", separator = "\\t")
+    meta_het.write_csv("meta.tsv", separator = "\\t", null_value = "NA")
     """
 }
 
@@ -512,6 +520,7 @@ process FIXED_POST {
                   CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
     
     het <- meta_p |>
+      filter(!is.na(QP)) |>
       transmute(CHR = str_remove(CHROM, 'chr'), SNP = ID, BP = POS,
                 A1 = ALT, A2 = REF, P = QP, BETA, ESS=NEFF,
                 CPID = str_glue("{CHR}:{BP}:{A2}:{A1}"))
@@ -700,7 +709,7 @@ process POST {
     clump_paths <- str_split("${clumps}", pattern = " ")[[1]]
     names(clump_paths) <- clump_paths
 
-    clump_list <- lapply(clump_paths, read_table)
+    clump_list <- lapply(clump_paths, read_table, col_types = cols("#CHROM" = col_character()))
     clumps <- bind_rows(clump_list, .id = "dataset") |>
       filter(P <= 5e-8)
 
@@ -725,17 +734,27 @@ process POST {
     # group into loci
     locus_gr <- reduce_ranges(bind_ranges(clump_gr, mhc_gr))
 
-    clump_loci <- join_overlap_intersect(locus_gr, clump_gr) |>
+    clump_loci <- find_overlaps(locus_gr, clump_gr) |>
       as_tibble() |>
-      mutate(seqnames = as.numeric(as.character(seqnames)))
+      mutate(seqnames = as.character(seqnames)) |>
+      select(-ID)
 
     if(str_detect("${meta}", "mrmega")) {
 
       meta_clumps <- meta |>
+        mutate(CHR = Chromosome) |>
+        mutate(Chromosome = as.character(Chromosome)) |>
         inner_join(clump_loci, by = c("Chromosome" = "seqnames", "Position" = "POS")) |>
-        arrange(Chromosome, Position) |>
-        group_by(Chromosome, start, end) |>
-        mutate(locus = cur_group_id())
+        arrange(CHR, Position) |>
+        group_by(CHR, start, end) |>
+        mutate(locus = cur_group_id()) |>
+        filter()
+    } else {
+      clump_loci_chr <- clump_loci |>
+        mutate(CHROM = str_c("chr", seqnames))
+
+      meta_clumps <- meta |>
+        inner_join(clump_loci_chr, by = c("CHROM", "POS"))
     }
     """
 }
