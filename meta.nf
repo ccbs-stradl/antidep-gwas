@@ -211,8 +211,8 @@ process MEGA {
 
     publishDir "meta", pattern: "*.log", mode: "copy"
 
-    cpus = 2
-    memory = 31.GB
+    cpus = 1
+    memory = 48.GB
     time = '3h'
 
     input:
@@ -237,7 +237,7 @@ process MEGA_POST {
 
     publishDir "meta", pattern: "*.{gz,csv}", mode: 'copy'
 
-    cpus = 2
+    cpus = 1
     memory = 31.GB
     time = '30m'
 
@@ -353,7 +353,7 @@ process FIXED {
     label 'analysis'
 
     cpus = 6
-    memory = 31.GB
+    memory = 48.GB
     time = '30m'
 
     input:
@@ -616,7 +616,7 @@ process CLUMP {
 
     publishDir 'meta', mode: 'copy'
 
-    //errorStrategy 'ignore'
+    errorStrategy 'ignore'
 
     cpus = 4
     memory = 16.GB
@@ -676,7 +676,7 @@ process POST {
 
     publishDir "meta", pattern: "*.tsv", mode: 'copy'
 
-    cpus = 2
+    cpus = 1
     memory = 31.GB
     time = '30m'
 
