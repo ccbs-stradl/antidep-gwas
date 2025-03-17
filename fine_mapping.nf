@@ -478,8 +478,8 @@ process SUSIEX {
       SUMSTATS="\$(echo "${ma}" | tr ' ' ',')"
       NEFF="\$(echo "${neff}" | tr -d '[]' | tr -d ' ')"
       BFILE_PREFIX="\$(echo "${bfile_prefix}" | tr -d '[]' | tr -d ' ')"
-      ANCESTRY_LD="\$(echo "${cluster}" | tr -d '[]' | tr -d ' ')"
-      ANCESTRY_FILE="\$(echo "${cluster}" | tr -d '[]' | tr -d ' '| tr ',' '-')"
+      ANCESTRY_LD="\$(echo "${cluster}" | sort | tr -d '[]' | tr -d ' ')"
+      ANCESTRY_FILE="\$(echo "${cluster}" | sort | tr -d '[]' | tr -d ' '| tr ',' '-')"
 
       echo "Sumstats: \$SUMSTATS"
       echo "Effective sample sizes: \$NEFF"
