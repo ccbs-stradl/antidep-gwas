@@ -741,20 +741,43 @@ process POST {
 
     if(str_detect("${meta}", "mrmega")) {
 
+      # merge clump results with MR-MEGA output
+      # keep most significant of each association for each locus
       meta_clumps <- meta |>
-        mutate(CHR = Chromosome) |>
-        mutate(Chromosome = as.character(Chromosome)) |>
-        inner_join(clump_loci, by = c("Chromosome" = "seqnames", "Position" = "POS")) |>
-        arrange(CHR, Position) |>
-        group_by(CHR, start, end) |>
-        mutate(locus = cur_group_id()) |>
-        filter()
+        mutate(seqnames = if_else(Chromosome == 23,
+                                  true = "X",
+                                  false = as.character(Chromosome))) |>
+        inner_join(clump_loci, by = c("seqnames" = "seqnames", "Position" = "POS")) |>
+        arrange(Chromosome, Position) |>
+        group_by(Chromosome, start, end) |>
+        mutate(Locus = cur_group_id()) |>
+        filter((`P-value_association` == min(`P-value_association`) & 
+                `P-value_association` <= 5e-8) | 
+               (`P-value_ancestry_het` == min(`P-value_ancestry_het`) & 
+                `P-value_ancestry_het` <= 5e-8) |
+               (`P-value_residual_het` == min(`P-value_residual_het`) & 
+                `P-value_residual_het` <= 5e-8)) |>
+        ungroup() |>
+        select(-seqnames, -width, -strand, -dataset) |>
+        select(Locus, everything())
+
+        write_tsv(meta_clumps, "${analysis}.clumps.tsv")
     } else {
       clump_loci_chr <- clump_loci |>
         mutate(CHROM = str_c("chr", seqnames))
 
       meta_clumps <- meta |>
-        inner_join(clump_loci_chr, by = c("CHROM", "POS"))
+        inner_join(clump_loci_chr, by = c("CHROM", "POS")) |>
+        mutate(CHR = if_else(CHROM == "chrX", true = 23, false = as.numeric(str_remove(CHROM, "chr")))) |>
+        arrange(CHR, POS) |>
+        group_by(CHROM, start, end) |>
+        mutate(LOCUS = cur_group_id()) |>
+        filter(P == min(P)) |>
+        ungroup() |>
+        select(-CHR, -seqnames, -width, -strand, -dataset) |>
+        select(LOCUS, everything())
+
+        write_tsv(meta_clumps, "${analysis}.clumps.tsv")
     }
     """
 }
