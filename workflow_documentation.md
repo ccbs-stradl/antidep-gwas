@@ -9,10 +9,7 @@ Users running these Nextflow scripts outside of Eddie may need to create a new `
 
 ## Requirements
 
-- [Singularity](https://docs.sylabs.io/)
-- [bcftools](https://samtools.github.io/bcftools/bcftools.html)
-- [gatk](https://gatk.broadinstitute.org)
-- R and packages: [plyranges](https://sa-lee.github.io/plyranges/index.html), ....
+See [list of workflow process requirments](workflow_requirements.md).
 
 ## Pre-processing steps
 
