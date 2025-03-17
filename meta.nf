@@ -188,6 +188,7 @@ process MEGA_IN {
 
 process MEGA {
     tag "${meta.metaset}-${meta.pheno}"
+    label 'mrmega'
 
     publishDir "meta", pattern: "*.log", mode: "copy"
 
@@ -564,6 +565,7 @@ process MANHATTAN {
 /* ref variants IDs as CPID */
 process REF_CPID {
     tag "${ref}"
+    label 'plink2'
 
     cpus = 1
     memory = 8.GB
@@ -591,6 +593,7 @@ process REF_CPID {
 
 process CLUMP {
     tag "${assoc.baseName}"
+    label 'plink2'
 
     publishDir 'meta', mode: 'copy'
 
