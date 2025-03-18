@@ -7,6 +7,7 @@
 library(data.table) # fread()
 library(tools) # file_path_sans_ext()
 library(dplyr) # %>%
+library(tidyr) # pivot_wider
 
 # --------------------------------
 # Helper function to read in files 
@@ -87,13 +88,23 @@ create_table_MRMEGA <- function(summary_table_path){
 }
 
 # --------------------------------
-create_table_fixed <- function(){
+create_table_fixed <- function(summary_table_path){
   # Read in files
   dataframes <- read_files("meta", "fixed")
   
+  # Concatenate the files together (rbind) and add column for the file name
+  summary_table <- rbind_dataframes_list(dataframes, c("dataset", "build", "pheno", "version", "cluster")) 
   
+  summary_table_wide <- pivot_wider(summary_table,
+                                    names_from = cohort,
+                                    values_from = c(cases, controls, neff)) %>%
+    rename_with(~ gsub("(.+)_(.+)", "\\2_\\1", .), -meta_analysis) %>%  # Reorder names but exclude "meta_analysis"
+    select(meta_analysis, order(colnames(.)[-1]) + 1)  # Keep "meta_analysis" first and reorder the rest
   
-  return(dataframes)
+  # Write csv
+  save_csv(summary_table_wide, summary_table_path, "fixed")
+  
+  return(summary_table_wide)
 }
 
 # --------------------------------
@@ -102,7 +113,7 @@ create_summary_tables <- function(summary_table_path){
   
   create_table_MRMEGA(summary_table_path)
   
-  create_table_fixed()
+  create_table_fixed(summary_table_path)
   
 }
 
