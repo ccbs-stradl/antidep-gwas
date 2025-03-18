@@ -20,6 +20,12 @@ Workflow processes use the '[label](https://www.nextflow.io/docs/latest/referenc
 - Requirments: [gwas2vcf](https://github.com/MRCIEU/gwas2vcf)
 - Conda: gwas2vcf.yaml
 
+Clone repository:
+```sh
+mkdir vendor
+git clone https://github.com/MRCIEU/gwas2vcf.git vendor/gwas2vcf
+```
+
 ## label 'hail'
 
 - Used by: swath.nf

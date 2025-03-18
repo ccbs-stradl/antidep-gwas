@@ -2,7 +2,7 @@
 /* https://github.com/brielin/Popcorn */
 
 
-params.vcf = "vcf/gwas/GRCh38/*.{csv,json,vcf.gz,vcf.gz.tbi}"
+params.vcf = "results/vcf/gwas/GRCh38/*.{csv,json,vcf.gz,vcf.gz.tbi}"
 params.reference = "reference/all_hg38.{pgen,psam,pvar.zst}"
 params.exclude = "https://raw.githubusercontent.com/gabraham/flashpca/refs/heads/master/exclusion_regions_hg19.txt"
 
@@ -168,7 +168,7 @@ process FIT {
     tag "${dataset1}_${dataset2}"
     label "popcorn"
 
-    publishDir "models/popcorn", mode: "copy"
+    publishDir "results/models/popcorn", mode: "copy"
 
     errorStrategy 'ignore'
 

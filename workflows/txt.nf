@@ -30,7 +30,7 @@ process COJO {
   tag "${dataset}"
   label 'tools'
   
-  publishDir 'txt/cojo/${params.out}', mode: 'copy'
+  publishDir 'results/txt/cojo/${params.out}', mode: 'copy'
   
   input:
   tuple val(dataset), path(vcf)
@@ -54,7 +54,7 @@ process TXT {
   tag "${dataset}"
   label 'tools'
   
-  publishDir "txt/${params.out}"
+  publishDir "results/txt/${params.out}"
   
   input:
   tuple val(dataset), path(vcf)
@@ -65,9 +65,9 @@ process TXT {
   shell:
   '''
   echo "SNP\tA1\tA2\tOR\tP\tINFO\tFRQ\tN" > !{dataset}.txt
+  bcftools norm -m- --output-type u !{dataset}.vcf.gz |\
   bcftools query \
-  -f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%LP]\\t[%SI]\\t[%AFCON]\\t[%NE]\\n" \
-  !{dataset}.vcf.gz | awk -v OFS='\t' '{if($6 == ".") $6 = 1; print $1, $2, $3,  exp($4), 10^-($5), $6, $7, $8}' >> !{dataset}.txt
+  -f "%ID\\t%ALT\\t%REF\\t[%ES]\\t[%LP]\\t[%SI]\\t[%AFCON]\\t[%NE]\\n" | awk -v OFS='\t' '{if($6 == ".") $6 = 1; print $1, $2, $3,  exp($4), 10^-($5), $6, $7, $8}' >> !{dataset}.txt
   '''
 }
 
@@ -77,7 +77,7 @@ process MUNGE {
   tag "${dataset}"
   label 'ldsc'
   
-  publishDir "txt/munged/${params.out}", mode: 'copy'
+  publishDir "results/txt/munged/${params.out}", mode: 'copy'
   
   input:
   tuple val(dataset), path(sumstats), path(merge)

@@ -1,7 +1,7 @@
 /* LD Score genetic correlations
 */
 
-params.source = "txt/munged/*.sumstats.gz"
+params.source = "results/txt/munged/*.sumstats.gz"
 params.target = "reference/munged/EUR/*.sumstats.gz"
 params.w_ld_chr = "reference/eur_w_ld_chr"
 params.out = "meta"
@@ -23,7 +23,7 @@ process LDSC {
   tag "${source.simpleName}--${target.simpleName}"
   label 'ldsc'
   
-  publishDir "models/rg/${params.out}", mode: 'copy'
+  publishDir "results/models/rg/${params.out}", mode: 'copy'
   
   cpu = 1
   memory = 4.GB
