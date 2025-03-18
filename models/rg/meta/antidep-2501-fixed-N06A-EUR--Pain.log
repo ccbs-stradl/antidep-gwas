@@ -1,0 +1,65 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 2.0.0
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--out antidep-2501-fixed-N06A-EUR--Pain \
+--rg antidep-2501-fixed-N06A-EUR.sumstats.gz,Pain.sumstats.gz \
+--ref-ld-chr eur_w_ld_chr/ \
+--w-ld-chr eur_w_ld_chr/ 
+
+Beginning analysis at Mon Feb 10 14:53:14 2025
+Reading summary statistics from antidep-2501-fixed-N06A-EUR.sumstats.gz ...
+Read summary statistics for 1156520 SNPs.
+Reading reference panel LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read reference panel LD Scores for 1290028 SNPs.
+Removing partitioned LD Scores with zero variance.
+Reading regression weight LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read regression weight LD Scores for 1290028 SNPs.
+After merging with reference panel LD, 1151105 SNPs remain.
+After merging with regression SNP LD, 1151105 SNPs remain.
+Computing rg for phenotype 2/2
+Reading summary statistics from Pain.sumstats.gz ...
+Read summary statistics for 1080043 SNPs.
+After merging with summary statistics, 1029851 SNPs remain.
+1029851 SNPs with valid alleles.
+
+Heritability of phenotype 1
+---------------------------
+Total Observed scale h2: 0.0556 (0.0023)
+Lambda GC: 1.489
+Mean Chi^2: 1.5965
+Intercept: 1.079 (0.0102)
+Ratio: 0.1325 (0.0171)
+
+Heritability of phenotype 2/2
+-----------------------------
+Total Observed scale h2: 0.0862 (0.0068)
+Lambda GC: 1.1366
+Mean Chi^2: 1.1489
+Intercept: 1.0016 (0.0069)
+Ratio: 0.0104 (0.0465)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0542 (0.0028)
+Mean z1*z2: 0.2734
+Intercept: 0.0575 (0.006)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.7827 (0.0356)
+Z-score: 22.0098
+P: 2.3198e-107
+
+
+Summary of Genetic Correlation Results
+                                     p1               p2     rg     se       z           p  h2_obs  h2_obs_se  h2_int  h2_int_se  gcov_int  gcov_int_se
+antidep-2501-fixed-N06A-EUR.sumstats.gz Pain.sumstats.gz 0.7827 0.0356 22.0098 2.3198e-107  0.0862     0.0068  1.0016     0.0069    0.0575        0.006
+
+Analysis finished at Mon Feb 10 14:53:24 2025
+Total time elapsed: 10.26s

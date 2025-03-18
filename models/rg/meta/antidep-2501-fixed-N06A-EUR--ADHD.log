@@ -1,0 +1,65 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 2.0.0
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--out antidep-2501-fixed-N06A-EUR--ADHD \
+--rg antidep-2501-fixed-N06A-EUR.sumstats.gz,ADHD.sumstats.gz \
+--ref-ld-chr eur_w_ld_chr/ \
+--w-ld-chr eur_w_ld_chr/ 
+
+Beginning analysis at Mon Feb 10 14:53:01 2025
+Reading summary statistics from antidep-2501-fixed-N06A-EUR.sumstats.gz ...
+Read summary statistics for 1156520 SNPs.
+Reading reference panel LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read reference panel LD Scores for 1290028 SNPs.
+Removing partitioned LD Scores with zero variance.
+Reading regression weight LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read regression weight LD Scores for 1290028 SNPs.
+After merging with reference panel LD, 1151105 SNPs remain.
+After merging with regression SNP LD, 1151105 SNPs remain.
+Computing rg for phenotype 2/2
+Reading summary statistics from ADHD.sumstats.gz ...
+Read summary statistics for 1067415 SNPs.
+After merging with summary statistics, 1043298 SNPs remain.
+1043298 SNPs with valid alleles.
+
+Heritability of phenotype 1
+---------------------------
+Total Observed scale h2: 0.055 (0.0025)
+Lambda GC: 1.5217
+Mean Chi^2: 1.6333
+Intercept: 1.0842 (0.0133)
+Ratio: 0.1329 (0.021)
+
+Heritability of phenotype 2/2
+-----------------------------
+Total Observed scale h2: 0.2722 (0.0181)
+Lambda GC: 1.2545
+Mean Chi^2: 1.2978
+Intercept: 1.0376 (0.0104)
+Ratio: 0.1263 (0.0348)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0643 (0.004)
+Mean z1*z2: 0.2106
+Intercept: 0.0133 (0.007)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.5251 (0.0307)
+Z-score: 17.1142
+P: 1.1631e-65
+
+
+Summary of Genetic Correlation Results
+                                     p1               p2     rg     se       z          p  h2_obs  h2_obs_se  h2_int  h2_int_se  gcov_int  gcov_int_se
+antidep-2501-fixed-N06A-EUR.sumstats.gz ADHD.sumstats.gz 0.5251 0.0307 17.1142 1.1631e-65  0.2722     0.0181  1.0376     0.0104    0.0133        0.007
+
+Analysis finished at Mon Feb 10 14:53:12 2025
+Total time elapsed: 10.93s

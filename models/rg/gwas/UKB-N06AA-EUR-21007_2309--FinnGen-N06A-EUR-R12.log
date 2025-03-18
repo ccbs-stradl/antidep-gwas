@@ -1,0 +1,65 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 2.0.0
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--out UKB-N06AA-EUR-21007_2309--FinnGen-N06A-EUR-R12 \
+--rg UKB-N06AA-EUR-21007_2309.sumstats.gz,FinnGen-N06A-EUR-R12.sumstats.gz \
+--ref-ld-chr eur_w_ld_chr/ \
+--w-ld-chr eur_w_ld_chr/ 
+
+Beginning analysis at Mon Feb 10 19:23:11 2025
+Reading summary statistics from UKB-N06AA-EUR-21007_2309.sumstats.gz ...
+Read summary statistics for 1159194 SNPs.
+Reading reference panel LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read reference panel LD Scores for 1290028 SNPs.
+Removing partitioned LD Scores with zero variance.
+Reading regression weight LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read regression weight LD Scores for 1290028 SNPs.
+After merging with reference panel LD, 1153033 SNPs remain.
+After merging with regression SNP LD, 1153033 SNPs remain.
+Computing rg for phenotype 2/2
+Reading summary statistics from FinnGen-N06A-EUR-R12.sumstats.gz ...
+Read summary statistics for 1217311 SNPs.
+After merging with summary statistics, 1153033 SNPs remain.
+1136945 SNPs with valid alleles.
+
+Heritability of phenotype 1
+---------------------------
+Total Observed scale h2: 0.0528 (0.0051)
+Lambda GC: 1.1715
+Mean Chi^2: 1.1832
+Intercept: 1.0569 (0.0084)
+Ratio: 0.3104 (0.0458)
+
+Heritability of phenotype 2/2
+-----------------------------
+Total Observed scale h2: 0.1096 (0.0051)
+Lambda GC: 1.6032
+Mean Chi^2: 1.7043
+Intercept: 1.1552 (0.012)
+Ratio: 0.2203 (0.0171)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0455 (0.0032)
+Mean z1*z2: 0.1587
+Intercept: 0.0001 (0.006)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.5984 (0.0435)
+Z-score: 13.7531
+P: 4.8763e-43
+
+
+Summary of Genetic Correlation Results
+                                  p1                               p2     rg     se       z          p  h2_obs  h2_obs_se  h2_int  h2_int_se  gcov_int  gcov_int_se
+UKB-N06AA-EUR-21007_2309.sumstats.gz FinnGen-N06A-EUR-R12.sumstats.gz 0.5984 0.0435 13.7531 4.8763e-43  0.1096     0.0051  1.1552      0.012    0.0001        0.006
+
+Analysis finished at Mon Feb 10 19:23:25 2025
+Total time elapsed: 14.5s
