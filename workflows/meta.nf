@@ -4,10 +4,9 @@ nextflow.enable.dsl=2
     Meta analyse GWASVCF files
 */
 
-params.vcf = "vcf/gwas/GRCh38/*.{vcf.gz,vcf.gz.tbi,csv}"
+params.vcf = "results/vcf/gwas/GRCh38/*.{vcf.gz,vcf.gz.tbi,csv}"
 params.metasets = "metasets/*.csv"
 params.ref = "reference/all_hg38.{pgen,psam,pvar.zst}"
-params.genes = "reference/glist_ensgid_hg38_v40_symbol_gene_names.txt"
 
 workflow {
   /*
@@ -30,9 +29,6 @@ workflow {
 
     REF_CH = Channel
         .fromFilePairs(params.ref, size: 3)
-
-    GENES_CH = Channel
-        .fromPath(params.genes)
         
     /*
       Pre-processing
@@ -209,7 +205,7 @@ process MEGA_IN {
 process MEGA {
     tag "${metaset.metaset}-${metaset.pheno}"
 
-    publishDir "meta", pattern: "*.log", mode: "copy"
+    publishDir "results/meta/${metaset.metaset}", pattern: "*.log", mode: "copy"
 
     cpus = 1
     memory = 48.GB
@@ -235,7 +231,7 @@ process MEGA_POST {
     tag "${analysis}"
     label 'analysis'
 
-    publishDir "meta", pattern: "*.{gz,csv}", mode: 'copy'
+    publishDir "results/meta/${metaset.metaset}", pattern: "*.{gz,csv}", mode: 'copy'
 
     cpus = 1
     memory = 31.GB
@@ -477,7 +473,7 @@ process FIXED_POST {
     tag "${analysis}"
     label 'analysis'
 
-    publishDir "meta", pattern: "*.{gz,csv}", mode: 'copy'
+    publishDir "results/meta/${metaset.metaset}", pattern: "*.{gz,csv}", mode: 'copy'
 
     cpus = 2
     memory = 24.GB
@@ -558,7 +554,7 @@ process MANHATTAN {
 	tag "${assoc}"
   label 'analysis'
 
-	publishDir 'meta', mode: 'copy'
+	publishDir "results/meta/${metaset.metaset}", mode: 'copy'
 	
 	cpus = 1
 	memory = 16.GB
@@ -623,8 +619,6 @@ process REF_CPID {
 process CLUMP {
     tag "${assoc.baseName}"
 
-    publishDir 'meta', mode: 'copy'
-
     errorStrategy 'ignore'
 
     cpus = 4
@@ -683,7 +677,7 @@ process POST {
     tag "${analysis}"
     label 'analysis'
 
-    publishDir "meta", pattern: "*.tsv", mode: 'copy'
+    publishDir "results/meta/${metaset.metaset}", pattern: "*.tsv", mode: 'copy'
 
     cpus = 1
     memory = 31.GB

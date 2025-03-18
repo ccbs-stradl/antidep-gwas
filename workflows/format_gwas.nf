@@ -96,7 +96,7 @@ process TABLE {
   tag "${dataset}"
   label 'analysis'
 
-  publishDir "format/gwas/${meta.build}"
+  publishDir "results/format/gwas/${meta.build}"
 
   cpus = 1
   memory = 1.GB
