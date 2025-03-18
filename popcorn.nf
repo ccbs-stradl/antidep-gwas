@@ -76,6 +76,7 @@ process REF_CLUSTERS {
 // QC reference for each cluster
 process QC {
     tag "${cluster}"
+    label 'plink2'
 
     cpus = 1
     memory = 8.GB
