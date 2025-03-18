@@ -34,12 +34,12 @@ Workflow processes use the '[label](https://www.nextflow.io/docs/latest/referenc
 This program can be downloaded, compiled, and placed in the `bin` directory.
 
 ```sh
-mkdir bin
+mkdir workflows/bin
 wget https://tools.gi.ut.ee/tools/MR-MEGA_v0.2.zip -d MR-MEGA
 cd MR-MEGA
 make
 cd ..
-mv MR-MEGA/MR-MEGA bin/
+mv MR-MEGA/MR-MEGA workflows/bin/
 ```
 
 ## label 'plink2'
