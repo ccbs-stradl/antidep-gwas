@@ -27,10 +27,10 @@ import groovy.json.JsonOutput
 
 
 // Input files: sumstats txt and meta json file
-params.sumstats = "format/gwas/*-GRCh38.{txt,json,csv}"
+params.sumstats = "results/format/gwas/*-GRCh38.{txt,json,csv}"
 
 // Output location
-params.publish = "vcf"
+params.publish = "results/vcf"
 
 // reference files
 // assembly fasta, fai, and dict 

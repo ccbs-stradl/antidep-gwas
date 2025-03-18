@@ -70,7 +70,7 @@ workflow {
 process FORMAT {
   tag "${dataset}"
   
-  publishDir "format/gwas/${meta.build}"
+  publishDir "results/format/gwas/${meta.build}"
 
   cpus = 1
   memory = 1.GB
