@@ -24,3 +24,8 @@ test_that("MR-MEGA files exist in meta directory",{
 test_that("Fixed meta analysis files exist in meta directory",{
   expect_no_error(read_files("meta", "fixed"))
 })
+
+# -----------------------------
+# Add tests for:
+# *summary_table_fixed.csv matches values in input .csv (test for a couple of inputs)
+  # this is because there is a risk when pivoting the table from long to wide and reordering the cols that something could go wrong at this step
