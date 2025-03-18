@@ -39,7 +39,7 @@ import groovy.json.JsonSlurper
 // MAKE_BFILE INPUTS:
   params.pfile = '/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv3_pgen/ukb_imp_v3.qc.{pgen,psam,pvar}' // prefix of the pfiles to pass to --pfile in plink 
   params.ancestry_ids = 'reference/ukb-ld-ref_ancestry.id' // Output from script make-pgen.sh
-  params.chr = [1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+  params.chr = (1..22).toList()
 
 // MA INPUTS:
   // load in gwas meta sumstats that have been lifted over to hg19
@@ -427,7 +427,7 @@ process CLUMP_POST {
 
   # Reduce ranges to collapse overlapping or nearby regions
   grng_reduced <- grng_streched %>%
-    reduce_ranges(min.gapwidth = 5000)  %>% # What should this be set to?
+    reduce_ranges(min.gapwidth = 1000000)  %>% # set to 1Mb
     as_tibble() %>%
     mutate(WIDTH = end - start + 1) %>%
     dplyr::select(CHR = seqnames, BP_START = start, BP_END = end, WIDTH)
@@ -480,7 +480,7 @@ process SUSIEX {
       BFILE_PREFIX="\$(echo "${bfile_prefix}" | tr -d '[]' | tr -d ' ')"
       ANCESTRY_LD="\$(echo "${cluster}" | tr -d '[]' | tr -d ' ')"
       ANCESTRY_FILE="\$(echo "${cluster}" | tr -d '[]' | tr -d ' '| tr ',' '-')"
-
+  
       echo "Sumstats: \$SUMSTATS"
       echo "Effective sample sizes: \$NEFF"
       echo "bfile prefix: \$BFILE_PREFIX"
@@ -533,7 +533,7 @@ process SUSIEX {
        --pval_col=7,7,7 \
        --mult-step=True \
        --plink=plink \
-       --keep-ambig=True |& tee SuSiEx.\${ANCESTRY_FILE}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
+       --keep-ambig=True |& tee SuSiEx.\${ANCESTRY_FILE}.output.cs95_\${CHR}-\${BP_START}-\${BP_END}.log
 
       echo "--------------------- END OF SUSIEX --------------------------"
 

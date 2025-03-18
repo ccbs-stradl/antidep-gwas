@@ -7,12 +7,12 @@ Options in effect:
   --pfile ukb_imp_v3.qc.geno02_SAS_18 vzs
   --threads 4
 
-Hostname: node1b26.ecdf.ed.ac.uk
-Working directory: /exports/eddie/scratch/aedmond3/ad/work/72/221af4643c82f243de39a985ebb6d0
-Start time: Wed Feb 12 16:30:26 2025
+Hostname: node1b14.ecdf.ed.ac.uk
+Working directory: /exports/eddie/scratch/aedmond3/ad/work/d5/a9604a1212da87e4e1f9e6dc2f4e83
+Start time: Sun Mar 16 09:27:17 2025
 
-Random number seed: 1739377826
-385061 MiB RAM detected, ~369067 available; reserving 8589 MiB for main
+Random number seed: 1742117237
+385061 MiB RAM detected, ~365179 available; reserving 8589 MiB for main
 workspace.
 Allocated 6441 MiB successfully, after larger attempt(s) failed.
 Using up to 4 compute threads.
@@ -29,4 +29,4 @@ Writing ukb_imp_v3.qc.geno02.mind02_SAS_18.fam ... done.
 Writing ukb_imp_v3.qc.geno02.mind02_SAS_18.bim ... done.
 Writing ukb_imp_v3.qc.geno02.mind02_SAS_18.bed ... done.
 
-End time: Wed Feb 12 16:30:35 2025
+End time: Sun Mar 16 09:27:22 2025
