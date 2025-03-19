@@ -220,3 +220,18 @@ Plot the results of SuSiEx using R.
 ```sh
 Rscript fine_mapping_plots.R
 ```
+
+### 16. Run LDSC on GWAS
+
+Munge the sumstats
+```sh
+nextflow run workflows/txt.nf -resume \
+ --sumstats "results/vcf/gwas/GRCh38/*.{vcf.gz,vcf.gz.tbi}" \
+ --format ldsc --out gwas
+-work-dir /exports/eddie/scratch/${USER}/ad/work \
+-c eddie.config 
+```
+
+Estimate LDSC genetic correlations within each cluster
+```sh
+```
