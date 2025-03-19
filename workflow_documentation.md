@@ -208,5 +208,5 @@ nextflow run fine_mapping.nf -resume \
 Plot the results of SuSiEx using R.
 
 ```sh
-Rscript fine_mapping_plots.R
+Rscript scripts/fine_mapping_plots.R
 ```

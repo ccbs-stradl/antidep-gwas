@@ -81,10 +81,9 @@ dev.off()
 # They should be in the same order
 
 # load in function for nextflow (todo: update function in susiexR package)
-source( 'mainPlotNextFlow.R' )
 
 for( i in 1:length(results$cs) ){
-  main_plot <- mainPlotNextFlow(cs_results = results$cs[[i]],
+  main_plot <- mainPlot(cs_results = results$cs[[i]],
                       snp_results = results$snp[[i]],
                       sumstats = sumstats,
                       ancestries = ancestries,
