@@ -4,36 +4,26 @@ This document provides step-by-step instructions for setting up the environment,
 
 ## Important things to note
 
-[`eddie.config`](eddie.config) is a config file used for running scripts on the University of Edinburgh's High Performance Computer (called EDDIE).
-Users running these Nextflow scripts outside of Eddie may need to create a new `.config` file to suit their computational environment.
+
 
 ## Requirements
 
-See [list of workflow process requirments](workflow_requirements.md).
+See [list of workflow process requirements](workflow_requirements.md) and [reference files](workflow_references.md).
 
-## Pre-processing steps
+## Workflow steps
 
-### 0. Download reference files
+### 0. Setup
 
-First, create a directory for reference files and download the necessary reference files.
+Specify configuration file and working directory
 
 ```sh
-mkdir reference
-curl "https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}" -o "reference/Homo_sapiens_assembly38.#1"
-curl "http://fileserve.mrcieu.ac.uk/dbsnp/dbsnp.v153.hg38.vcf.{gz,gz.tbi}" -o "reference/dbsnp.v153.hg38.vcf.#1"
-curl "http://fileserve.mrcieu.ac.uk/dbsnp/dbsnp.v153.b37.vcf.{gz,gz.tbi}" -o "reference/dbsnp.v153.b37.vcf.#1"
-curl "http://fileserve.mrcieu.ac.uk/ref/2.8/b37/human_g1k_v37.fasta.gz" | gunzip -c > reference/human_g1k_v37.fasta
-curl "http://fileserve.mrcieu.ac.uk/ref/2.8/b37/human_g1k_v37.{fasta.fai,dict}" -o "reference/human_g1k_v37.#1"
-curl "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/liftOver/hg19ToHg38.over.chain.gz" -o "reference/hg19ToHg38.over.chain.gz"
-curl "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz" -o "reference/hg38ToHg19.over.chain.gz"
-curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg38_v40.txt" -o "reference/glist_ensgid_hg38_v40.txt"
-curl "https://raw.githubusercontent.com/Share-AL-work/mBAT/main/glist_ensgid_hg38_v40_symbol_gene_names.txt" -o "reference/glist_ensgid_hg38_v40_symbol_gene_names.txt"
-curl -L "https://www.dropbox.com/s/j72j6uciq5zuzii/all_hg38.pgen.zst?dl=1" -o reference/all_hg38.pgen.zst
-plink2 --zst-decompress reference/all_hg38.pgen.zst > reference/all_hg38.pgen
-rm reference/all_hg38.pgen.zst
-curl -L "https://www.dropbox.com/s/ngbo2xm5ojw9koy/all_hg38_noannot.pvar.zst?dl=1" -o reference/all_hg38.pvar.zst
-curl -L "https://www.dropbox.com/s/2e87z6nc4qexjjm/hg38_corrected.psam?dl=1" -o reference/all_hg38.psam
+config=config/eddie.config
+workdir=/exports/eddie/scratch/${USER}/ad/work/format
 ```
+
+[`eddie.config`](config/eddie.config) is a config file used for running scripts on the University of Edinburgh's High Performance Computer (called EDDIE).
+Users running these Nextflow scripts outside of Eddie may need to create a new `.config` file to suit their computational environment. 
+
 
 ### 1. Format antidepressant exposure summary statistics
 
@@ -41,8 +31,8 @@ Run the Nextflow pipeline to format the GWAS summary statistics.
 
 ```sh
 nextflow run format_gwas.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work/format \
--c eddie.config
+-work-dir $workdir \
+-c $config
 ```
 
 ### 2. Convert hg38 summary statistics to VCF
@@ -56,8 +46,8 @@ nextflow run vcf.nf -resume \
 --publish "vcf/gwas/GRCh38" \
 --assembly "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}" \
 --dbsnp "reference/dbsnp.v153.hg38.vcf.{gz,gz.tbi}" \
--work-dir /exports/eddie/scratch/${USER}/ad/work/vcf \
--c eddie.config
+-work-dir $workdir \
+-c $config
 ```
 
 ### 3. Convert hg19 summary statistics to VCF
@@ -71,8 +61,8 @@ nextflow run vcf.nf -resume \
 --publish "vcf/gwas/GRCh37" \
 --assembly "reference/human_g1k_v37.{fasta,fasta.fai,dict}" \
 --dbsnp "reference/dbsnp.v153.b37.vcf.{gz,gz.tbi}" \
--work-dir /exports/eddie/scratch/${USER}/ad/work/vcf \
--c eddie.config
+-work-dir $workdir \
+-c $config
 ```
 
 ### 4. Liftover hg19 VCFs to hg38
@@ -86,8 +76,8 @@ nextflow run liftover.nf -resume \
 --destination "reference/Homo_sapiens_assembly38.{fasta,fasta.fai}" \
 --chain reference/hg19ToHg38.over.chain.gz \
 --publish liftover/gwas \
--work-dir /exports/eddie/scratch/${USER}/ad/work/liftover \
--c eddie.config
+-work-dir $workdir \
+-c $config
 ```
 
 ### 5. Move lifted over files
@@ -108,8 +98,8 @@ Run the meta-analysis pipeline.
 
 ```sh
 nextflow run meta.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work/meta \
--c eddie.config
+-work-dir $workdir \
+-c $config
 ```
 
 ### 7. Convert meta-analysis results to VCF
@@ -118,8 +108,8 @@ Convert the meta-analysis results to VCF format.
 
 ```sh
 nextflow run format_meta.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work/meta \
--c eddie.config
+-work-dir $workdir \
+-c $config
 ```
 
 ```sh
@@ -129,8 +119,8 @@ nextflow run vcf.nf -resume \
 --publish "vcf/meta/GRCh38" \
 --assembly "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}" \
 --dbsnp "reference/dbsnp.v153.hg38.vcf.{gz,gz.tbi}" \
--work-dir /exports/eddie/scratch/${USER}/ad/work/vcf \
--c eddie.config -with-trace
+-work-dir $workdir \
+-c $config -with-trace
 ```
 
 ### 8. Liftover hg19 VCFs to hg38
@@ -144,8 +134,8 @@ nextflow run liftover.nf -resume \
 --destination "reference/human_g1k_v37.{fasta,fasta.fai}" \
 --chain reference/hg38ToHg19.over.chain.gz \
 --publish liftover/meta \
--work-dir /exports/eddie/scratch/${USER}/ad/work/liftover \
--c eddie.config 
+-work-dir $workdir \
+-c $config 
 ```
 
 ### 9. Move lifted over files and copy sidecar files
@@ -166,8 +156,8 @@ Run the mBAT-combo pipeline on genome build 19.
 
 ```sh
 nextflow run genes.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work_hg19 \
--c eddie.config \
+-work-dir $workdir \
+-c $config \
 --build 'hg19'
 ```
 
@@ -177,8 +167,8 @@ Run the mBAT-combo pipeline on genome build 38.
 
 ```sh
 nextflow run genes.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work_hg38 \
--c eddie.config \
+-work-dir $workdir \
+-c $config \
 --build 'hg38'
 ```
 
@@ -188,8 +178,8 @@ Run the popcorn pipeline.
 
 ```sh
 nextflow run popcorn.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work_hg38 \
--c eddie.config
+-work-dir $workdir \
+-c $config
 ```
 
 ### 13. Convert sumstats to text format
@@ -198,8 +188,8 @@ Convert the summary statistics to text format.
 
 ```sh
 nextflow run txt.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work \
--c eddie.config \
+-work-dir $workdir \
+-c $config \
 --sumstats "liftover/*.{vcf.gz,vcf.gz.tbi}"
 ```
 
@@ -209,8 +199,8 @@ Run the SuSiEx pipeline on genome build 19.
 
 ```sh
 nextflow run fine_mapping.nf -resume \
--work-dir /exports/eddie/scratch/${USER}/ad/work \
--c eddie.config -with-dag fineMapping/fine_mapping_dag.png
+-work-dir $workdir \
+-c $config -with-dag fineMapping/fine_mapping_dag.png
 ```
 
 ### 15. Plot results of SuSiEx
