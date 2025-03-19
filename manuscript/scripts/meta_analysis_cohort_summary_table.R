@@ -74,22 +74,25 @@ save_csv <- function(table, summary_tables_path, meta_type){
 }
 
 # --------------------------------
+makeWide <- function(summary_table, firstCols){
+  pivot_wider(summary_table,
+              names_from = cohort,
+              values_from = c(cases, controls, neff)) %>%
+    rename_with(~ gsub("(.+)_(.+)", "\\2_\\1", .), -c(firstCols)) %>%  # Reorder names but exclude firsCols
+    select(all_of(firstCols), order(colnames(.)[-c(1:(length(firstCols)))]) + length(firstCols))  # Keep firstCols first and reorder the rest
+}
+
+# --------------------------------
 create_table_MRMEGA <- function(summary_table_path){
   # Read in MR-MEGA cohort csv files
   dataframes <- read_files("meta", "mrmega")
 
   # Concatenate the files together (rbind) and add column for the file name
-  summary_table <- rbind_dataframes_list(dataframes, c("dataset", "build"))
+  summary_table <- rbind_dataframes_list(dataframes, c("dataset", "build", "version", "pheno"))
 
   # Make the table wider, with columns for cases, controls, and neff for each cohort
   # Keep ancestry as long format
-  summary_table_wide <- summary_table %>%
-                          select(-c(version, pheno)) %>%
-                          pivot_wider(.,
-                                    names_from = cohort,
-                                     values_from = c(cases, controls, neff)) %>%
-    rename_with(~ gsub("(.+)_(.+)", "\\2_\\1", .), -c(meta_analysis, cluster)) %>%  # Reorder names but exclude "meta_analysis" and "cluster"
-    select(c(meta_analysis, cluster), order(colnames(.)[-c(1:2)]) + 2)  # Keep "meta_analysis" and "cluster" first and reorder the rest
+  summary_table_wide <-  makeWide(summary_table, c("meta_analysis", "cluster"))
 
   # Write csv
   save_csv(summary_table_wide, summary_table_path, "mrmega")
@@ -105,11 +108,7 @@ create_table_fixed <- function(summary_table_path){
   # Concatenate the files together (rbind) and add column for the file name
   summary_table <- rbind_dataframes_list(dataframes, c("dataset", "build", "pheno", "version", "cluster"))
 
-  summary_table_wide <- pivot_wider(summary_table,
-                                    names_from = cohort,
-                                    values_from = c(cases, controls, neff)) %>%
-    rename_with(~ gsub("(.+)_(.+)", "\\2_\\1", .), -meta_analysis) %>%  # Reorder names but exclude "meta_analysis"
-    select(meta_analysis, order(colnames(.)[-1]) + 1)  # Keep "meta_analysis" first and reorder the rest
+  summary_table_wide <- makeWide(summary_table, "meta_analysis")
 
   # Write csv
   save_csv(summary_table_wide, summary_table_path, "fixed")
@@ -123,7 +122,7 @@ create_summary_tables <- function(summary_table_path){
 
   create_table_MRMEGA(summary_table_path)
 
-  # create_table_fixed(summary_table_path)
+  create_table_fixed(summary_table_path)
 
 }
 
