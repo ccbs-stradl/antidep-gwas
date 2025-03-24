@@ -11,9 +11,9 @@ library(stringr)
 library(susiexR)
 
 # ---- Read in variables:
-plotsDir <- "fineMapping/plots/"
+plotsDir <- "results/fineMapping/plots/"
 
-path_to_susiex_results <- "fineMapping/output"
+path_to_susiex_results <- "results/fineMapping/output"
 
 ancestries <- fread('reference/ukb-ld-ref_ancestry.id') %>%
                 pull(3) %>%
