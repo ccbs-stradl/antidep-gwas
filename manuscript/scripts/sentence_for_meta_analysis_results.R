@@ -12,7 +12,7 @@ json_files <- list.files("vcf/meta/GRCh38",
 json_data <- lapply(json_files, function(json_file) {
   json <- fromJSON(file=json_file)
   as.data.frame(json)
-  } )
+})
 
 lapply(json_data, function(json){
   cluster <- json[["cluster"]]
@@ -20,6 +20,3 @@ lapply(json_data, function(json){
   N <- round(neff/2, 3)
   paste0(cluster, " cases = ",N , ", ", cluster, " controls = ", N, "; ")
 }) %>% do.call(paste0, .)
-
-
-
