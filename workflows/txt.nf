@@ -76,6 +76,9 @@ process TXT {
 process MUNGE {
   tag "${dataset}"
   label 'ldsc'
+
+  cpu = 1
+  memory = 4.GB
   
   publishDir "results/txt/munged/${params.out}", mode: 'copy'
   
