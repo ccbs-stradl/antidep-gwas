@@ -55,6 +55,8 @@ curl -L "https://www.dropbox.com/s/2e87z6nc4qexjjm/hg38_corrected.psam?dl=1" -o 
 Files from [Pan UKBB](https://pan.ukbb.broadinstitute.org/downloads).
 
 ```sh
+curl https://zenodo.org/records/7773502/files/w_hm3.snplist.gz -o reference/w_hm3.snplist.gz
+gunzip reference/w_hm3.snplist.gz
 curl "https://pan-ukb-us-east-1.s3.amazonaws.com/ld_release/UKBB.ALL.ldscore.tar.gz" -o reference/UKBB.ALL.ldscore.tar.gz
 tar xzf reference/UKBB.ALL.ldscore.tar.gz -C reference
 # make subdirectories for use with --ld-chr arguments
