@@ -3,133 +3,139 @@ Antidepressant exposure GWAS fixed-effects meta-analysis
 
 ``` r
 library(dplyr)
+library(here)
 library(readr)
 library(stringr)
+library(tidyr)
 library(topr)
 library(UpSetR)
 library(plyranges)
+library(ggplot2)
 ```
 
-## Results
+## GWAS results
 
 ### Sumstats
 
 ``` r
-meta_gzs <- list.files("meta", "fixed-.+meta\\.gz", full.names = TRUE)
-metas <- str_remove(meta_gzs, ".meta.gz")
-names(metas) <- str_remove(basename(metas), "fixed-")
+# Use here to create paths relative to the top-level directory
+# Specify which meta-analysis version to plot
+metaset <- "antidep-2501"
+# list fixed effects susmtats (.gz) files
+sumstats_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.gz"), full.names = TRUE)
+# simply names for plotting
+prefixes <- str_remove(basename(sumstats_paths), ".gz")
+metas <- str_remove(prefixes, str_c(metaset, "-fixed-"))
            
-sumstats_paths <- lapply(metas, function(.x) str_c(.x, "meta.gz", sep = "."))
+names(sumstats_paths) <- metas
 
 sumstats <- lapply(sumstats_paths, function(path) {
     read_tsv(path) |>
-        select(CHROM = CHR, POS = BP, ID = SNP,
-               REF = A2, ALT = A1, P, OR,
-               AF = AFCON, NCAS, NCON, NEFF)
+        select(CHROM, POS, P)
 })
 ```
 
-    ## Rows: 18446355 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 25029825 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 7250885 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 17066490 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 8391178 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 13429399 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 10748047 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 15885140 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 8842191 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 11556922 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 10195596 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 14178029 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 18463581 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 24971597 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 10357731 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 14044866 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 10206559 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 14058662 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 18465873 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 24994551 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 10357712 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 14077542 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 8840275 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 11525458 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 10199157 Columns: 21
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## Rows: 14158341 Columns: 19
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
-    ## chr  (4): CHR, SNP, A1, A2
-    ## dbl (17): BP, studies, OR, SE, P, OR_R, SE_R, P_R, Q, I, INFO, AFCAS, AFCON,...
+    ## chr  (4): CHROM, ID, REF, ALT
+    ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -137,190 +143,126 @@ sumstats <- lapply(sumstats_paths, function(path) {
 ### Loci
 
 ``` r
-clumped_paths <- sumstats_paths <- lapply(metas, function(.x) str_c(.x, "clumped", sep = "."))
+clumps_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.clumps\\.tsv"), full.names = TRUE)
+clump_prefixes <- str_remove(basename(clumps_paths), ".clumps.tsv")
+names(clumps_paths) <- str_remove(clump_prefixes, str_c(metaset, "-fixed-"))
 
-clumped <- lapply(clumped_paths[sapply(clumped_paths, file.exists)], read_table)
+clumps <- lapply(clumps_paths, read_table)
 ```
 
     ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## cols(
-    ##   CHR = col_double(),
-    ##   F = col_double(),
-    ##   SNP = col_character(),
-    ##   BP = col_double(),
-    ##   P = col_double(),
-    ##   TOTAL = col_double(),
-    ##   NSIG = col_double(),
-    ##   S05 = col_double(),
-    ##   S01 = col_double(),
-    ##   S001 = col_double(),
-    ##   S0001 = col_double(),
-    ##   SP2 = col_character()
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_character(),
+    ##   ALT = col_character()
     ## )
-    ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   CHR = col_double(),
-    ##   F = col_double(),
-    ##   SNP = col_character(),
-    ##   BP = col_double(),
-    ##   P = col_double(),
-    ##   TOTAL = col_double(),
-    ##   NSIG = col_double(),
-    ##   S05 = col_double(),
-    ##   S01 = col_double(),
-    ##   S001 = col_double(),
-    ##   S0001 = col_double(),
-    ##   SP2 = col_character()
-    ## )
-    ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   CHR = col_double(),
-    ##   F = col_double(),
-    ##   SNP = col_character(),
-    ##   BP = col_double(),
-    ##   P = col_double(),
-    ##   TOTAL = col_double(),
-    ##   NSIG = col_double(),
-    ##   S05 = col_double(),
-    ##   S01 = col_double(),
-    ##   S001 = col_double(),
-    ##   S0001 = col_double(),
-    ##   SP2 = col_character()
-    ## )
-    ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   CHR = col_double(),
-    ##   F = col_double(),
-    ##   SNP = col_character(),
-    ##   BP = col_double(),
-    ##   P = col_double(),
-    ##   TOTAL = col_double(),
-    ##   NSIG = col_double(),
-    ##   S05 = col_double(),
-    ##   S01 = col_double(),
-    ##   S001 = col_double(),
-    ##   S0001 = col_double(),
-    ##   SP2 = col_character()
-    ## )
-    ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   CHR = col_double(),
-    ##   F = col_double(),
-    ##   SNP = col_character(),
-    ##   BP = col_double(),
-    ##   P = col_double(),
-    ##   TOTAL = col_double(),
-    ##   NSIG = col_double(),
-    ##   S05 = col_double(),
-    ##   S01 = col_double(),
-    ##   S001 = col_double(),
-    ##   S0001 = col_double(),
-    ##   SP2 = col_character()
-    ## )
-    ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   CHR = col_double(),
-    ##   F = col_double(),
-    ##   SNP = col_character(),
-    ##   BP = col_double(),
-    ##   P = col_double(),
-    ##   TOTAL = col_double(),
-    ##   NSIG = col_double(),
-    ##   S05 = col_double(),
-    ##   S01 = col_double(),
-    ##   S001 = col_double(),
-    ##   S0001 = col_double(),
-    ##   SP2 = col_character()
-    ## )
-
-``` r
-ranges_paths <- sumstats_paths <- lapply(metas, function(.x) str_c(.x, "clumped.ranges", sep = "."))
-
-clumped_ranges <- lapply(ranges_paths[sapply(ranges_paths, file.exists)], read_table)
-```
+    ## ℹ Use `spec()` for the full column specifications.
 
     ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## cols(
-    ##   CHR = col_double(),
-    ##   SNP = col_character(),
-    ##   P = col_double(),
-    ##   N = col_double(),
-    ##   POS = col_character(),
-    ##   KB = col_double(),
-    ##   RANGES = col_character()
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_logical(),
+    ##   ALT = col_character()
     ## )
+    ## ℹ Use `spec()` for the full column specifications.
 
     ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## cols(
-    ##   CHR = col_double(),
-    ##   SNP = col_character(),
-    ##   P = col_double(),
-    ##   N = col_double(),
-    ##   POS = col_character(),
-    ##   KB = col_double(),
-    ##   RANGES = col_character()
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_character(),
+    ##   ALT = col_character()
     ## )
+    ## ℹ Use `spec()` for the full column specifications.
+
     ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## cols(
-    ##   CHR = col_double(),
-    ##   SNP = col_character(),
-    ##   P = col_double(),
-    ##   N = col_double(),
-    ##   POS = col_character(),
-    ##   KB = col_double(),
-    ##   RANGES = col_character()
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_character(),
+    ##   ALT = col_logical(),
+    ##   Q = col_logical(),
+    ##   QP = col_logical()
     ## )
+    ## ℹ Use `spec()` for the full column specifications.
+
     ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## cols(
-    ##   CHR = col_double(),
-    ##   SNP = col_character(),
-    ##   P = col_double(),
-    ##   N = col_double(),
-    ##   POS = col_character(),
-    ##   KB = col_double(),
-    ##   RANGES = col_character()
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_character(),
+    ##   ALT = col_character()
     ## )
+    ## ℹ Use `spec()` for the full column specifications.
     ## 
     ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## cols(
-    ##   CHR = col_double(),
-    ##   SNP = col_character(),
-    ##   P = col_double(),
-    ##   N = col_double(),
-    ##   POS = col_character(),
-    ##   KB = col_double(),
-    ##   RANGES = col_character()
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_character(),
+    ##   ALT = col_character()
     ## )
+    ## ℹ Use `spec()` for the full column specifications.
     ## 
     ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
     ## cols(
-    ##   CHR = col_double(),
-    ##   SNP = col_character(),
-    ##   P = col_double(),
-    ##   N = col_double(),
-    ##   POS = col_character(),
-    ##   KB = col_double(),
-    ##   RANGES = col_character()
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_character(),
+    ##   ALT = col_character()
     ## )
+    ## ℹ Use `spec()` for the full column specifications.
+    ## 
+    ## 
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## cols(
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_character(),
+    ##   ALT = col_character()
+    ## )
+    ## ℹ Use `spec()` for the full column specifications.
+
+    ## 
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## cols(
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_logical(),
+    ##   ALT = col_character(),
+    ##   Q = col_logical(),
+    ##   QP = col_logical()
+    ## )
+    ## ℹ Use `spec()` for the full column specifications.
+
+    ## 
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## cols(
+    ##   .default = col_double(),
+    ##   CHROM = col_character(),
+    ##   ID = col_character(),
+    ##   REF = col_character(),
+    ##   ALT = col_logical()
+    ## )
+    ## ℹ Use `spec()` for the full column specifications.
 
 ## Manhattan plot
 
@@ -336,37 +278,30 @@ manhattan(sumstats2, legend_labels = names(sumstats), ntop = 6, sign_thresh = 5e
 Construct genomic ranges.
 
 ``` r
-clumped_ranges_grs <- lapply(clumped_ranges, function(cr) {
+clumped_ranges_grs <- lapply(clumps, function(cr) {
     cr |>
-    mutate(range = str_match(POS, "chr[0-9]+:([0-9]+)\\.\\.([0-9]+)")) |>
-    transmute(seqnames = str_c("chr", CHR),
-              start = as.numeric(range[,2]),
-              end = as.numeric(range[,3]), P, SNP) |>
-    filter(P <= 5e-8) |>
-    as_granges() |>
+    as_granges(seqnames = CHROM, start = start, end = end) |>
     set_genome_info(genome = "hg38")
-})
-
-loci_ranges_grs <- lapply(clumped_ranges_grs, function(gr) {
-    reduce_ranges(gr, SNPs = c(SNP), Ps = c(P))
 })
 ```
 
 Count number of loci
 
 ``` r
-sapply(loci_ranges_grs, length)
+sapply(clumped_ranges_grs, length)
 ```
 
-    ##  N06A-EAS  N06A-EUR N06AA-EUR N06AB-AFR N06AB-EUR N06AB-SAS 
-    ##         1        51         3         1         2         1
+    ##  N06A-AFR  N06A-EAS  N06A-EUR  N06A-SAS N06AA-AFR N06AA-EUR N06AB-AFR N06AB-EUR 
+    ##         1         1        59         1         1         6         2         4 
+    ## N06AB-MID N06AB-SAS 
+    ##         1         1
 
 ## Overlaps
 
 ``` r
-all_gr <- reduce_ranges(bind_ranges(loci_ranges_grs))
+all_gr <- reduce_ranges(bind_ranges(clumped_ranges_grs))
 
-hits_upset <- lapply(loci_ranges_grs, function(gr) findOverlaps(all_gr, gr)@from)
+hits_upset <- lapply(clumped_ranges_grs, function(gr) findOverlaps(all_gr, gr)@from)
 
 upset(fromList(hits_upset), nsets = length(hits_upset), order.by='freq', text.scale=2)
 ```
