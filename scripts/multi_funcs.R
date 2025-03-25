@@ -18,28 +18,39 @@ plot_ancestry_PCs <- function(log_file_name){
   return(plot)
 }
 
-# Make manhattan plot, eg. plot_manhat("antidep-2501-mrmega-N06A.gz", "N06A" )
-plot_manhat <- function(gz_file_name, pheno_name){
+# Get sumstats. eg. get_sumstats("antidep-2501-mrmega-N06A.gz")
+get_sumstats <- function(gz_file_name){
   mrmega <- read_tsv(here::here("meta", gz_file_name))
-  
+  return(mrmega)
+}
+
+# Split into a list. eg. get_assoc(mrmega, "N06A")
+get_assoc <- function(mrmega, pheno_name){
   mrmega_assoc <- list(
-    paste0(pheno_name, " Assoc") = select(mrmega_n06a, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_association`),
-    paste0(pheno_name, " Ancestry") = select(mrmega_n06a, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_ancestry_het`),
-    paste0(pheno_name, " Residual") = select(mrmega_n06a, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_residual_het`))
+     select(mrmega, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_association`),
+     select(mrmega, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_ancestry_het`),
+     select(mrmega, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_residual_het`))
   
+  names(mrmega_assoc) <- c(paste0(pheno_name, " Assoc"), 
+                           paste0(pheno_name, " Ancestry"),
+                           paste0(pheno_name, " Residual"))
+  return(mrmega_assoc)
+}
+
+# Make manhattan plot, eg. plot_manhat(mrmega_assoc)
+plot_manhat <- function(mrmega_assoc){
   plot <- manhattan(mrmega_assoc, legend_labels = names(mrmega_assoc), ntop = 1, sign_thresh = 5e-08, build = 38)
   return(plot)
 }
 
 
 # Get clumps. eg. get_clumps("antidep-2501-mrmega-N06A.clumps")
-
 get_clumps <- function(clump_file_name){
   clumps <- read_tsv(here::here("meta", clump_file_name))
   
   clumps_gw <- clumps |>
     filter(P <= 5e-8) |>
-    left_join(mrmega_n06a, by = c(`#CHROM` = "Chromosome", "POS" = "Position"))
+    left_join(mrmega, by = c(`#CHROM` = "Chromosome", "POS" = "Position"))
   
   clumps_gw_gr <- clumps_gw |>
     select(seqnames = `#CHROM`, start = POS, width = 1, P, SNP = MarkerName) |>

@@ -17,72 +17,50 @@ library(UpSetR)
 library(plyranges)
 library(ieugwasr)
 library(gwascat)
+# Source helper functions 
+source("multi_funcs.R")
 ```
 
 ## Principal components
 
-```{r n06a_pcs, dpi=218}
-mrmega_n06a_log <- read_lines(here::here("meta", "antidep-2501-mrmega-N06A.log"))
-
-pcs_start_idx <- which(mrmega_n06a_log == "Principal components:") + 1
-pcs_end_idx <- which(mrmega_n06a_log == "Analysis finished.") - 1
-
-pcs <- read_table(str_c(mrmega_n06a_log[seq(pcs_start_idx, pcs_end_idx)], sep="\\n")) |>
-  mutate(dataset = str_remove(PCs, fixed(".txt.gz"))) |>
-  separate(dataset, sep = "-", into = c("cohort", "pheno", "cluster", "version"), remove = FALSE)
-  
-ggplot(pcs, aes(x = PC0, y = PC1, label = str_glue("{cohort} [{cluster}]"))) +
-  geom_point() +
-  geom_text_repel()
+```{r pcs, dpi=218}
+plot_ancestry_PCs("antidep-2501-mrmega-N06A.log")
+plot_ancestry_PCs("antidep-2501-mrmega-N06AA.log")
+plot_ancestry_PCs("antidep-2501-mrmega-N06AB.log")
 ```
 
 ## Manhattan plots
 
+
 ```{r sumstats, cache = TRUE, cache.lazy = FALSE}
 
-mrmega_n06a <- read_tsv(here::here("meta", "antidep-2501-mrmega-N06A.gz"))
+mrmega_n06a <- get_sumstats("antidep-2501-mrmega-N06A.gz")
+mrmega_n06aa <- get_sumstats("antidep-2501-mrmega-N06AA.gz")
+mrmega_n06ab <- get_sumstats("antidep-2501-mrmega-N06AB.gz")
 
 ```
 
 ```{r assoc}
 
-mrmega_n06a_assoc <- list(
-  "N06A Assoc" = select(mrmega_n06a, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_association`),
-  "N06A Ancestry" = select(mrmega_n06a, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_ancestry_het`),
-  "N06A Residual" = select(mrmega_n06a, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_residual_het`))
+mrmega_n06a_assoc <- get_assoc(mrmega_n06a)
+mrmega_n06aa_assoc <- get_assoc(mrmega_n06aa)
+mrmega_n06ab_assoc <- get_assoc(mrmega_n06ab)
 
 ```
 
 ```{r n06a_multi_manhattan, fig.width=8, fig.height=4.5, dpi=218, cache = TRUE}
-manhattan(mrmega_n06a_assoc, legend_labels = names(mrmega_n06a_assoc), ntop = 1, sign_thresh = 5e-08, build = 38)
+plot_manhat(mrmega_n06a_assoc)
+plot_manhat(mrmega_n06aa_assoc)
+plot_manhat(mrmega_n06ab_assoc)
+
 ```
 
 ## Clumps
 
 ```{r clumps}
-
-clumps <- read_tsv(here::here("meta", "antidep-2501-mrmega-N06A.clumps"))
-
-clumps_gw <- clumps |>
-  filter(P <= 5e-8) |>
-  left_join(mrmega_n06a, by = c(`#CHROM` = "Chromosome", "POS" = "Position"))
-  
-clumps_gw_gr <- clumps_gw |>
-  select(seqnames = `#CHROM`, start = POS, width = 1, P, SNP = MarkerName) |>
-  as_granges() |>
-  set_genome_info(genome = 'hg38')
-
-mhc_gr <- tibble(seqnames = 6, start = 28510120, end = 33480577) |>
-  as_granges() |>
-  set_genome_info(genome = 'hg38')
-  
-clumps_gw_mhc_gr <-
-clumps_gw_gr |>
-  filter_by_overlaps(mhc_gr)
-  
-clumps_gw_nomhc_gr <-
-clumps_gw_gr |>
-  filter_by_non_overlaps(mhc_gr)
+clumps_gw_nomhc_gr_N06A <- get_clumps("antidep-2501-mrmega-N06A.clumps")
+clumps_gw_nomhc_gr_N06AA <- get_clumps("antidep-2501-mrmega-N06AA.clumps")
+clumps_gw_nomhc_gr_N06AB <- get_clumps("antidep-2501-mrmega-N06AB.clumps")
 ```
 
 ## Catalogue
@@ -97,20 +75,8 @@ open_gwas <- phewas(variants = clumps_gw_nomhc_gr |> as_tibble() |> pull(SNP), p
 
 gwcat <- get_cached_gwascat()
 
-gwcat_snps <-
-gwcat |>
-  select(PUBMEDID, `DISEASE/TRAIT`, SNPS, MAPPED_TRAIT) |>
-  separate_wider_delim(SNPS, delim = "; ", names_sep = "_", too_few = "align_start") |>
-  pivot_longer(starts_with("SNP"), values_to = 'SNP') |>
-  filter(!is.na(SNP)) |>
-  select(-name)
+look_up_snps(clumps_gw_nomhc_gr_N06A, gwcat)
+look_up_snps(clumps_gw_nomhc_gr_N06AA, gwcat)
+look_up_snps(clumps_gw_nomhc_gr_N06AB, gwcat)
 
-```
-
-```{r}
-nomhc_snps <- clumps_gw_nomhc_gr |> as_tibble() |> pull(SNP)
-gwcat_snps |>
-  filter(SNP %in% nomhc_snps) |>
-  transmute(`DISEASE/TRAIT` = str_sub(`DISEASE/TRAIT`, 1, 50), SNP) |>
-  arrange(SNP)
 ```
