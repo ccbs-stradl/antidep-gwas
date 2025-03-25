@@ -12,6 +12,13 @@ source /exports/applications/support/set_qlogin_environment.sh
 export NXF_SINGULARITY_LIBRARYDIR=/exports/igmm/eddie/BioinformaticsResources/nfcore/singularity-images
 ```
 
+## Setting up sym links
+
+Use symlinks to link to `meta/`, `vcf` and other folders. eg. something like this if you have mounted DataStore on your mac
+```sh
+ln -s /Volumes/GenScotDepression/data/AMBER/antidep-gwas/meta ~/GitRepos/antidep-gwas/meta
+```
+
 ## label 'analysis'
 
 - Used by: fine_mapping.nf, format_gwas.nf, format_meta.nf, meta.nf
