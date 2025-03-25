@@ -8,23 +8,12 @@ library(readr)
 library(dplyr)
 ```
 
-    ## 
-    ## Attaching package: 'dplyr'
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     filter, lag
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, setdiff, setequal, union
-
 ``` r
-datasets <- read_csv(here::here("datasets.csv"))
+datasets <- read_csv("datasets.csv")
 ```
 
     ## Rows: 57 Columns: 8
-    ## ── Column specification ────────────────────────────────────────────────────────
+    ## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: ","
     ## chr (6): cohort, pheno, dataset, version, build, cluster
     ## dbl (2): cases, controls
@@ -66,7 +55,12 @@ metaset_2501_list <- list(
 )
 metaset_2501 <- bind_rows(lapply(metaset_2408_list, as_tibble))
 
-dir.create(here::here("metasets"), showWarnings = FALSE)
-write_csv(metaset_2408, here::here("metasets", "antidep-2408.csv"))
-write_csv(metaset_2501, here::here("metasets", "antidep-2408.csv"))
+dir.create("metasets")
+```
+
+    ## Warning in dir.create("metasets"): 'metasets' already exists
+
+``` r
+write_csv(metaset_2408, "metasets/antidep-2408.csv")
+write_csv(metaset_2501, "metasets/antidep-2501.csv")
 ```

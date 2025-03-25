@@ -19,15 +19,15 @@ if (!(params.build in valid_builds)) {
 // assign labels for process MA based on build:
 def processMALabel = (params.build == 'hg19') ? 'tools' : (params.build == 'hg38') ? 'rscript' : null
 
-def mapsDuplicatesDir = (params.build == 'hg19') ? 'results/maps_hg19_duplicates' : (params.build == 'hg38') ? 'results/maps_hg38_duplicates' : null
+def mapsDuplicatesDir = (params.build == 'hg19') ? 'maps_hg19_duplicates' : (params.build == 'hg38') ? 'maps_hg38_duplicates' : null
 
-def mapsDir = (params.build == 'hg19') ? 'results/maps/mbat/hg19' : (params.build == 'hg38') ? 'results/maps/mbat/hg38' : null
+def mapsDir = (params.build == 'hg19') ? 'maps/mbat/hg19' : (params.build == 'hg38') ? 'maps/mbat/hg38' : null
 
 // input files dependent on genotype build type:
 if (params.build == 'hg19') {
 	// files for hg19 build
 	// input meta-analysis sumstats
-	params.meta = "results/vcf/meta/GRCh37/*fixed*.{vcf.gz,vcf.gz.tbi}"
+	params.meta = "vcf/meta/GRCh37/*fixed*.{vcf.gz,vcf.gz.tbi}"
 
 	// ld reference PGEN where first phenotype specifies reference population */
 	params.ref = "reference/ukb_imp_v3.qc_ancestry.{pgen,psam,pvar.zst}"

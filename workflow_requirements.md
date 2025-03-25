@@ -2,16 +2,6 @@
 
 Workflow processes use the '[label](https://www.nextflow.io/docs/latest/reference/process.html#process-label)' directive to specify their requirements, which can then be supplied by the configuration file.
 
-## Use of University of Edinburgh's High Performance Computer - Eddie
-
-If using Eddie then the following snippet loads the required modules to run nextflow:
-```sh
-module load roslin/nextflow/23.10.1
-module load singularity/4.1.3
-source /exports/applications/support/set_qlogin_environment.sh
-export NXF_SINGULARITY_LIBRARYDIR=/exports/igmm/eddie/BioinformaticsResources/nfcore/singularity-images
-```
-
 ## label 'analysis'
 
 - Used by: fine_mapping.nf, format_gwas.nf, format_meta.nf, meta.nf

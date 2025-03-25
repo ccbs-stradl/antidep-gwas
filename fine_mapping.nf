@@ -43,7 +43,7 @@ import groovy.json.JsonSlurper
 
 // MA INPUTS:
   // load in gwas meta sumstats that have been lifted over to hg19
-  params.meta = 'results/vcf/meta/GRCh37/antidep-2501-fixed-N06A-*.{csv,json,vcf.gz,vcf.gz.tbi}'
+  params.meta = 'vcf/meta/GRCh37/antidep-2501-fixed-N06A-*.{csv,json,vcf.gz,vcf.gz.tbi}'
 
   // effective sample size QC parameter
   params.neff_pct = 0.8 // gwas is filtered by effectve sample size, threshold is 0.8
@@ -450,7 +450,7 @@ process SUSIEX {
   memory = 32.GB
   time = '30m'
 
-  publishDir "results/fineMapping/output", mode: "copy"
+  publishDir "fineMapping/output", mode: "copy"
 
   input:
     tuple val(chr), val(cluster), path(ma), val(neff), val(bfile_prefix), path(bfile), val(dataset), path(finemapRegions)

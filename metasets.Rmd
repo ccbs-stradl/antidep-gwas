@@ -11,7 +11,7 @@ library(dplyr)
 ```
 
 ```{r datsets}
-datasets <- read_csv(here::here("datasets.csv"))
+datasets <- read_csv("datasets.csv")
 datasets |> distinct(cohort, version)
 ```
 
@@ -34,8 +34,8 @@ metaset_2501_list <- list(
 )
 metaset_2501 <- bind_rows(lapply(metaset_2408_list, as_tibble))
 
-dir.create(here::here("metasets"), showWarnings = FALSE)
-write_csv(metaset_2408, here::here("metasets", "antidep-2408.csv"))
-write_csv(metaset_2501, here::here("metasets", "antidep-2408.csv"))
+dir.create("metasets")
+write_csv(metaset_2408, "metasets/antidep-2408.csv")
+write_csv(metaset_2501, "metasets/antidep-2501.csv")
 ```
 
