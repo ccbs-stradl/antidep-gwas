@@ -22,7 +22,7 @@ library(gwascat)
 ## Principal components
 
 ```{r n06a_pcs, dpi=218}
-mrmega_n06a_log <- read_lines("meta/antidep-2501-mrmega-N06A.log")
+mrmega_n06a_log <- read_lines(here::here("meta", "antidep-2501-mrmega-N06A.log"))
 
 pcs_start_idx <- which(mrmega_n06a_log == "Principal components:") + 1
 pcs_end_idx <- which(mrmega_n06a_log == "Analysis finished.") - 1
@@ -40,7 +40,7 @@ ggplot(pcs, aes(x = PC0, y = PC1, label = str_glue("{cohort} [{cluster}]"))) +
 
 ```{r sumstats, cache = TRUE, cache.lazy = FALSE}
 
-mrmega_n06a <- read_tsv("meta/antidep-2501-mrmega-N06A.gz")
+mrmega_n06a <- read_tsv(here::here("meta", "antidep-2501-mrmega-N06A.gz"))
 
 ```
 
@@ -61,7 +61,7 @@ manhattan(mrmega_n06a_assoc, legend_labels = names(mrmega_n06a_assoc), ntop = 1,
 
 ```{r clumps}
 
-clumps <- read_tsv("meta/antidep-2501-mrmega-N06A.clumps")
+clumps <- read_tsv(here::here("meta", "antidep-2501-mrmega-N06A.clumps"))
 
 clumps_gw <- clumps |>
   filter(P <= 5e-8) |>
