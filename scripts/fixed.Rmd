@@ -5,6 +5,7 @@ output: github_document
 
 ```{r lib}
 library(dplyr)
+library(here)
 library(readr)
 library(stringr)
 library(tidyr)
@@ -20,16 +21,18 @@ library(ggplot2)
 ### Sumstats
 
 ```{r sumstats, cache = TRUE, cache.lazy = FALSE}
-meta_gzs <- list.files("meta", "fixed-.+meta\\.gz", full.names = TRUE)
-metas <- str_remove(meta_gzs, ".meta.gz")
-names(metas) <- str_remove(basename(metas), "fixed-")
-           
-sumstats_paths <- lapply(metas, function(.x) str_c(.x, "meta.gz", sep = "."))
+# Use here to create paths relative to the top-level directory
 
-sumstats <- lapply(sumstats_paths, function(path) {
+meta_gzs <- list.files(here::here("meta"), "antidep-2501-fixed-.+\\.gz", full.names = TRUE)
+metas <- str_remove(meta_gzs, ".gz")
+names(metas) <- str_remove(basename(metas), ".gz")
+           
+sumstats_paths <- lapply(metas, function(.x) str_c(.x, "gz", sep = "."))
+
+sumstats <- lapply(meta_gzs, function(path) {
     read_tsv(path) |>
-        select(CHROM = CHR, POS = BP, ID = SNP,
-               REF = A2, ALT = A1, P, OR,
+        select(CHROM, POS, ID,
+               REF, ALT, P, OR,
                AF = AFCON, NCAS, NCON, NEFF)
 })
 ```
