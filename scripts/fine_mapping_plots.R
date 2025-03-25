@@ -3,6 +3,7 @@
 #if (!require("susiexr", quietly = TRUE)) { devtools::install_github("ameliaes/susiexr") }
 library(cowplot)
 library(data.table)
+library(here)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
@@ -11,9 +12,10 @@ library(stringr)
 library(susiexR)
 
 # ---- Read in variables:
-plotsDir <- "fineMapping/plots/"
+# Use here to create paths relative to the top-level directory
+plotsDir <- here::here("results", "fineMapping", "plots")
 
-path_to_susiex_results <- "fineMapping/output"
+path_to_susiex_results <- here::here("results", "fineMapping", "output")
 
 ancestries <- fread('reference/ukb-ld-ref_ancestry.id') %>%
                 pull(3) %>%
