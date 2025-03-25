@@ -5,3 +5,13 @@
 - `make-pgen_hg19.sh`: Use UKBiobank genetic data for creating LD references as these are in the hg19 format. Creates one pfile for all ancestries. With an extra column in the .psam file indicating the ancestry for that ID. Used in `fine_mapping.nf` and `genes.nf`.
 
 - `fine_mapping_plots.R`: Formats and plots results from SuSiEx fine mapping. Used in `fine_mapping.nf`.
+
+- `fixed.*`
+
+- `meta.*`
+
+- `metasets.*`
+
+- `multi.*`
+
+- `meta.pynb`
