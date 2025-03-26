@@ -34,17 +34,17 @@ plot_ancestry_PCs("antidep-2501-mrmega-N06AB.log")
 
 ```{r sumstats, cache = TRUE, cache.lazy = FALSE}
 
-mrmega_n06a <- get_sumstats("antidep-2501-mrmega-N06A.gz")
-mrmega_n06aa <- get_sumstats("antidep-2501-mrmega-N06AA.gz")
-mrmega_n06ab <- get_sumstats("antidep-2501-mrmega-N06AB.gz")
+mrmega_n06a <- get_sumstats("antidep-2501-mrmega-N06A-DIV.gz")
+mrmega_n06aa <- get_sumstats("antidep-2501-mrmega-N06AA-DIV.gz")
+mrmega_n06ab <- get_sumstats("antidep-2501-mrmega-N06AB-DIV.gz")
 
 ```
 
 ```{r assoc}
 
-mrmega_n06a_assoc <- get_assoc(mrmega_n06a)
-mrmega_n06aa_assoc <- get_assoc(mrmega_n06aa)
-mrmega_n06ab_assoc <- get_assoc(mrmega_n06ab)
+mrmega_n06a_assoc <- get_assoc(mrmega_n06a, "N06A")
+mrmega_n06aa_assoc <- get_assoc(mrmega_n06aa, "N06AA")
+mrmega_n06ab_assoc <- get_assoc(mrmega_n06ab, "N06AB")
 
 ```
 
@@ -58,25 +58,25 @@ plot_manhat(mrmega_n06ab_assoc)
 ## Clumps
 
 ```{r clumps}
-clumps_gw_nomhc_gr_N06A <- get_clumps("antidep-2501-mrmega-N06A.clumps")
-clumps_gw_nomhc_gr_N06AA <- get_clumps("antidep-2501-mrmega-N06AA.clumps")
-clumps_gw_nomhc_gr_N06AB <- get_clumps("antidep-2501-mrmega-N06AB.clumps")
+# clumps_gw_nomhc_gr_N06A <- get_clumps("antidep-2501-mrmega-N06A-DIV.clumps.tsv", mrmega_n06a_assoc)
+# clumps_gw_nomhc_gr_N06AA <- get_clumps("antidep-2501-mrmega-N06AA-DIV.clumps.tsv", mrmega_n06aa_assoc)
+# clumps_gw_nomhc_gr_N06AB <- get_clumps("antidep-2501-mrmega-N06AB-DIV.clumps.tsv", mrmega_n06ab_assoc)
 ```
 
 ## Catalogue
 
 ```{r opengwas, eval = FALSE, cache = TRUE}
 
-open_gwas <- phewas(variants = clumps_gw_nomhc_gr |> as_tibble() |> pull(SNP), pval=5e-8)
+# open_gwas <- phewas(variants = clumps_gw_nomhc_gr |> as_tibble() |> pull(SNP), pval=5e-8)
 
 ```
 
 ```{r gwascat, cache = TRUE}
 
-gwcat <- get_cached_gwascat()
-
-look_up_snps(clumps_gw_nomhc_gr_N06A, gwcat)
-look_up_snps(clumps_gw_nomhc_gr_N06AA, gwcat)
-look_up_snps(clumps_gw_nomhc_gr_N06AB, gwcat)
+# gwcat <- get_cached_gwascat()
+# 
+# look_up_snps(clumps_gw_nomhc_gr_N06A, gwcat)
+# look_up_snps(clumps_gw_nomhc_gr_N06AA, gwcat)
+# look_up_snps(clumps_gw_nomhc_gr_N06AB, gwcat)
 
 ```

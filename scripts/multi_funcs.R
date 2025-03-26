@@ -45,8 +45,10 @@ plot_manhat <- function(mrmega_assoc){
 
 
 # Get clumps. eg. get_clumps("antidep-2501-mrmega-N06A.clumps")
-get_clumps <- function(clump_file_name){
-  clumps <- read_tsv(here::here("meta", clump_file_name))
+get_clumps <- function(clump_file_name, mrmega){
+  clumps <- read_tsv(here::here("meta", "antidep-2501", clump_file_name))
+  
+  names(clumps)[names(clumps) == "P-value_association"] <- "P"
   
   clumps_gw <- clumps |>
     filter(P <= 5e-8) |>
