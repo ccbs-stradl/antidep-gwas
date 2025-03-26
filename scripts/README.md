@@ -6,12 +6,10 @@
 
 - `fine_mapping_plots.R`: Formats and plots results from SuSiEx fine mapping. Used in `fine_mapping.nf`.
 
-- `fixed.*`
+- `fixed.*`: Antidepressant exposure GWAS fixed-effects meta-analysis. Plots Manhattans and returns number of signifcant loci per genetic ancestry.
 
-- `meta.*`
+- `metasets.*`: Creates files with versions of each cohort used in each meta-analysis version eg. 2408 = meta-analysis run in August 2024, 2501 = meta-analysis run in Jan 2025.
 
-- `metasets.*`
+- `multi.*`: Returns Manhattan plots and ancestry PCA plots from MR-MEGA. Also searches GWAS catalogue.
 
-- `multi.*`
-
-- `meta.pynb`
+- `meta.pynb`: Meta-analysis using HAIL.
