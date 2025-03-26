@@ -78,7 +78,7 @@ sapply(clumped_ranges_grs, length)
 
 ## Overlaps
 
-```{r overlaps}
+```{r overlaps, fig.width=8, fig.height=12, dpi=218}
 
 all_gr <- reduce_ranges(bind_ranges(clumped_ranges_grs))
 
