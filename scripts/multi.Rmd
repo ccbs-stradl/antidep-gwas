@@ -58,9 +58,9 @@ plot_manhat(mrmega_n06ab_assoc)
 ## Clumps
 
 ```{r clumps}
-# clumps_gw_nomhc_gr_N06A <- get_clumps("antidep-2501-mrmega-N06A-DIV.clumps.tsv", mrmega_n06a_assoc)
-# clumps_gw_nomhc_gr_N06AA <- get_clumps("antidep-2501-mrmega-N06AA-DIV.clumps.tsv", mrmega_n06aa_assoc)
-# clumps_gw_nomhc_gr_N06AB <- get_clumps("antidep-2501-mrmega-N06AB-DIV.clumps.tsv", mrmega_n06ab_assoc)
+clumps_gw_nomhc_gr_N06A <- get_clumps("antidep-2501-mrmega-N06A-DIV.clumps.tsv", mrmega_n06a)
+clumps_gw_nomhc_gr_N06AA <- get_clumps("antidep-2501-mrmega-N06AA-DIV.clumps.tsv", mrmega_n06aa)
+clumps_gw_nomhc_gr_N06AB <- get_clumps("antidep-2501-mrmega-N06AB-DIV.clumps.tsv", mrmega_n06ab)
 ```
 
 ## Catalogue
@@ -73,10 +73,10 @@ plot_manhat(mrmega_n06ab_assoc)
 
 ```{r gwascat, cache = TRUE}
 
-# gwcat <- get_cached_gwascat()
-# 
-# look_up_snps(clumps_gw_nomhc_gr_N06A, gwcat)
-# look_up_snps(clumps_gw_nomhc_gr_N06AA, gwcat)
-# look_up_snps(clumps_gw_nomhc_gr_N06AB, gwcat)
+gwcat <- get_cached_gwascat()
+
+look_up_snps(clumps_gw_nomhc_gr_N06A, gwcat)
+look_up_snps(clumps_gw_nomhc_gr_N06AA, gwcat)
+look_up_snps(clumps_gw_nomhc_gr_N06AB, gwcat)
 
 ```

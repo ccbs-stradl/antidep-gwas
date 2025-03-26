@@ -52,10 +52,12 @@ get_clumps <- function(clump_file_name, mrmega){
   
   clumps_gw <- clumps |>
     filter(P <= 5e-8) |>
-    left_join(mrmega, by = c(`#CHROM` = "Chromosome", "POS" = "Position"))
+    left_join(mrmega, by = c("Chromosome" = "Chromosome", 
+                             "Position" = "Position", 
+                             "MarkerName" = "MarkerName"))
   
   clumps_gw_gr <- clumps_gw |>
-    select(seqnames = `#CHROM`, start = POS, width = 1, P, SNP = MarkerName) |>
+    select(seqnames = "Chromosome", start = Position, width = 1, P, SNP = MarkerName) |>
     as_granges() |>
     set_genome_info(genome = 'hg38')
   
