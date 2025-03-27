@@ -2,7 +2,6 @@
 *.gz.tbi
 *.bgz
 *.zip
-*.log
 reference/
 .nextflow*
 hail-*.log
@@ -13,7 +12,6 @@ bin/
 plugins/
 mt/
 meta/
-meta
 vcf/
 vcf
 metavcf/
@@ -28,4 +26,5 @@ MR-MEGA
 fineMapping/*
 !fineMapping/logs/
 logs/
-*.correlations.txt
+models/*.log
+!models/rg/**/*.log

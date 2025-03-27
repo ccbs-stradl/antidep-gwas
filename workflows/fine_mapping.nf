@@ -480,7 +480,7 @@ process SUSIEX {
       BFILE_PREFIX="\$(echo "${bfile_prefix}" | tr -d '[]' | tr -d ' ')"
       ANCESTRY_LD="\$(echo "${cluster}" | tr -d '[]' | tr -d ' ')"
       ANCESTRY_FILE="\$(echo "${cluster}" | tr -d '[]' | tr -d ' '| tr ',' '-')"
-
+  
       echo "Sumstats: \$SUMSTATS"
       echo "Effective sample sizes: \$NEFF"
       echo "bfile prefix: \$BFILE_PREFIX"
@@ -533,7 +533,7 @@ process SUSIEX {
        --pval_col=7,7,7 \
        --mult-step=True \
        --plink=plink \
-       --keep-ambig=True |& tee SuSiEx.\${ANCESTRY_FILE}.output.cs95_\${CHR}:\${BP_START}:\${BP_END}.log
+       --keep-ambig=True |& tee SuSiEx.\${ANCESTRY_FILE}.output.cs95_\${CHR}-\${BP_START}-\${BP_END}.log
 
       echo "--------------------- END OF SUSIEX --------------------------"
 

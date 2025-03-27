@@ -1,0 +1,65 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 2.0.0
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--out AllOfUs-N06A-EUR-v7_2411--AllOfUs-N06AA-EUR-v7_2411 \
+--rg AllOfUs-N06A-EUR-v7_2411.sumstats.gz,AllOfUs-N06AA-EUR-v7_2411.sumstats.gz \
+--ref-ld-chr eur_w_ld_chr/ \
+--w-ld-chr eur_w_ld_chr/ 
+
+Beginning analysis at Mon Feb 10 17:39:19 2025
+Reading summary statistics from AllOfUs-N06A-EUR-v7_2411.sumstats.gz ...
+Read summary statistics for 1186754 SNPs.
+Reading reference panel LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read reference panel LD Scores for 1290028 SNPs.
+Removing partitioned LD Scores with zero variance.
+Reading regression weight LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read regression weight LD Scores for 1290028 SNPs.
+After merging with reference panel LD, 1177938 SNPs remain.
+After merging with regression SNP LD, 1177938 SNPs remain.
+Computing rg for phenotype 2/2
+Reading summary statistics from AllOfUs-N06AA-EUR-v7_2411.sumstats.gz ...
+Read summary statistics for 1217311 SNPs.
+After merging with summary statistics, 1177938 SNPs remain.
+1177831 SNPs with valid alleles.
+
+Heritability of phenotype 1
+---------------------------
+Total Observed scale h2: 0.0363 (0.005)
+Lambda GC: 1.1082
+Mean Chi^2: 1.1088
+Intercept: 1.0304 (0.0069)
+Ratio: 0.2791 (0.0638)
+
+Heritability of phenotype 2/2
+-----------------------------
+Total Observed scale h2: 0.0528 (0.0105)
+Lambda GC: 1.0527
+Mean Chi^2: 1.0621
+Intercept: 1.0224 (0.0056)
+Ratio: 0.3617 (0.0903)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0343 (0.0061)
+Mean z1*z2: 0.4603
+Intercept: 0.4169 (0.005)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.7836 (0.0995)
+Z-score: 7.8722
+P: 3.4836e-15
+
+
+Summary of Genetic Correlation Results
+                                  p1                                    p2     rg     se      z          p  h2_obs  h2_obs_se  h2_int  h2_int_se  gcov_int  gcov_int_se
+AllOfUs-N06A-EUR-v7_2411.sumstats.gz AllOfUs-N06AA-EUR-v7_2411.sumstats.gz 0.7836 0.0995 7.8722 3.4836e-15  0.0528     0.0105  1.0224     0.0056    0.4169        0.005
+
+Analysis finished at Mon Feb 10 17:39:34 2025
+Total time elapsed: 14.66s

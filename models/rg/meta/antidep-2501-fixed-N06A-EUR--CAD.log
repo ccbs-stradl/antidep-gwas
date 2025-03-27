@@ -1,0 +1,65 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 2.0.0
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--out antidep-2501-fixed-N06A-EUR--CAD \
+--rg antidep-2501-fixed-N06A-EUR.sumstats.gz,CAD.sumstats.gz \
+--ref-ld-chr eur_w_ld_chr/ \
+--w-ld-chr eur_w_ld_chr/ 
+
+Beginning analysis at Mon Feb 10 14:53:30 2025
+Reading summary statistics from antidep-2501-fixed-N06A-EUR.sumstats.gz ...
+Read summary statistics for 1156520 SNPs.
+Reading reference panel LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read reference panel LD Scores for 1290028 SNPs.
+Removing partitioned LD Scores with zero variance.
+Reading regression weight LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read regression weight LD Scores for 1290028 SNPs.
+After merging with reference panel LD, 1151105 SNPs remain.
+After merging with regression SNP LD, 1151105 SNPs remain.
+Computing rg for phenotype 2/2
+Reading summary statistics from CAD.sumstats.gz ...
+Read summary statistics for 1193582 SNPs.
+After merging with summary statistics, 1149925 SNPs remain.
+1149925 SNPs with valid alleles.
+
+Heritability of phenotype 1
+---------------------------
+Total Observed scale h2: 0.0554 (0.0023)
+Lambda GC: 1.4926
+Mean Chi^2: 1.5998
+Intercept: 1.0809 (0.0105)
+Ratio: 0.1348 (0.0176)
+
+Heritability of phenotype 2/2
+-----------------------------
+Total Observed scale h2: 0.1134 (0.0078)
+Lambda GC: 1.3656
+Mean Chi^2: 1.6229
+Intercept: 0.9911 (0.0163)
+Ratio < 0 (usually indicates GC correction).
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0265 (0.0018)
+Mean z1*z2: 0.2144
+Intercept: 0.0251 (0.0063)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.3339 (0.0221)
+Z-score: 15.1081
+P: 1.4323e-51
+
+
+Summary of Genetic Correlation Results
+                                     p1              p2     rg     se       z          p  h2_obs  h2_obs_se  h2_int  h2_int_se  gcov_int  gcov_int_se
+antidep-2501-fixed-N06A-EUR.sumstats.gz CAD.sumstats.gz 0.3339 0.0221 15.1081 1.4323e-51  0.1134     0.0078  0.9911     0.0163    0.0251       0.0063
+
+Analysis finished at Mon Feb 10 14:53:42 2025
+Total time elapsed: 11.83s
