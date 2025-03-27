@@ -40,6 +40,7 @@ cohorts_versions <- metaset |>
 popcorns_keep <- popcorns |>
   filter(str_c(p1_cohort, p1_version, sep = "-") %in% cohorts_versions,
          str_c(p2_cohort, p2_version, sep = "-") %in% cohorts_versions) |>
-         filter(p1_cluster != p2_cluster)
+         filter(p1_cluster != p2_cluster) |>
+         filter(p1_pheno != "N06AX", p2_pheno != "N06AX")
 
 write_csv(popcorns_keep, here::here("manuscript/tables/rg_popcorn_gwas.csv"))
