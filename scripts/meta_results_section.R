@@ -1,8 +1,11 @@
 # Fill in some missing gaps needed to write up the meta-analysis results section
 
+library(tidyr)
 library(data.table)
 library(glue)
 library(dplyr)
+library(gwascat)
+library(ieugwasr)
 
 # ------------------------------
 # Get numbers for significant SNPs and numbers of genomic regions these are in.
@@ -28,11 +31,16 @@ lapply(c("antidep-2501-mrmega-N06A-DIV.clumps.tsv",
        print_clumps_sentences_mrmega)
 
 #### Fixed
-print_clumps_sentences_fixed <- function(file_name){
+
+get_clumps <- function(file_name){
   clumps <- fread(here::here("meta", "antidep-2501", file_name))
   # Only get significant SNPs
   clumps <- clumps %>%
     filter(P <= 5e-8) 
+}
+
+print_clumps_sentences_fixed <- function(file_name){
+  clumps <- get_clumps(file_name)
   
   nSNPs <- nrow(clumps)
   nGenomicRegions <- length(unique(clumps$LOCUS))
@@ -53,12 +61,44 @@ lapply(c("antidep-2501-fixed-N06A-AFR.clumps.tsv",
 # Run the GWAS catalogue look up code for the fixed effects results
 gwcat <- get_cached_gwascat()
 
-gwascat_N06A_table <- look_up_snps(clumps_N06A, gwcat)
-gwascat_N06AA_table <- look_up_snps(clumps_N06AA, gwcat)
-gwascat_N06AB_table <- look_up_snps(clumps_N06AB, gwcat)
+clumps <- lapply(c("antidep-2501-fixed-N06A-AFR.clumps.tsv",
+                   "antidep-2501-fixed-N06A-EAS.clumps.tsv",
+                   "antidep-2501-fixed-N06A-EUR.clumps.tsv",
+                   "antidep-2501-fixed-N06A-SAS.clumps.tsv",
+                   "antidep-2501-fixed-N06AA-AFR.clumps.tsv",
+                   "antidep-2501-fixed-N06AA-EUR.clumps.tsv",
+                   "antidep-2501-fixed-N06AB-AFR.clumps.tsv",
+                   "antidep-2501-fixed-N06AB-EUR.clumps.tsv"),
+                 get_clumps)
 
-write.csv(gwascat_N06A_table, "manuscript/tables/gwas_cat_N06A_table.csv", quote = F, row.names = F)
+look_up_snps <- function(clumps, gwcat=gwcat){
+  open_gwas <- phewas(variants = clumps |> as_tibble() |> pull(ID), pval=5e-8)
+  
+  gwcat_snps <-
+    gwcat |>
+    select(PUBMEDID, `DISEASE/TRAIT`, SNPS, MAPPED_TRAIT) |>
+    separate_wider_delim(SNPS, delim = "; ", names_sep = "_", too_few = "align_start") |>
+    pivot_longer(starts_with("SNP"), values_to = 'SNP') |>
+    filter(!is.na(SNP)) |>
+    select(-name)
+  
+  nomhc_snps <- clumps |> as_tibble() |> pull(ID)
+  
+  gwcat_snps |>
+    filter(SNP %in% nomhc_snps) |>
+    transmute(`DISEASE/TRAIT` = str_sub(`DISEASE/TRAIT`, 1, 50), SNP) |>
+    arrange(SNP)
+}
+
+gwascat_tables <- lapply(clumps, look_up_snps)
+
+# write.csv(gwascat_table, "manuscript/tables/gwas_cat_fixed_table.csv", quote = F, row.names = F)
 
 # ------------------------------
 # Get the number of unique SNPs and check for duplicate trait names in GWAS catalogue look up
+
+gwas_cat_results <- fread(here::here("scripts", "multi_files", "gwas_cat_N06A_table.csv"))
+gwas_cat_results %>%
+  pull(SNP) %>%
+  unique()
 
