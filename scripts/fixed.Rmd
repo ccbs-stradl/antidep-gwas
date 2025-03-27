@@ -22,31 +22,31 @@ library(ggplot2)
 
 ```{r sumstats, cache = TRUE, cache.lazy = FALSE}
 # Use here to create paths relative to the top-level directory
-
-meta_gzs <- list.files(here::here("meta"), "antidep-2501-fixed-.+\\.gz", full.names = TRUE)
-metas <- str_remove(meta_gzs, ".gz")
-names(metas) <- str_remove(basename(metas), ".gz")
+# Specify which meta-analysis version to plot
+metaset <- "antidep-2501"
+# list fixed effects susmtats (.gz) files
+sumstats_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.gz"), full.names = TRUE)
+# simply names for plotting
+prefixes <- str_remove(basename(sumstats_paths), ".gz")
+metas <- str_remove(prefixes, str_c(metaset, "-fixed-"))
            
-sumstats_paths <- lapply(metas, function(.x) str_c(.x, "gz", sep = "."))
+names(sumstats_paths) <- metas
 
-sumstats <- lapply(meta_gzs, function(path) {
+sumstats <- lapply(sumstats_paths, function(path) {
     read_tsv(path) |>
-        select(CHROM, POS, ID,
-               REF, ALT, P, OR,
-               AF = AFCON, NCAS, NCON, NEFF)
+        select(CHROM, POS, P)
 })
 ```
 
 ### Loci
 
 ```{r loci}
-clumped_paths <- sumstats_paths <- lapply(metas, function(.x) str_c(.x, "clumped", sep = "."))
+clumps_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.clumps\\.tsv"), full.names = TRUE)
+clump_prefixes <- str_remove(basename(clumps_paths), ".clumps.tsv")
+names(clumps_paths) <- str_remove(clump_prefixes, str_c(metaset, "-fixed-"))
 
-clumped <- lapply(clumped_paths[sapply(clumped_paths, file.exists)], read_table)
+clumps <- lapply(clumps_paths, read_table)
 
-ranges_paths <- sumstats_paths <- lapply(metas, function(.x) str_c(.x, "clumped.ranges", sep = "."))
-
-clumped_ranges <- lapply(ranges_paths[sapply(ranges_paths, file.exists)], read_table)
 ```
 
 ## Manhattan plot
@@ -62,19 +62,10 @@ Construct genomic ranges.
 
 ```{r ranges}
 
-clumped_ranges_grs <- lapply(clumped_ranges, function(cr) {
+clumped_ranges_grs <- lapply(clumps, function(cr) {
     cr |>
-    mutate(range = str_match(POS, "chr[0-9]+:([0-9]+)\\.\\.([0-9]+)")) |>
-    transmute(seqnames = str_c("chr", CHR),
-              start = as.numeric(range[,2]),
-              end = as.numeric(range[,3]), P, SNP) |>
-    filter(P <= 5e-8) |>
-    as_granges() |>
+    as_granges(seqnames = CHROM, start = start, end = end) |>
     set_genome_info(genome = "hg38")
-})
-
-loci_ranges_grs <- lapply(clumped_ranges_grs, function(gr) {
-    reduce_ranges(gr, SNPs = c(SNP), Ps = c(P))
 })
 
 ```
@@ -82,16 +73,16 @@ loci_ranges_grs <- lapply(clumped_ranges_grs, function(gr) {
 Count number of loci
 
 ```{r nloci}
-sapply(loci_ranges_grs, length)
+sapply(clumped_ranges_grs, length)
 ```
 
 ## Overlaps
 
-```{r overlaps}
+```{r overlaps, fig.width=8, fig.height=12, dpi=218}
 
-all_gr <- reduce_ranges(bind_ranges(loci_ranges_grs))
+all_gr <- reduce_ranges(bind_ranges(clumped_ranges_grs))
 
-hits_upset <- lapply(loci_ranges_grs, function(gr) findOverlaps(all_gr, gr)@from)
+hits_upset <- lapply(clumped_ranges_grs, function(gr) findOverlaps(all_gr, gr)@from)
 
 upset(fromList(hits_upset), nsets = length(hits_upset), order.by='freq', text.scale=2)
 

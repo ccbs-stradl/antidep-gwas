@@ -1,22 +1,47 @@
-/* 
-	Convert meta-analysis to GWAS VCF format
+/**
+	Convert sumstats to GWAS VCF format
 	
 	Inputs:
-		- meta/fixed-*.meta.gz: fixed-effects meta-analysis sumstats
-		
-*/
+	  - format/dataset.txt: formatted GWAS sumstats
+      - chr
+      - pos
+      - ea
+      - oa
+      - beta
+      - se
+      - pval
+      - ncase
+      - ncontrol
+      - snp
+      - eaf
+      - imp_info
+      - eaf_case
+      - eaf_control
+	    - neff
+	  - format/dataset.json: sumstats meta data
+	  - format/dataset.csv: cohort meta data
 
-// Input files: sumstats gz, shell scripts, and meta data csv
-params.sumstats = "meta/fixed-*.meta.gz"
+**/
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+
+
+// Input files: sumstats txt and meta json file
+params.sumstats = "results/format/gwas/*-GRCh38.{txt,json,csv}"
+
+// Output location
+params.publish = "results/vcf"
 
 // reference files
 // assembly fasta, fai, and dict 
 params.assembly = "reference/Homo_sapiens_assembly38.{fasta,fasta.fai,dict}"
 // dbsnp rsID vcf
 params.dbsnp = "reference/dbsnp.v153.hg38.vcf.{gz,gz.tbi}"
+// chromosome pattern (if there is one)
+params.chr = "chr#"
 
 // gwas2vcf files
-params.json = "sumstats/gwas.json"
+params.json = "format/gwas.json"
 params.gwas2vcf = "vendor/gwas2vcf"
 
 workflow {
@@ -25,11 +50,12 @@ workflow {
 	Input sumstats
 */
 
-	// meta-analysed sumstats
+  def jsonSlurper = new JsonSlurper()
+	// sumstats and meta data, parse json
 	SUMSTATS_CH = Channel
-		.fromPath(params.sumstats)
-
-
+		.fromFilePairs(params.sumstats, size: 3, checkIfExists: true) { it -> it.baseName }
+    	.map { it -> it.plus(jsonSlurper.parseText(it[1][1].text)) }
+  
 /*
 	Reference files
 */
@@ -45,177 +71,166 @@ workflow {
 */
 	JSON_CH = Channel
 		.fromPath(params.json, checkIfExists: true)
+		.map { it -> jsonSlurper.parseText(it.text) }
 	
 	GWAS2VCF_CH = Channel
 		.fromPath(params.gwas2vcf, type: "dir", checkIfExists: true)
 
 /*
-	Process sumstats
-*/
-	
-	// run original sumstats through a reformatting
-	FORMAT_CH = FORMAT(SUMSTATS_CH)	
-/*
 	GWASVCF
 */
 
-	// subset sumstats and references file to each chromosome
-	CHR_CH = Channel.of(1..22, 'X')
-		.map { it -> "chr${it}" }
-
-	DATA_CH = FORMAT_CH
-		.combine(DBSNP_CH)
-		
-	DATA_CHR_CH = CHR(DATA_CH, CHR_CH)
-		.combine(ASSEMBLY_CH)
+	// add genome build to json parameter file
+	SUMSTATS_JSON_CH = SUMSTATS_CH
 		.combine(JSON_CH)
-		.combine(GWAS2VCF_CH)
+		.map { it -> it.plus(JsonOutput.toJson(it[3].plus([build: it[2].build]))) }
 
-	VCF_CHR_CH = VCF(DATA_CHR_CH)
+	// subset sumstats and references file to each chromosome
+	// using pattern to get sequence names (usually 'chr#' or '#')
+	CHR_CH = Channel.of(1..22, 'X')
+		.map { it -> params.chr.replaceFirst('#', it.toString()) }
+	
+  // qc sumstats
+	QC_CH = QC(SUMSTATS_JSON_CH)
+  	
+	// subset sumstats to chromosome
+	QC_CHR_CH = CHR(QC_CH, CHR_CH)
+    	.combine(DBSNP_CH)		
+		.combine(ASSEMBLY_CH)
+		.combine(GWAS2VCF_CH)
+    
+  
+	VCF_CHR_CH = VCF(QC_CHR_CH)
 	VCF_TBI_CHR_CH = INDEX(VCF_CHR_CH)
+		.map { it -> [it[0], it[2], it[3]] }
 		.groupTuple(size: 23)
-		
+	
 	VCF_CH = CONCAT(VCF_TBI_CHR_CH)
 
 	// additional annotations (AFCAS, AFCON, NE)
-	ANNOTATIONS_CH = ANNOTATIONS(DATA_CH)
+	ANNOTATIONS_CH = ANNOTATIONS(QC_CH)
 
 	// harmonised effect size and allele frequency
 	MAPPING_CH = MAPPING(VCF_CH)
 	
 	ANNOTATIONS_MAPPING_CH = ANNOTATIONS_CH
 		.join(MAPPING_CH)
-	     
+		
 	ANNOTATIONS_HARMONISED_CH = HARMONISE(ANNOTATIONS_MAPPING_CH)
 	
 	VCF_ANNOTATIONS_CH = VCF_CH
 		.join(ANNOTATIONS_HARMONISED_CH)
 
 	VCF_ANNOTATED_CH = ANNOTATE(VCF_ANNOTATIONS_CH)
-	
+
 
 }
 
-/* Reformat sumstats for GWASVCF input */
-process FORMAT {
-	tag "${sumstats.simpleName}"
+// QC sumstats for duplicate variants
+process QC {
+	tag "${dataset}"
+  	label 'rscript'
+	
+	cpus = 4
+	memory = 32.GB
+	time = '1h'
+	
+	input:
+	tuple val(dataset), path(gwas), val(meta), val(json), val(params)
+	
+	output:
+	tuple val(dataset), val(meta), val(params), path("${dataset}-qc.txt"), path("${dataset}.{csv,json}", includeInputs: true)
+	
+	script:
+	"""
+	#! /bin/env Rscript
+	
+	library(readr)
+	library(dplyr)
+	library(plyranges)
+	
+	gwas <- read_tsv("${dataset}.txt")
+	
+	# GRanges object for efficient position lookups
+	gwas_gr <- as_granges(gwas, seqnames = chr, start = pos, width = 1)
+	
+	# count overlaps
+	gwas_overlap_counts <- count_overlaps(gwas_gr, gwas_gr)
+	
+	# find variants with more than 1 overlap where chr+pos+ea/oa are duplicated
+	gwas_overlaps <- gwas |> slice(which(gwas_overlap_counts > 1)) |>
+		mutate(a1 = pmin(ea, oa), a2 = pmax(ea, oa)) |>
+		group_by(chr, pos, a1, a2) |>
+		mutate(n = dplyr::n()) |>
+		ungroup() |>
+		filter(n > 1) |> 
+		select(chr, pos, ea, oa)
+	
+	# remove duplicate positions with an anti-join
+	gwas_qc <- gwas |>
+		anti_join(gwas_overlaps)
+		
+	write_tsv(gwas_qc, "${dataset}-qc.txt")
+	"""
+	
+}
+
+// subset to chromosome
+process CHR {
+	tag "${dataset} ${chr}"
+  label 'tools'
 
 	cpus = 1
 	memory = 1.GB
 	time = '10m'
 
 	input:
-	path(sumstats)
-
-	output:
-	tuple val(sumstats.simpleName), path("*.txt")
-
-	shell:
-	'''
-	
-	# sumstats columns
-	#  1  CHR
-    #  2  BP
-    #  3  SNP
-    #  4  A1
-    #  5  A2
-    #  6  studies
-    #  7  OR
-    #  8  SE
-    #  9  P
-    # 10  OR_R
-    # 11  SE_R
-    # 12  P_R
-    # 13  Q
-    # 14  I
-    # 15  INFO
-    # 16  AFCAS
-    # 17  AFCON
-    # 18  NCAS
-    # 19  NCON
-    # 20  NEFF
-    # 21  NTOT
-
-
-	gunzip -c !{sumstats} | awk 'OFS = "\t" {if(NR == 1) {print "chr", "pos", "ea", "oa", "beta", "se", "pval", "ncase", "ncontrol", "snp", "eaf", "imp_info", "eaf_case", "eaf_control", "neff"} else {print $1, $2, $4, $5, log($7), $8, $9, $18, $19, $3, $17, $15, $16, $17, $20}}' > !{sumstats.simpleName}.txt
-
-	# output columns
-	# chr
-	# pos
-	# ea
-	# oa
-	# beta
-	# se
-	# pval
-	# ncase
-	# ncontrol
-	# snp
-	# eaf
-	# imp_info
-	# eaf_case
-	# eaf_control
-	# neff
-	'''
-}
-
-
-// subset to chromosome
-process CHR {
-	tag "${dataset} ${dbsnp} ${chr}"
-  	label 'tools'
-
-	cpus = 1
-	memory =4.GB
-	time = '3h'
-
-	input:
-	tuple val(dataset), path(gwas), val(dbsnp), path(vcf)
+	tuple val(dataset), val(meta), val(params), path(gwas), path(cohorts)
 	each chr
 
 	output:
-	tuple val(dataset), val(chr), path("${dataset}_${chr}.txt"), val("${vcf[0].simpleName}_${dataset}_${chr}"), path("${vcf[0].simpleName}_${dataset}_${chr}.vcf.{gz,gz.tbi}")
+	tuple val(dataset), val(chr), val(meta), val(params), path("${dataset}-${chr}.txt")
 
 	script:
 	"""
-	cat ${gwas} | awk 'NR == 1 || \$1 == "${chr}"' > ${dataset}_${chr}.txt
-	cat ${dataset}_${chr}.txt | tail -n +2 | awk '{OFS="\\t"; {print \$1, \$2-1, \$2}}' > ${dataset}_${chr}.bed
-	bgzip ${dataset}_${chr}.bed
-	tabix ${dataset}_${chr}.bed.gz
-	
-	bcftools view --targets-file ${dataset}_${chr}.bed.gz -o ${vcf[0].simpleName}_${dataset}_${chr}.vcf.gz ${dbsnp}.gz
-	tabix ${vcf[0].simpleName}_${dataset}_${chr}.vcf.gz
+	cat ${gwas} | awk 'NR == 1 || \$1 == "${chr}"' > ${dataset}-${chr}.txt
 	"""
 }
 
 // Convert to VCF
+// turn json param string into a file
+// run gwas2vcf
 process VCF {
 	tag "${dataset} ${assembly} ${dbsnp}"
   	label 'gwas2vcf'
 
-	//scratch true
+	scratch true
 	//stageInMode 'copy'
 	//stageOutMode 'copy'
-  errorStrategy 'finish'
+  	errorStrategy 'finish'
   
 
 	cpus = 1
-	memory = 8.GB
-	time = '1h'
+	memory = 16.GB
+	time = '6h'
 
 	input:
-	tuple val(dataset), val(chr), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(json), path(gwas2vcf)
+	tuple val(dataset), val(chr), val(meta), val(params), path(gwas), val(dbsnp), path(vcf), val(assembly), path(fasta), path(gwas2vcf)
 
 	output:
-	tuple val(dataset), path("${dataset}_${chr}.vcf.gz")
+	tuple val(dataset), val(meta), path("${dataset}_${chr}.vcf.gz")
 
 	script:
 	"""
+	cat <<EOF > params.json
+	${params}
+	EOF
 	python ${gwas2vcf}/main.py \
 	--data ${gwas} \
-	--json ${json} \
+	--json params.json \
 	--id ${dataset} \
 	--ref ${assembly}.fasta \
-	--dbsnp ${dbsnp}.vcf.gz \
+	--dbsnp ${dbsnp}.gz \
 	--out ./${dataset}_${chr}.vcf.gz
 	"""
 }
@@ -230,10 +245,10 @@ process INDEX {
 	time = '30m'
 
 	input:
-	tuple val(dataset), path(vcf)
+	tuple val(dataset), val(dict), path(vcf)
 
 	output:
-	tuple val(dataset), path(vcf, includeInputs: true), path("${vcf}.tbi")
+	tuple val(dataset), val(dict), path(vcf, includeInputs: true), path("${vcf}.tbi")
 
 	script:
 	"""
@@ -265,22 +280,22 @@ process CONCAT {
 
 // make annotations file
 process ANNOTATIONS {
-	tag "${sumstats.baseName}"
+	tag "${dataset}"
 
 	cpus = 1
 	memory = 1.GB
 	time = '10m'
 
 	input:
-	tuple val(dataset), path(sumstats), val(dbsnp), path(vcf)
+	tuple val(dataset), val(dict), val(params), path(sumstats), path(cohorts)
 
 	output:
-	tuple val(dataset), path("${dataset}-annot.tsv")
+	tuple val(dataset), path("${dataset}-annot.tsv"), path(cohorts, includeInputs: true)
 
-	shell:
-	'''	
-	cat !{sumstats} | awk 'OFS="\\t" {if(NR == 1) {print "#CHROM", "POS", "REF", "ALT", "BETA", "AFCAS", "AFCON", "NE"} else {print $1, $2, $4, $3, $5, $13, $14, $15}}' > !{dataset}-annot.tsv
-	'''
+	script:
+	"""
+	cat ${sumstats} | awk 'OFS="\\t" {if(NR == 1) {print "#CHROM", "POS", "REF", "ALT", "BETA", "AFCAS", "AFCON", "NE"} else {print \$1, \$2, \$4, \$3, \$5, \$13, \$14, \$15}}' > ${dataset}-annot.tsv
+	"""
 }
 
 // get harmonised effect size and allele frequency
@@ -309,17 +324,17 @@ process MAPPING {
 // output tsv that can be tabix'd and a list of annotation column names
 process HARMONISE {
 	tag "${dataset}"
-  label 'rscript'
+  	label 'rscript'
 	
 	cpus = 4
 	memory = 32.GB
 	time = '30m'
 	
 	input:
-	tuple val(dataset), path(annotations), path(mapping)
+	tuple val(dataset), path(annotations), path(cohorts), path(mapping)
 	
 	output:
-	tuple val(dataset), path("${dataset}-annot-mapped.tsv"), path("${dataset}-annot-mapped.cols"), path("header.txt")
+	tuple val(dataset), path("${dataset}-annot-mapped.tsv"), path("${dataset}-annot-mapped.cols"), path("header.txt"), path(cohorts, includeInputs: true)
 	
 	script:
 	"""
@@ -353,7 +368,7 @@ process HARMONISE {
 	write(names(mapped_annot), "${dataset}-annot-mapped.cols", ncolumns = 1)
 
 	headers = c('##FORMAT=<ID=AFCAS,Number=A,Type=Float,Description="Alternate allele frequency in cases">',
-			        '##FORMAT=<ID=AFCON,Number=A,Type=Float,Description="Alternate allele frequency in controls">',
+			    '##FORMAT=<ID=AFCON,Number=A,Type=Float,Description="Alternate allele frequency in controls">',
 	            '##FORMAT=<ID=NE,Number=A,Type=Float,Description="Effective sample size used to estimate genetic effect">')
 	write(headers, "header.txt", ncolumns = 1)
 	"""
@@ -362,19 +377,19 @@ process HARMONISE {
 // add annotations to GWASVCF
 process ANNOTATE {
 	tag "${dataset}"
-  label 'tools'
+  	label 'tools'
 
-	publishDir "metavcf", mode: "copy"
+	publishDir params.publish, mode: "copy"
 
 	cpus = 1
 	memory = 4.GB
 	time = '1h'
 
 	input:
-	tuple val(dataset), path(vcf), path(tbi), path(annotations), path(columns), path(headers)
+	tuple val(dataset), path(vcf), path(tbi), path(annotations), path(columns), path(headers), path(cohorts)
 
 	output:
-	tuple val(dataset), path("${dataset}.vcf.gz"), path("${dataset}.vcf.gz.tbi")
+	tuple val(dataset), path("${dataset}.vcf.gz"), path("${dataset}.vcf.gz.tbi"), path(cohorts, includeInputs: true)
 
 	script:
 	"""
@@ -388,11 +403,9 @@ process ANNOTATE {
 	--annotations ${annotations}.gz \
 	--columns-file ${columns} \
 	--header-lines ${headers} \
-  --output-type z \
-  ${vcf} |\
-  bcftools sort --output-type z \
-	--output ${dataset}.vcf.gz
-	
+	--output ${dataset}.vcf.gz \
+	${vcf}
+
 	tabix ${dataset}.vcf.gz
 	"""
 }

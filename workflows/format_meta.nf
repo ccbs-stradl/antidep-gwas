@@ -59,7 +59,7 @@ workflow {
 process FORMAT_FIXED {
   tag "${dataset}"
   
-  publishDir "format/meta/${params.build}"
+  publishDir "results/format/meta/${params.build}"
 
   cpus = 1
   memory = 1.GB
@@ -120,7 +120,7 @@ process FORMAT_JSON {
   tag "${dataset}"
   label 'analysis'
 
-  publishDir "format/meta/${params.build}"
+  publishDir "results/format/meta/${params.build}"
 
   cpus = 1
   memory = 1.GB
