@@ -40,4 +40,15 @@ ldsc_datasets <- ldsc_tables |>
   separate(p2, into = c("p2_cohort", "p2_pheno", "p2_cluster", "p2_version", "ext"),
            sep = "[-.]+", extra = "merge")
 
+# keep combinations that are in the metaset
+cohorts_versions <- metaset |>
+  mutate(cohort_version = str_c(cohort, version, sep = "-")) |>
+  pull(cohort_version)
 
+ldsc_datasets_keep <- ldsc_datasets |>
+  filter(str_c(p1_cohort, p1_version, sep = "-") %in% cohorts_versions,
+         str_c(p2_cohort, p2_version, sep = "-") %in% cohorts_versions) |>
+  select(-ext) |>
+  select(starts_with("p1"), starts_with("p2"), everything())
+
+write_csv(ldsc_datasets_keep, here::here("manuscript/tables/rg_ldsc_gwas.csv"))
