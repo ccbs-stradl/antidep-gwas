@@ -51,36 +51,16 @@ get_clumps <- function(clump_file_name, mrmega){
   names(clumps)[names(clumps) == "P-value_association"] <- "P"
   
   clumps_gw <- clumps |>
-    filter(P <= 5e-8) |>
-    left_join(mrmega, by = c("Chromosome" = "Chromosome", 
-                             "Position" = "Position", 
-                             "MarkerName" = "MarkerName"))
+    filter(P <= 5e-8) 
   
-  clumps_gw_gr <- clumps_gw |>
-    select(seqnames = "Chromosome", start = Position, width = 1, P, SNP = MarkerName) |>
-    as_granges() |>
-    set_genome_info(genome = 'hg38')
-  
-  mhc_gr <- tibble(seqnames = 6, start = 28510120, end = 33480577) |>
-    as_granges() |>
-    set_genome_info(genome = 'hg38')
-  
-  clumps_gw_mhc_gr <-
-    clumps_gw_gr |>
-    filter_by_overlaps(mhc_gr)
-  
-  clumps_gw_nomhc_gr <-
-    clumps_gw_gr |>
-    filter_by_non_overlaps(mhc_gr)
-  
-  return(clumps_gw_nomhc_gr)
+  return(clumps_gw)
 }
 
 
-# Look up in GWAS catalogue eg. look_up_snps(clumps_gw_nomhc_gr, gwcat)
+# Look up in GWAS catalogue eg. look_up_snps(clumps, gwcat)
 # gwcat <- get_cached_gwascat()
-look_up_snps <- function(clumps_gw_nomhc_gr, gwcat){
-  open_gwas <- phewas(variants = clumps_gw_nomhc_gr |> as_tibble() |> pull(SNP), pval=5e-8)
+look_up_snps <- function(clumps, gwcat){
+  open_gwas <- phewas(variants = clumps |> as_tibble() |> pull(MarkerName), pval=5e-8)
   
   gwcat_snps <-
     gwcat |>
@@ -90,7 +70,7 @@ look_up_snps <- function(clumps_gw_nomhc_gr, gwcat){
     filter(!is.na(SNP)) |>
     select(-name)
   
-  nomhc_snps <- clumps_gw_nomhc_gr |> as_tibble() |> pull(SNP)
+  nomhc_snps <- clumps |> as_tibble() |> pull(MarkerName)
   
   gwcat_snps |>
     filter(SNP %in% nomhc_snps) |>
