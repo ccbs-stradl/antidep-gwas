@@ -1,0 +1,72 @@
+---
+title: Between GWAS genetic correlations
+output: github_document
+---
+
+```{r library}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+```
+
+Read in LDSC (within-ancestry) and Popcorn (cross ancestry) genetic correlation estimates.
+
+```{r tables}
+ldsc <- read_csv(here::here("manuscript/tables/rg_ldsc_gwas.csv"))
+popcorns <- read_csv(here::here("manuscript/tables/rg_popcorn_gwas.csv"))
+
+rgs <-
+bind_rows(
+    ldsc,
+    rename(popcorns, rg = pgi, se = SE, z = Z, p = `P (Z)`)
+)
+```
+
+Set up dataset names for correlation matrix
+```{r datasets}
+p1_datasets <- rgs |>
+    mutate(dataset = str_c(p1_cohort, p1_pheno, p1_cluster, sep = "-")) |>
+    pull(dataset)
+
+p2_datasets <- rgs |>
+    mutate(dataset = str_c(p2_cohort, p2_pheno, p2_cluster, sep = "-")) |>
+    pull(dataset)
+
+datasets <- unique(c(p1_datasets, p2_datasets))
+
+rg <- rgs |> pull(rg)
+```
+
+Matrix to store correlations
+```{r matrix}
+rg_matrix <- matrix(data = NA,
+                    nrow = length(datasets),
+                    ncol = length(datasets),
+                    dimnames = list(datasets, datasets))
+
+for(i in seq_along(rg)) {
+    dataset1 <- p1_datasets[i]
+    dataset2 <- p2_datasets[i]
+    rg_matrix[dataset1, dataset2] <- rg_matrix[dataset2, dataset1] <- rg[i]
+}
+```
+
+Squish genetic correlations to (-1, 1)
+```{r, squish}
+rg_matrix_squish <- rg_matrix
+rg_matrix_squish[rg_matrix > 2] <- NA
+rg_matrix_squish[rg_matrix < -2] <- NA
+rg_matrix_squish[rg_matrix < 2 & rg_matrix > 1] <- 1
+rg_matrix_squish[rg_matrix > -2 & rg_matrix < -1] <- -1
+```
+
+Correlation plots
+
+```{r corrplot}
+corrplot(rg_matrix, is.corr = FALSE)
+```
+
+```{r corrplot_squish}
+corrplot(rg_matrix_squish)
+```

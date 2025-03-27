@@ -32,13 +32,14 @@ popcorns <- bind_rows(popcorn_tables, .id = "filename") |>
     select(-filename, -estimate) |>
     select(starts_with("p1"), starts_with("p2"), pgi = `Val (obs)`, everything())
 
-# keep combinations that are in the metaset
+# keep combinations that are in the metaset, cross-cluster only
 cohorts_versions <- metaset |>
   mutate(cohort_version = str_c(cohort, version, sep = "-")) |>
   pull(cohort_version)
 
 popcorns_keep <- popcorns |>
   filter(str_c(p1_cohort, p1_version, sep = "-") %in% cohorts_versions,
-         str_c(p2_cohort, p2_version, sep = "-") %in% cohorts_versions)
+         str_c(p2_cohort, p2_version, sep = "-") %in% cohorts_versions) |>
+         filter(p1_cluster != p2_cluster)
 
 write_csv(popcorns_keep, here::here("manuscript/tables/rg_popcorn_gwas.csv"))

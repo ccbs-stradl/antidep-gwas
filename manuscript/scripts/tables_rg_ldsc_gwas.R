@@ -48,6 +48,7 @@ cohorts_versions <- metaset |>
 ldsc_datasets_keep <- ldsc_datasets |>
   filter(str_c(p1_cohort, p1_version, sep = "-") %in% cohorts_versions,
          str_c(p2_cohort, p2_version, sep = "-") %in% cohorts_versions) |>
+  filter(p1_pheno != "N06AX", p2_pheno != "N06AX") |>
   select(-ext) |>
   select(starts_with("p1"), starts_with("p2"), everything())
 
