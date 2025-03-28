@@ -71,8 +71,8 @@ clumps <- lapply(c("antidep-2501-fixed-N06A-AFR.clumps.tsv",
                    "antidep-2501-fixed-N06AB-EUR.clumps.tsv"),
                  get_clumps)
 
-look_up_snps <- function(clumps, gwcat=gwcat){
-  open_gwas <- phewas(variants = clumps |> as_tibble() |> pull(ID), pval=5e-8)
+look_up_snps <- function(clump, gwcat){
+  open_gwas <- phewas(variants = clump |> as_tibble() |> pull(ID), pval=5e-8)
   
   gwcat_snps <-
     gwcat |>
@@ -82,7 +82,7 @@ look_up_snps <- function(clumps, gwcat=gwcat){
     filter(!is.na(SNP)) |>
     select(-name)
   
-  nomhc_snps <- clumps |> as_tibble() |> pull(ID)
+  nomhc_snps <- clump |> as_tibble() |> pull(ID)
   
   gwcat_snps |>
     filter(SNP %in% nomhc_snps) |>
@@ -90,13 +90,13 @@ look_up_snps <- function(clumps, gwcat=gwcat){
     arrange(SNP)
 }
 
-gwascat_tables <- lapply(clumps, look_up_snps)
+gwascat_tables <- lapply(clumps, look_up_snps, gwcat = gwcat)
 
 names(gwascat_tables) <- c("N06A-AFR", "N06A-EAS", "N06A-EUR", "N06A-SAS", "N06AA-AFR", "N06AA-EUR", "N06AB-AFR", "N06AB-EUR")
 
 save_gwascat_table <- function(gwascat_table, file_name){
   write.csv(gwascat_table, 
-            here::here("manuscript", "tables", paste0("gwascat_fixed_table", file_name, ".csv")), 
+            here::here("manuscript", "tables", paste0("gwascat_fixed_table_", file_name, ".csv")), 
             quote = F, row.names = F)
 }
 
@@ -118,6 +118,15 @@ nSNPs <- gwas_cat_results %>% pull(SNP) %>% unique() %>% length()
 nDiseases <- gwas_cat_results %>% pull(`DISEASE/TRAIT`) %>% unique() %>% length()
 glue("{nSNPs} unique SNPs were identified in the NHGRI-EBI GWAS catalogue as associated with {nDiseases} traits ")
 
+gwas_cat_results <- fread(here::here("scripts", "multi_files", "gwas_cat_N06AA_table.csv"))
+nSNPs <- gwas_cat_results %>% pull(SNP) %>% unique() %>% length()
+nDiseases <- gwas_cat_results %>% pull(`DISEASE/TRAIT`) %>% unique() %>% length()
+glue("{nSNPs} unique SNPs were identified in the NHGRI-EBI GWAS catalogue as associated with {nDiseases} traits ")
+
+gwas_cat_results <- fread(here::here("scripts", "multi_files", "gwas_cat_N06AB_table.csv"))
+nSNPs <- gwas_cat_results %>% pull(SNP) %>% unique() %>% length()
+nDiseases <- gwas_cat_results %>% pull(`DISEASE/TRAIT`) %>% unique() %>% length()
+glue("{nSNPs} unique SNPs were identified in the NHGRI-EBI GWAS catalogue as associated with {nDiseases} traits ")
 
 
 
