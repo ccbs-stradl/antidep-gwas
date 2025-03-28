@@ -92,13 +92,32 @@ look_up_snps <- function(clumps, gwcat=gwcat){
 
 gwascat_tables <- lapply(clumps, look_up_snps)
 
-# write.csv(gwascat_table, "manuscript/tables/gwas_cat_fixed_table.csv", quote = F, row.names = F)
+names(gwascat_tables) <- c("N06A-AFR", "N06A-EAS", "N06A-EUR", "N06A-SAS", "N06AA-AFR", "N06AA-EUR", "N06AB-AFR", "N06AB-EUR")
+
+save_gwascat_table <- function(gwascat_table, file_name){
+  write.csv(gwascat_table, 
+            here::here("manuscript", "tables", paste0("gwascat_fixed_table", file_name, ".csv")), 
+            quote = F, row.names = F)
+}
+
+Map(save_gwascat_table, gwascat_tables, names(gwascat_tables))
 
 # ------------------------------
 # Get the number of unique SNPs and check for duplicate trait names in GWAS catalogue look up
 
+# fixed
+lapply(gwascat_tables, function(x) {
+  nSNPs <- x %>% pull(SNP) %>% unique() %>% length()
+  nDiseases <- x %>% pull(`DISEASE/TRAIT`) %>% unique() %>% length()
+  glue("{nSNPs} unique SNPs were identified in the NHGRI-EBI GWAS catalogue as associated with {nDiseases} traits ")
+})
+
+# MR-MEGA
 gwas_cat_results <- fread(here::here("scripts", "multi_files", "gwas_cat_N06A_table.csv"))
-gwas_cat_results %>%
-  pull(SNP) %>%
-  unique()
+nSNPs <- gwas_cat_results %>% pull(SNP) %>% unique() %>% length()
+nDiseases <- gwas_cat_results %>% pull(`DISEASE/TRAIT`) %>% unique() %>% length()
+glue("{nSNPs} unique SNPs were identified in the NHGRI-EBI GWAS catalogue as associated with {nDiseases} traits ")
+
+
+
 
