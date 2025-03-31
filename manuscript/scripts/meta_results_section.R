@@ -12,7 +12,7 @@ library(ieugwasr)
 # Paste as text to go in manuscript.
 
 print_clumps_sentences_mrmega <- function(file_name){
-  clumps <- fread(here::here("meta", "antidep-2501", file_name))
+  clumps <- fread(file_name)
   # Only get significant SNPs
   names(clumps)[names(clumps) == "P-value_association"] <- "P"
   
@@ -25,15 +25,15 @@ print_clumps_sentences_mrmega <- function(file_name){
 }
 
 ### MR-MEGA
-lapply(c("antidep-2501-mrmega-N06A-DIV.clumps.tsv",
-         "antidep-2501-mrmega-N06AA-DIV.clumps.tsv",
-         "antidep-2501-mrmega-N06AB-DIV.clumps.tsv"),
+path <- here::here("results", "meta", "antidep-2501")
+files <- list.files(path, ".+mrmega.+clumps\\.tsv", full.names = T)
+lapply(files,
        print_clumps_sentences_mrmega)
 
 #### Fixed
 
 get_clumps <- function(file_name){
-  clumps <- fread(here::here("meta", "antidep-2501", file_name))
+  clumps <- fread(file_name)
   # Only get significant SNPs
   clumps <- clumps %>%
     filter(P <= 5e-8) 
@@ -47,28 +47,16 @@ print_clumps_sentences_fixed <- function(file_name){
   glue("{nSNPs} significant independent SNPs in {nGenomicRegions} genomic regions")
 }
 
-lapply(c("antidep-2501-fixed-N06A-AFR.clumps.tsv",
-          "antidep-2501-fixed-N06A-EAS.clumps.tsv",
-         "antidep-2501-fixed-N06A-EUR.clumps.tsv",
-         "antidep-2501-fixed-N06A-SAS.clumps.tsv",
-         "antidep-2501-fixed-N06AA-AFR.clumps.tsv",
-         "antidep-2501-fixed-N06AA-EUR.clumps.tsv",
-         "antidep-2501-fixed-N06AB-AFR.clumps.tsv",
-         "antidep-2501-fixed-N06AB-EUR.clumps.tsv"),
+path <- here::here("results", "meta", "antidep-2501")
+files <- list.files(path, ".+fixed.+clumps\\.tsv", full.names = T)
+lapply(files,
        print_clumps_sentences_fixed)
 
 # ------------------------------
 # Run the GWAS catalogue look up code for the fixed effects results
 gwcat <- get_cached_gwascat()
 
-clumps <- lapply(c("antidep-2501-fixed-N06A-AFR.clumps.tsv",
-                   "antidep-2501-fixed-N06A-EAS.clumps.tsv",
-                   "antidep-2501-fixed-N06A-EUR.clumps.tsv",
-                   "antidep-2501-fixed-N06A-SAS.clumps.tsv",
-                   "antidep-2501-fixed-N06AA-AFR.clumps.tsv",
-                   "antidep-2501-fixed-N06AA-EUR.clumps.tsv",
-                   "antidep-2501-fixed-N06AB-AFR.clumps.tsv",
-                   "antidep-2501-fixed-N06AB-EUR.clumps.tsv"),
+clumps <- lapply(files,
                  get_clumps)
 
 look_up_snps <- function(clump, gwcat){
