@@ -6,6 +6,7 @@ library(glue)
 library(dplyr)
 library(gwascat)
 library(ieugwasr)
+library(stringr)
 
 # ------------------------------
 # Get numbers for significant SNPs and numbers of genomic regions these are in.
@@ -80,7 +81,13 @@ look_up_snps <- function(clump, gwcat){
 
 gwascat_tables <- lapply(clumps, look_up_snps, gwcat = gwcat)
 
-names(gwascat_tables) <- c("N06A-AFR", "N06A-EAS", "N06A-EUR", "N06A-SAS", "N06AA-AFR", "N06AA-EUR", "N06AB-AFR", "N06AB-EUR")
+# Use regular expression to rename the tables
+# "[A-Za-z0-9]+" is a regex pattern that matches one or more alphanumeric characters
+# "-" matches the literal hyphen between the two alphanumeric strings
+# "(?=)" is a lookahead that ensures the preceding match is 
+# followed by the given pattern but does not include it in the match.
+# "." are escapped wtih "\\" to match the literal period in the file name
+names(gwascat_tables) <- str_extract(files, "([A-Za-z0-9]+-[A-Za-z0-9]+)(?=\\.clumps\\.tsv)")
 
 save_gwascat_table <- function(gwascat_table, file_name){
   write.csv(gwascat_table, 
