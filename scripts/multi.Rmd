@@ -1,0 +1,100 @@
+---
+title: Antidepressant exposure GWAS multi-ancestry meta-analysis
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r lib}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(stringr)
+library(ggplot2)
+library(ggrepel)
+library(topr)
+library(UpSetR)
+library(plyranges)
+library(ieugwasr)
+library(gwascat)
+# Source helper functions 
+source("multi_funcs.R")
+```
+
+## Principal components
+
+```{r pcs_n06a, dpi=218}
+plot_ancestry_PCs("antidep-2501-mrmega-N06A.log")
+```
+```{r pcs_n06aa, dpi=218}
+plot_ancestry_PCs("antidep-2501-mrmega-N06AA.log")
+```
+
+```{r pcs_n06ab, dpi=218}
+plot_ancestry_PCs("antidep-2501-mrmega-N06AB.log")
+```
+
+## Manhattan plots
+
+
+```{r sumstats, cache = TRUE, cache.lazy = FALSE}
+
+mrmega_n06a <- get_sumstats("antidep-2501-mrmega-N06A-DIV.gz")
+mrmega_n06aa <- get_sumstats("antidep-2501-mrmega-N06AA-DIV.gz")
+mrmega_n06ab <- get_sumstats("antidep-2501-mrmega-N06AB-DIV.gz")
+
+```
+
+```{r assoc}
+
+mrmega_n06a_assoc <- get_assoc(mrmega_n06a, "N06A")
+mrmega_n06aa_assoc <- get_assoc(mrmega_n06aa, "N06AA")
+mrmega_n06ab_assoc <- get_assoc(mrmega_n06ab, "N06AB")
+
+```
+
+```{r multi_manhattan_n06a, fig.width=8, fig.height=4.5, dpi=218, cache = TRUE}
+plot_manhat(mrmega_n06a_assoc)
+
+```
+
+
+```{r multi_manhattan_n06aa, fig.width=8, fig.height=4.5, dpi=218, cache = TRUE}
+plot_manhat(mrmega_n06aa_assoc)
+
+```
+
+
+```{r multi_manhattan_n06ab, fig.width=8, fig.height=4.5, dpi=218, cache = TRUE}
+plot_manhat(mrmega_n06ab_assoc)
+
+```
+
+## Clumps
+
+```{r clumps}
+clumps_N06A <- get_clumps("antidep-2501-mrmega-N06A-DIV.clumps.tsv")
+clumps_N06AA <- get_clumps("antidep-2501-mrmega-N06AA-DIV.clumps.tsv")
+clumps_N06AB <- get_clumps("antidep-2501-mrmega-N06AB-DIV.clumps.tsv")
+
+clumps_N06A
+clumps_N06AA
+clumps_N06AB
+
+```
+
+## Catalogue
+
+```{r gwascat, cache = TRUE}
+
+gwcat <- get_cached_gwascat()
+
+gwascat_N06A_table <- look_up_snps(clumps_N06A, gwcat)
+gwascat_N06AA_table <- look_up_snps(clumps_N06AA, gwcat)
+gwascat_N06AB_table <- look_up_snps(clumps_N06AB, gwcat)
+
+write.csv(gwascat_N06A_table, "multi_files/gwas_cat_N06A_table.csv", quote = F, row.names = F)
+write.csv(gwascat_N06AA_table, "multi_files/gwas_cat_N06AA_table.csv", quote = F, row.names = F)
+write.csv(gwascat_N06AB_table, "multi_files/gwas_cat_N06AB_table.csv", quote = F, row.names = F)
+
+```
