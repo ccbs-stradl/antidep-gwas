@@ -19,7 +19,7 @@ lapply(json_data, function(json){
   cluster <- json[["cluster"]]
   neff <- json[["neff"]]
   N <- round(neff/2, 3)
-  paste0(cluster, " cases = ",N , ", ", cluster, " controls = ", N, "; ")
+  paste0(cluster, " = ",N , "; ")
 }) %>% do.call(paste0, .)
 
 # -----------------------------------------
@@ -38,6 +38,6 @@ summary_table_neff <- summary_table %>%
 lapply(1:nrow(summary_table_neff), function(i){
   cluster <- summary_table_neff$cluster[i]
   N <- summary_table_neff$total_neff[i]
-  paste0(cluster, " cases = ", N , ", ", cluster, " controls = ", N, "; ")
+  paste0(cluster, " = ", N , "; ")
 }) %>% do.call(paste0, .)
 
