@@ -1,0 +1,65 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 2.0.0
+* (C) 2014-2019 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Call: 
+./ldsc.py \
+--out antidep-2501-fixed-N06AB-EUR--Clin \
+--rg antidep-2501-fixed-N06AB-EUR.sumstats.gz,Clin.sumstats.gz \
+--ref-ld-chr eur_w_ld_chr/ \
+--w-ld-chr eur_w_ld_chr/ 
+
+Beginning analysis at Mon Feb 10 14:53:59 2025
+Reading summary statistics from antidep-2501-fixed-N06AB-EUR.sumstats.gz ...
+Read summary statistics for 1172119 SNPs.
+Reading reference panel LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read reference panel LD Scores for 1290028 SNPs.
+Removing partitioned LD Scores with zero variance.
+Reading regression weight LD Score from eur_w_ld_chr/[1-22] ... (ldscore_fromlist)
+Read regression weight LD Scores for 1290028 SNPs.
+After merging with reference panel LD, 1165457 SNPs remain.
+After merging with regression SNP LD, 1165457 SNPs remain.
+Computing rg for phenotype 2/2
+Reading summary statistics from Clin.sumstats.gz ...
+Read summary statistics for 1117026 SNPs.
+After merging with summary statistics, 1104872 SNPs remain.
+1104872 SNPs with valid alleles.
+
+Heritability of phenotype 1
+---------------------------
+Total Observed scale h2: 0.0507 (0.0033)
+Lambda GC: 1.2234
+Mean Chi^2: 1.2481
+Intercept: 1.0329 (0.0092)
+Ratio: 0.1327 (0.0371)
+
+Heritability of phenotype 2/2
+-----------------------------
+Total Observed scale h2: 0.0955 (0.0101)
+Lambda GC: 1.1331
+Mean Chi^2: 1.1359
+Intercept: 1.0126 (0.0074)
+Ratio: 0.0929 (0.0546)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0542 (0.0042)
+Mean z1*z2: 0.1443
+Intercept: 0.0174 (0.006)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.7797 (0.0612)
+Z-score: 12.7491
+P: 3.1551e-37
+
+
+Summary of Genetic Correlation Results
+                                      p1               p2     rg     se       z          p  h2_obs  h2_obs_se  h2_int  h2_int_se  gcov_int  gcov_int_se
+antidep-2501-fixed-N06AB-EUR.sumstats.gz Clin.sumstats.gz 0.7797 0.0612 12.7491 3.1551e-37  0.0955     0.0101  1.0126     0.0074    0.0174        0.006
+
+Analysis finished at Mon Feb 10 14:54:13 2025
+Total time elapsed: 14.29s
