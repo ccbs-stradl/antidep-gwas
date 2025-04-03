@@ -2,9 +2,9 @@
   Format cohort-level sumstats to be ready for GWAS VCF
   
   Inputs:
-    - datasets.csv: meta data file with cohort, phenotype, version, build for each dataset
-    - sumstats/cohort-dataset-version.gz: original GWAS sumstats
-    - sumstats/cohort-version.sh: shell script to reformat sumstats to the following columns:		
+    - inputs/datasets.csv: meta data file with cohort, phenotype, version, build for each dataset
+    - inputs/sumstats/cohort-dataset-version.gz: original GWAS sumstats
+    - inputs/sumstats/cohort-version.sh: shell script to reformat sumstats to the following columns:		
       - chr
       - pos
       - ea
@@ -26,9 +26,9 @@
 import groovy.json.JsonOutput
 
 // Input files: sumstats gz, formatting scripts, and meta data csv
-params.sumstats = "sumstats/*.gz"
-params.scripts = "sumstats/*.sh"
-params.datasets = "datasets.csv"
+params.sumstats = "inputs/sumstats/*.gz"
+params.scripts = "inputs/sumstats/*.sh"
+params.datasets = "inputs/datasets.csv"
 
 workflow {
 
