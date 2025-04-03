@@ -1,0 +1,99 @@
+---
+title: Antidepressant exposure GWAS fixed-effects meta-analysis
+output: github_document
+---
+
+```{r lib}
+library(dplyr)
+library(here)
+library(readr)
+library(stringr)
+library(tidyr)
+library(topr)
+library(UpSetR)
+library(plyranges)
+library(ggplot2)
+```
+
+
+## GWAS results
+
+### Sumstats
+
+```{r sumstats, cache = TRUE, cache.lazy = FALSE}
+# Use here to create paths relative to the top-level directory
+# Specify which meta-analysis version to plot
+metaset <- "antidep-2501"
+# list fixed effects susmtats (.gz) files
+sumstats_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.gz"), full.names = TRUE)
+# simply names for plotting
+prefixes <- str_remove(basename(sumstats_paths), ".gz")
+metas <- str_remove(prefixes, str_c(metaset, "-fixed-"))
+           
+names(sumstats_paths) <- metas
+
+sumstats <- lapply(sumstats_paths, function(path) {
+    read_tsv(path) |>
+        select(CHROM, POS, P)
+})
+```
+
+### Loci
+
+```{r loci}
+clumps_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.clumps\\.tsv"), full.names = TRUE)
+clump_prefixes <- str_remove(basename(clumps_paths), ".clumps.tsv")
+names(clumps_paths) <- str_remove(clump_prefixes, str_c(metaset, "-fixed-"))
+
+clumps <- lapply(clumps_paths, read_table)
+
+```
+
+## Manhattan plot
+
+```{r manhattan, fig.width=8, fig.height=4.5, dpi=218}
+sumstats2 <- lapply(sumstats, function(ss) filter(ss, P <= 1e-2))
+manhattan(sumstats2, legend_labels = names(sumstats), ntop = 6, sign_thresh = 5e-08, build = 38)
+```
+
+## Loci
+
+Construct genomic ranges.
+
+```{r ranges}
+
+clumped_ranges_grs <- lapply(clumps, function(cr) {
+    cr |>
+    as_granges(seqnames = CHROM, start = start, end = end) |>
+    set_genome_info(genome = "hg38")
+})
+
+```
+
+Count number of loci
+
+```{r nloci}
+sapply(clumped_ranges_grs, length)
+```
+
+## Overlaps
+
+```{r overlaps, fig.width=8, fig.height=12, dpi=218}
+
+all_gr <- reduce_ranges(bind_ranges(clumped_ranges_grs))
+
+hits_upset <- lapply(clumped_ranges_grs, function(gr) findOverlaps(all_gr, gr)@from)
+
+upset(fromList(hits_upset), nsets = length(hits_upset), order.by='freq', text.scale=2)
+
+```
+
+## Regions
+
+```{r chr11_11, fig.width=8, fig.height=4.5, dpi=218}
+
+regionplot(sumstats["N06A-EUR"], legend_labels = names(sumstats["N06A-EUR"]),
+    chr = 11, xmin = 112956144, xmax = 113578846,
+    build = 38, show_overview = FALSE)
+
+```
