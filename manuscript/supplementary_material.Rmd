@@ -1,6 +1,8 @@
 ---
 title: "Supplementary Material"
-output: word_document
+output: 
+  github_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -29,7 +31,7 @@ paste_figure <- function(file, regex, legend_title, legend_text, fig_number, off
   # Paste to render as markdown
   cat("![](", file, ")\n", sep = "")
   cat("\n\n")
-  cat(paste0("**", glue("Supplementary Figure {fig_number + offset}"), ". ",  glue(legend_title), "** ",legend_text))
+  cat(paste0("**", glue("Supplementary Figure {fig_number + offset}"), ". ",  glue(legend_title), "** ",glue(legend_text)))
   cat("\n\n")
 }
 
@@ -56,6 +58,7 @@ offset <- fig_num
 ```
 ```{r multi_pcs_N06A, results="asis", echo=FALSE}
 fig_num <- offset + 1
+fig <- here::here("scripts", "multi_files", "figure-html", "pcs_n06a-1.png")
 cat("![](", fig, ")\n\n", sep = "")
 cat(paste0("**", glue("Supplementary Figure {fig_num}"), ". PCA plot of ancestries in MR-MEGA meta-analysis N06A.** Plot shows the first two principal components of the ancestry of the samples in the MR-MEGA meta-analysis for the antidepressant phenotype N06A."))
 offset <- fig_num
@@ -63,6 +66,7 @@ offset <- fig_num
 
 ```{r multi_pcs_N06AA, results="asis", echo=FALSE}
 fig_num <- offset + 1
+fig <- here::here("scripts", "multi_files", "figure-html", "pcs_n06aa-1.png")
 cat("![](", fig, ")\n\n", sep = "")
 cat(paste0("**", glue("Supplementary Figure {fig_num}"), ". PCA plot of ancestries in MR-MEGA meta-analysis N06AA.** Plot shows the first two principal components of the ancestry of the samples in the MR-MEGA meta-analysis for the antidepressant phenotype N06AA."))
 offset <- fig_num
@@ -70,6 +74,7 @@ offset <- fig_num
 
 ```{r multi_pcs_N06AB, results="asis", echo=FALSE}
 fig_num <- offset + 1
+fig <- here::here("scripts", "multi_files", "figure-html", "pcs_n06ab-1.png")
 cat("![](", fig, ")\n\n", sep = "")
 cat(paste0("**", glue("Supplementary Figure {fig_num}"), ". PCA plot of ancestries in MR-MEGA meta-analysis N06AB.** Plot shows the first two principal components of the ancestry of the samples in the MR-MEGA meta-analysis for the antidepressant phenotype N06AB."))
 offset <- fig_num
@@ -291,4 +296,26 @@ for(i in 1:length(files) ){
 # Keep a count on how many supplementary figures we have for the offset variable
 offset <- offset + length(files)
 ```
+
+## Fine-mapping using SuSiEx
+
+```{r finemapping, results="asis", echo=FALSE}
+path <- here::here("results", "fineMapping", "plots")
+files <- list.files(path, "region_plot_(3:16751665:16962555|7:41140716:41340716|17:44752612:44952612)", full.names = T)
+
+for(i in 1:length(files) ){
+  paste_figure(files[i], 
+             regex = "[0-9]+:[0-9]+:[0-9]+",
+             legend_title = "Locus zoom region plot of EUR, AFR, SAS N06A meta-analyses and credible sets for region {file_str}.",
+             legend_text = "Locus zoom region plot shows association of SNPs with the antidepressant phenotype N06A zoomed to the region {file_str} for each ancestry (EUR, AFR and SAS). The output from SuSiEx shows the Posterior Inclusion Probability (PIP). The horizontal red line on the credible set plot represents the threshold at which a credible set is defined and SNPs are considered potentially causal (PIP > 0.8), these SNPs are highlighted in the locus zoom plots.",
+             fig_number = i,
+             offset = offset)
+}
+
+# Keep a count on how many supplementary figures we have for the offset variable
+offset <- offset + length(files)
+
+```
+
+
 
