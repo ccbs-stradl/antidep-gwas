@@ -19,7 +19,7 @@ if (!(params.build in valid_builds)) {
 // assign labels for process MA based on build:
 def processMALabel = (params.build == 'hg19') ? 'tools' : (params.build == 'hg38') ? 'rscript' : null
 
-def mapsDuplicatesDir = (params.build == 'hg19') ? 'results/maps_hg19_duplicates' : (params.build == 'hg38') ? 'results/maps_hg38_duplicates' : null
+def mapsDuplicatesDir = (params.build == 'hg19') ? 'results/maps/mbat/hg19_duplicates' : (params.build == 'hg38') ? 'results/maps/mbat/hg38_duplicates' : null
 
 def mapsDir = (params.build == 'hg19') ? 'results/maps/mbat/hg19' : (params.build == 'hg38') ? 'results/maps/mbat/hg38' : null
 

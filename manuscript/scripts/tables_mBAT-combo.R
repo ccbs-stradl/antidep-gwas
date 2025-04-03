@@ -5,7 +5,7 @@ library(dplyr)
 library(stringr)
 
 # Read in results from mBAT-combo
-mbat_output_paths <- list.files("./maps_hg19",
+mbat_output_paths <- list.files(here::here("results", "maps", "mbat", "hg19"),
                           full.names = TRUE, pattern = ".mbat.tsv")
 
 mbat_output <- lapply(mbat_output_paths, fread)

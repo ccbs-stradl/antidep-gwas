@@ -10,6 +10,10 @@ This repository contains scripts, documentation and configuration files for cond
     - `workflow_requirements.md` indsutrctions for installing any requirements.
 - `workflows/` : Contains nextflow scripts for running the pipelines.
 - `scripts/`: Contains R markdown scripts (and their outputs), jupyter notebooks, bash shell scripts for data pre-processeing and formatting/plotting outputs from the nextflow scripts. See the README.md in this directory for more info on what each script does.
+- `inputs/`
+    - `datasets.csv`: table of input GWAS with cohort, phenotype, cluster, build and version information
+    - `metasets`: tables of cohort/versions used for each version of the meta-analysis
+    - `gwas.json`: formatting file for VCF conversion
 - `results/`: Contains outputs from the nextflow pipeline scripts. Sub-folders are made inside this directory for each nextflow pipeline. Most of these subfolders are not git commited, instead symlinks should be made to point to their contents (see `docs/workflow_documentation.md`)
 - `config/`: Contains nextflow configuration files
 - `env/`: Contains yaml files for setting up virtual conda environments.
