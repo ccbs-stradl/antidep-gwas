@@ -10,6 +10,7 @@ work/
 vendor/
 bin/
 plugins/
+results/
 mt/
 meta/
 vcf/

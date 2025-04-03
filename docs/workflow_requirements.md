@@ -37,10 +37,23 @@ ln -s /Volumes/GenScotDepression/data/AMBER/antidep-gwas/meta ~/GitRepos/antidep
 - Requirments: [gwas2vcf](https://github.com/MRCIEU/gwas2vcf)
 - Conda: gwas2vcf.yaml
 
+Clone repository:
+```sh
+mkdir vendor
+git clone https://github.com/MRCIEU/gwas2vcf.git vendor/gwas2vcf
+```
+
 ## label 'hail'
 
 - Used by: swath.nf
 - Requirments: [Hail](https://hail.is)
+
+## label 'ldsc'
+
+- Used by: ldsc.nf, txt.nf
+- Requirements: [ldsc](https://github.com/bulik/ldsc) or [ldsc python3 port](https://github.com/belowlab/ldsc) (recommended)
+- Conda: env/ldsc.yaml
+```
 
 ## label 'mrmega'
 
