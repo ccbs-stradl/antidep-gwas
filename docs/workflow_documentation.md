@@ -210,3 +210,12 @@ Plot the results of SuSiEx using R.
 ```sh
 Rscript scripts/fine_mapping_plots.R
 ```
+
+### 16. Prepare sumstats for drug targetor
+
+Prepare the sumstats into a format used as input for drug targetor
+```sh
+nextflow run format_gwas_drugtar.nf -resume \
+-work-dir $workdir \
+-c $config -with-dag fineMapping/fine_mapping_dag.png
+```
