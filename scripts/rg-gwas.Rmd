@@ -8,6 +8,7 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 library(corrplot)
+library(stringr)
 ```
 
 Read in LDSC (within-ancestry) and Popcorn (cross ancestry) genetic correlation estimates.
@@ -63,10 +64,10 @@ rg_matrix_squish[rg_matrix > -2 & rg_matrix < -1] <- -1
 
 Correlation plots
 
-```{r corrplot}
+```{r corrplot, fig.size = 10, fig.height=10, dpi=218}
 corrplot(rg_matrix, is.corr = FALSE)
 ```
 
-```{r corrplot_squish}
+```{r corrplot_squish, fig.size=10, fig.height=10, dpi=218}
 corrplot(rg_matrix_squish)
 ```

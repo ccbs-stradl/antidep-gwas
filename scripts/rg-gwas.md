@@ -6,6 +6,7 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 library(corrplot)
+library(stringr)
 ```
 
 Read in LDSC (within-ancestry) and Popcorn (cross ancestry) genetic
@@ -16,10 +17,10 @@ ldsc <- read_csv(here::here("manuscript/tables/rg_ldsc_gwas.csv"))
 ```
 
     ## Rows: 166 Columns: 18
-    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: ","
-    ## chr  (8): p1_cohort, p1_pheno, p1_cluster, p1_version, p2_cohort, p2_pheno, p2_cluster, p2_version
-    ## dbl (10): rg, se, z, p, h2_obs, h2_obs_se, h2_int, h2_int_se, gcov_int, gcov_int_se
+    ## chr  (8): p1_cohort, p1_pheno, p1_cluster, p1_version, p2_cohort, p2_pheno, ...
+    ## dbl (10): rg, se, z, p, h2_obs, h2_obs_se, h2_int, h2_int_se, gcov_int, gcov...
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -29,9 +30,9 @@ popcorns <- read_csv(here::here("manuscript/tables/rg_popcorn_gwas.csv"))
 ```
 
     ## Rows: 168 Columns: 12
-    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: ","
-    ## chr (8): p1_cohort, p1_pheno, p1_cluster, p1_version, p2_cohort, p2_pheno, p2_cluster, p2_version
+    ## chr (8): p1_cohort, p1_pheno, p1_cluster, p1_version, p2_cohort, p2_pheno, p...
     ## dbl (4): pgi, SE, Z, P (Z)
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
