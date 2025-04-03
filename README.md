@@ -17,15 +17,6 @@ This repository contains scripts, documentation and configuration files for cond
 - `reference/` : Contains reference files needed in nextflow scripts, see `docs/workflow_references.md`
 
 
-TODO
-Add documentation/tidy:
-- `format/`
-- `gwas/`
-- `maps/`
-- `metasets/`
-- `models/`
-- `sumstats/`
-
 ## Contact
 
 For questions or collaboration inquiries, please contact Mark Adams (mark.adams@ed.ac.uk) and Amelia Edmondson-Stait (amelia.edmondson-stait@ed.ac.uk).
