@@ -1,8 +1,6 @@
 ---
 title: "Supplementary Material"
-output: 
-  github_document: default
-  word_document: default
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
