@@ -16,7 +16,7 @@ export NXF_SINGULARITY_LIBRARYDIR=/exports/igmm/eddie/BioinformaticsResources/nf
 
 Use symlinks to link to `meta/`, `vcf` and other folders. eg. something like this if you have mounted DataStore on your mac
 ```sh
-ln -s /Volumes/GenScotDepression/data/AMBER/antidep-gwas/meta ~/GitRepos/antidep-gwas/
+ln -s /Volumes/GenScotDepression/data/AMBER/antidep-gwas/meta ~/GitRepos/antidep-gwas/results/
 ```
 
 ## label 'analysis'
