@@ -37,6 +37,12 @@ paste_figure <- function(file, regex, legend_title, legend_text, fig_number, off
 offset <- 0
 ```
 
+# Methods
+
+## mBAT-combo analysis
+
+SNPs with effective sample sizes < 0.8 or with duplicate IDs were removed from the meta-analysed summary statistics. Default values for mBAT-combo were used as follows: the minimum proportion of the total variance in the LD matrix explained by the top principal components used in the mBAT test was 0.9 (--mBAT-svd-gamma 0.9), a gene region was defined as spanning 50 kb upstream and downstream of the gene’s untranslated region (--mBAT-wind 50), SNPs with allele frequency difference between GWAS summary and LD reference data > 0.2 were removed (--diff-freq 0.2) and the threshold for LD r-squared value for LD pruning was 0.9 (--fastBAT-ld-cutoff 0.9).
+
 # Results
 
 ## GWAS meta-analysis
