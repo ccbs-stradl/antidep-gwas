@@ -55,9 +55,10 @@ reorder_results <- function(tables_list){
   
   # Reorder the rows in each table by the "p" column
   for (i in seq_along(tables_list)) {
-    tables_list[[i]] <- tables_list[[i]] %>% head() %>%
+    tables_list[[i]] <- tables_list[[i]] %>%
       arrange(desc(p_HEIDI)) %>%
-      arrange(p_SMR)
+      arrange(p_SMR) %>%
+      mutate(p_SMR_Bonferroni = p.adjust(p_SMR, method = "bonferroni"))
   }
   
   return(tables_list)
@@ -89,7 +90,7 @@ make_excell <- function(tables_list, file_name, sup_table_num){
 # significance is p_SMR < 0.05 and p_HEIDI > 0.05
 make_bold_rows <- function(df, sheet_name, wb){
   # Get the row indices that pass the significance threshold
-  bold_rows <- which(df$p_SMR < 0.05 & df$p_HEIDI > 0.05)
+  bold_rows <- which(df$p_SMR_Bonferroni < 0.05 & df$p_HEIDI > 0.05)
   
   # Make those rows bold
   addStyle(wb, sheet = sheet_name, rows = bold_rows + 1, cols = 1:ncol(df), 
@@ -125,6 +126,38 @@ add_readme <- function(tables_list, wb, sup_table_num){
   
 }
 
+# Paste to console sentence to include in manuscript
+paste_sentences <- function(tables_list){
+  # Get significant results for each tissue and omic type
+  gene_names <- lapply(1:length(tables_list), function(i) {
+      genes <- tables_list[[i]] %>%
+        filter(p_SMR_Bonferroni < 0.05 & p_HEIDI > 0.05)
+      
+      if (nrow(genes) > 0) {
+        gene_names <- genes %>%
+          pull(if_else("Gene" %in% colnames(genes), "Gene", "index"))
+      } else {
+        gene_names <- NULL
+      }
+      
+    # Number of genes
+    n_genes <- length(gene_names)
+    
+    # Name of the tissue and omic type
+    tissue_omic <- names(tables_list)[i] %>%
+                    gsub("_", " and ")
+    
+    # paste sentence
+    message("", n_genes, " genes in ", tissue_omic)
+    
+    return(gene_names)
+    })
+  
+  # Paste sentence on how many genes unique across all tissue and omic types
+  n_unique_genes <- length(unique(unlist(gene_names)))
+  message("Identified ", n_unique_genes, " unique genes across all tissue and omic types.")
+  
+}
 
 main <- function(rel_path, excell_file_name, sup_table_num){
   # Read in results
@@ -136,6 +169,9 @@ main <- function(rel_path, excell_file_name, sup_table_num){
   # Create an excell spreadsheet with a new sheet for each file, 
   # significant rows bold, and a readme for the first sheet
   make_excell(tables_list_ordered, excell_file_name, sup_table_num)
+  
+  # Paste to console sentence to include in manuscript
+  paste_sentences(tables_list_ordered)
   
 }
 
