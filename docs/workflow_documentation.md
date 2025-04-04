@@ -237,8 +237,9 @@ for i in $(seq 0 4); do
   -work-dir $workdir \
   -c $config
 done
+```
 
-### 16. Prepare sumstats for drug targetor
+### 17. Prepare sumstats for drug targetor
 
 Prepare the sumstats into a format used as input for drug targetor
 ```sh
