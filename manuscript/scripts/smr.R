@@ -126,6 +126,38 @@ add_readme <- function(tables_list, wb, sup_table_num){
   
 }
 
+# Paste to console sentence to include in manuscript
+paste_sentences <- function(tables_list){
+  # Get significant results for each tissue and omic type
+  gene_names <- lapply(1:length(tables_list), function(i) {
+      genes <- tables_list[[i]] %>%
+        filter(p_SMR_Bonferroni < 0.05 & p_HEIDI > 0.05)
+      
+      if (nrow(genes) > 0) {
+        gene_names <- genes %>%
+          pull(if_else("Gene" %in% colnames(genes), "Gene", "index"))
+      } else {
+        gene_names <- NULL
+      }
+      
+    # Number of genes
+    n_genes <- length(gene_names)
+    
+    # Name of the tissue and omic type
+    tissue_omic <- names(tables_list)[i] %>%
+                    gsub("_", " and ")
+    
+    # paste sentence
+    message("", n_genes, " genes in ", tissue_omic)
+    
+    return(gene_names)
+    })
+  
+  # Paste sentence on how many genes unique across all tissue and omic types
+  n_unique_genes <- length(unique(unlist(gene_names)))
+  message("Identified ", n_unique_genes, " unique genes across all tissue and omic types.")
+  
+}
 
 main <- function(rel_path, excell_file_name, sup_table_num){
   # Read in results
@@ -137,6 +169,9 @@ main <- function(rel_path, excell_file_name, sup_table_num){
   # Create an excell spreadsheet with a new sheet for each file, 
   # significant rows bold, and a readme for the first sheet
   make_excell(tables_list_ordered, excell_file_name, sup_table_num)
+  
+  # Paste to console sentence to include in manuscript
+  paste_sentences(tables_list_ordered)
   
 }
 
