@@ -55,9 +55,10 @@ reorder_results <- function(tables_list){
   
   # Reorder the rows in each table by the "p" column
   for (i in seq_along(tables_list)) {
-    tables_list[[i]] <- tables_list[[i]] %>% head() %>%
+    tables_list[[i]] <- tables_list[[i]] %>%
       arrange(desc(p_HEIDI)) %>%
-      arrange(p_SMR)
+      arrange(p_SMR) %>%
+      mutate(p_SMR_Bonferroni = p.adjust(p_SMR, method = "bonferroni"))
   }
   
   return(tables_list)
@@ -89,7 +90,7 @@ make_excell <- function(tables_list, file_name, sup_table_num){
 # significance is p_SMR < 0.05 and p_HEIDI > 0.05
 make_bold_rows <- function(df, sheet_name, wb){
   # Get the row indices that pass the significance threshold
-  bold_rows <- which(df$p_SMR < 0.05 & df$p_HEIDI > 0.05)
+  bold_rows <- which(df$p_SMR_Bonferroni < 0.05 & df$p_HEIDI > 0.05)
   
   # Make those rows bold
   addStyle(wb, sheet = sheet_name, rows = bold_rows + 1, cols = 1:ncol(df), 
