@@ -53,7 +53,7 @@ git clone https://github.com/MRCIEU/gwas2vcf.git vendor/gwas2vcf
 - Used by: ldsc.nf, txt.nf
 - Requirements: [ldsc](https://github.com/bulik/ldsc) or [ldsc python3 port](https://github.com/belowlab/ldsc) (recommended)
 - Conda: env/ldsc.yaml
-```
+
 
 ## label 'mrmega'
 
