@@ -123,9 +123,9 @@ nextflow run vcf.nf -resume \
 -c $config -with-trace
 ```
 
-### 8. Liftover hg19 VCFs to hg38
+### 8. Liftover hg38 VCFs to hg19
 
-Liftover the meta-analysis VCF files from genome build 19 to genome build 38.
+Liftover the meta-analysis VCF files from genome build 38 to genome build 19 to match reference builds for some downstream analyses.
 
 ```sh
 nextflow run liftover.nf -resume \
