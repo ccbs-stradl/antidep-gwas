@@ -46,6 +46,6 @@ snps <- bind_rows(fixed_snps, mrmega_snps, susiex_snps) |>
   distinct()
 
 dir.create(here::here("results/forest"))
-write_tsv(snps, here::here(str_glue("results/forest/{metaset}.snplist")))
+write_tsv(snps, here::here(str_glue("results/forest/{metaset}.snplist")), col_names = FALSE)
 ```
 
