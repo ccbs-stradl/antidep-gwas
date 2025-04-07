@@ -21,7 +21,7 @@ library(ggplot2)
 # Use here to create paths relative to the top-level directory
 # Specify which meta-analysis version to plot
 metaset <- "antidep-2501"
-# list fixed effects susmtats (.gz) files
+# list fixed effects sumstats (.gz) files
 sumstats_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.gz"), full.names = TRUE)
 # simply names for plotting
 prefixes <- str_remove(basename(sumstats_paths), ".gz")
@@ -36,7 +36,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
 ```
 
     ## Rows: 25029825 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -44,7 +44,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 17066490 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -52,7 +52,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 13429399 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -60,7 +60,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 15885140 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -68,7 +68,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 11556922 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -76,7 +76,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14178029 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -84,7 +84,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 24971597 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -92,7 +92,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14044866 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -100,7 +100,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14058662 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -108,7 +108,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 24994551 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -116,7 +116,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14077542 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -124,7 +124,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 11525458 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -132,7 +132,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14158341 Columns: 19
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -147,122 +147,11 @@ clumps_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset
 clump_prefixes <- str_remove(basename(clumps_paths), ".clumps.tsv")
 names(clumps_paths) <- str_remove(clump_prefixes, str_c(metaset, "-fixed-"))
 
-clumps <- lapply(clumps_paths, read_table)
+clumps <- lapply(clumps_paths, read_table, col_types = cols(REF = col_character(), ALT = col_character()))
+
+clumps_table <- bind_rows(clumps, .id = "dataset")
+write_csv(clumps_table, here::here("manuscript", "tables", str_c("clumps_fixed_", metaset, ".clumps.csv")))
 ```
-
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_character(),
-    ##   ALT = col_character()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_logical(),
-    ##   ALT = col_character()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_character(),
-    ##   ALT = col_character()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_character(),
-    ##   ALT = col_logical(),
-    ##   Q = col_logical(),
-    ##   QP = col_logical()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_character(),
-    ##   ALT = col_character()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-    ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_character(),
-    ##   ALT = col_character()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-    ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_character(),
-    ##   ALT = col_character()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-    ## 
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_character(),
-    ##   ALT = col_character()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_logical(),
-    ##   ALT = col_character(),
-    ##   Q = col_logical(),
-    ##   QP = col_logical()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
-
-    ## 
-    ## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
-    ## cols(
-    ##   .default = col_double(),
-    ##   CHROM = col_character(),
-    ##   ID = col_character(),
-    ##   REF = col_character(),
-    ##   ALT = col_logical()
-    ## )
-    ## ℹ Use `spec()` for the full column specifications.
 
 ## Manhattan plot
 

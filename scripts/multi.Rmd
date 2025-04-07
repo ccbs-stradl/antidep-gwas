@@ -17,21 +17,21 @@ library(UpSetR)
 library(plyranges)
 library(ieugwasr)
 library(gwascat)
-# Source helper functions 
+# Source helper functions
 source("multi_funcs.R")
 ```
 
 ## Principal components
 
 ```{r pcs_n06a, dpi=218}
-plot_ancestry_PCs("antidep-2501-mrmega-N06A.log")
+plot_ancestry_PCs("antidep-2501-mrmega-N06A-DIV.log")
 ```
 ```{r pcs_n06aa, dpi=218}
-plot_ancestry_PCs("antidep-2501-mrmega-N06AA.log")
+plot_ancestry_PCs("antidep-2501-mrmega-N06AA-DIV.log")
 ```
 
 ```{r pcs_n06ab, dpi=218}
-plot_ancestry_PCs("antidep-2501-mrmega-N06AB.log")
+plot_ancestry_PCs("antidep-2501-mrmega-N06AB-DIV.log")
 ```
 
 ## Manhattan plots
@@ -81,6 +81,12 @@ clumps_N06A
 clumps_N06AA
 clumps_N06AB
 
+clumps <- bind_rows(list("N06A-DIV" = clumps_N06A,
+                         "N06AA-DIV" = clumps_N06AA,
+                         "N06AB-DIV" = clumps_N06AB),
+                    .id = "dataset")
+
+write_csv(clumps, here::here("manuscript", "tables", str_c("clumps_mrmega_", "antidep-2501", ".clumps.csv")))
 ```
 
 ## Catalogue

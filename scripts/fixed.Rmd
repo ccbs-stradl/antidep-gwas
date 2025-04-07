@@ -24,7 +24,7 @@ library(ggplot2)
 # Use here to create paths relative to the top-level directory
 # Specify which meta-analysis version to plot
 metaset <- "antidep-2501"
-# list fixed effects susmtats (.gz) files
+# list fixed effects sumstats (.gz) files
 sumstats_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.gz"), full.names = TRUE)
 # simply names for plotting
 prefixes <- str_remove(basename(sumstats_paths), ".gz")
@@ -45,8 +45,10 @@ clumps_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset
 clump_prefixes <- str_remove(basename(clumps_paths), ".clumps.tsv")
 names(clumps_paths) <- str_remove(clump_prefixes, str_c(metaset, "-fixed-"))
 
-clumps <- lapply(clumps_paths, read_table)
+clumps <- lapply(clumps_paths, read_table, col_types = cols(REF = col_character(), ALT = col_character()))
 
+clumps_table <- bind_rows(clumps, .id = "dataset")
+write_csv(clumps_table, here::here("manuscript", "tables", str_c("clumps_fixed_", metaset, ".clumps.csv")))
 ```
 
 ## Manhattan plot
