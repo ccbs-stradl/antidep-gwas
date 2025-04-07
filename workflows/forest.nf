@@ -68,7 +68,7 @@ process EXTRACT {
   tuple val(details), val(dataset), path(vcf), path(snplist)
 
   output:
-  tuple val(details), val(dataset), path("${dataset}.txt")
+  tuple val(details), val(dataset), path("${dataset}.tsv")
 
   script:
   """
@@ -79,9 +79,12 @@ process EXTRACT {
     ${dataset}.vcf.gz |\
   bcftools query \
     --format "%CHROM %POS %ID %ALT %REF [%ES] [%SE] [%LP]\\n" \
-    --print-header -HH \
-    > ${dataset}.txt
+    > query.txt
+
+  cat query.txt | awk -v OFS="\t" '{if(NR == 1) {print "CHROM", "POS", "ID", "ALT", "REF", "ES", "SE", "LP", "cohort", "pheno", "cluster", "version"} else {print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, "${details.cohort}", "${details.pheno}", "${details.cluster}", "${details.version}"}}' > ${dataset}.tsv
   """
+
+
 
 
 }
