@@ -247,3 +247,13 @@ nextflow run format_gwas_drugtar.nf -resume \
 -work-dir $workdir \
 -c $config -with-dag fineMapping/fine_mapping_dag.png
 ```
+
+### 18. Clumps and forest plots
+
+Get SNP list from clumps and finemapping
+```sh
+cd scripts
+Rscript -e "rmarkdown::render('fixed.Rmd')"
+Rscript -e "rmarkdown::render('multi.Rmd')"
+Rscript -e "rmarkdown::render('forest_snplist.Rmd')"
+```
