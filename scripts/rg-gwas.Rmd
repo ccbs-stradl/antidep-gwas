@@ -71,3 +71,80 @@ corrplot(rg_matrix, is.corr = FALSE)
 ```{r corrplot_squish, fig.size=10, fig.height=10, dpi=218}
 corrplot(rg_matrix_squish)
 ```
+
+Text to paste in manuscript results section
+```{r text}
+# Get all ancestry names
+ancestries <- unique(str_split(colnames(rg_matrix_squish), "-", simplify = TRUE)[,3])
+drug_classes <- unique(str_split(colnames(rg_matrix_squish), "-", simplify = TRUE)[,2])
+
+# ------------------------
+# helper functions
+# Subset table by ancestry
+subset_by_ancestry <- function(df, anc) {
+  ancestry <- sub(".*-", "", colnames(df))
+  df[ancestry == anc, ancestry == anc]
+}
+
+# subset table by drug class
+subset_by_drug <- function(df, drug) {
+  drug_class <- str_split_fixed(colnames(df), "-", 3)[, 2]
+  df[drug_class == drug, drug_class == drug]
+}
+
+# ------------------------
+# Range of correlations:
+# within an ancestry (across multiple cohorts) and within a drug class
+lapply(1:length(ancestries), function(i){
+  sapply(1:length(drug_classes), function(j){
+  subset_rg <- subset_by_ancestry(as.data.frame(rg_matrix_squish), ancestries[i]) %>%
+    subset_by_drug(., drug_classes[j]) 
+  
+  # extract min and max and print statement with col names for min and max
+  subset_rg_long <- as.data.frame(as.table(as.matrix(subset_rg)))
+  
+  # Remove correlation with self
+  subset_rg_long <- subset_rg_long %>% filter(Var1 != Var2)
+  
+  # Find min and max
+  min_row <- subset_rg_long %>% filter(Freq == min(Freq, na.rm = TRUE)) %>% slice(1)
+  max_row <- subset_rg_long %>% filter(Freq == max(Freq, na.rm = TRUE)) %>% slice(1)
+  
+  # Print results
+  paste0("Min correlation: ", min_row$Freq, " between ", min_row$Var1, " and ", min_row$Var2, 
+        ". Max correlation: ", max_row$Freq, " between ", max_row$Var1, " and ", max_row$Var2)
+  })
+})
+
+# ------------------------
+pairwise_results <- lapply(1:length(drug_classes), function(j){
+  subset_rg <- as.data.frame(rg_matrix_squish) %>%
+    subset_by_drug(., drug_classes[j]) 
+  
+  subset_rg_long <- as.data.frame(as.table(as.matrix(subset_rg))) %>%
+    filter(Var1 != Var2)
+
+  # Extract ancestries from Var1 and Var2
+  subset_rg_long <- subset_rg_long %>%
+    mutate(
+      anc1 = str_split_fixed(as.character(Var1), "-", 3)[,3],
+      anc2 = str_split_fixed(as.character(Var2), "-", 3)[,3]
+    ) %>%
+    # Keep only pairs with different ancestries
+    filter(anc1 != anc2)
+
+  # Find min and max correlations between ancestries
+  min_row <- subset_rg_long %>% filter(Freq == min(Freq, na.rm = TRUE))
+  max_row <- subset_rg_long %>% filter(Freq == max(Freq, na.rm = TRUE))
+
+  # Add drug class label for clarity
+  min_row$drug_class <- drug_classes[j]
+  max_row$drug_class <- drug_classes[j]
+
+  rbind(min_row, max_row) %>%
+    arrange(anc1, anc2)
+})
+
+pairwise_results
+```
+
