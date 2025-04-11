@@ -23,21 +23,25 @@ susiex <- read_csv(here::here("manuscript/tables/susiex_significant_cs.csv"))
 Get SNPs for meta-analysis (build 38)
 ```{r meta}
 fixed_snps <- fixed |>
-  select(CHROM, POS, ID)
+  select(CHROM, POS, ID, REF, ALT)
 mrmega_snps <- mrmega |>
   mutate(CHROM = if_else(Chromosome == 23, true = "chrX", false = str_c("chr", Chromosome))) |>
-  select(CHROM, POS = Position, ID = MarkerName)
+  select(CHROM, POS = Position, ID = MarkerName, REF = NEA, ALT = EA)
 ```
 
 Lookup build 38 coordinates for SusieX results
 ```{r susiex, cache = TRUE}
+# ref/alt alleles should all be the same, but pick AFR since it
+# is available for all selected SNPs
 susiex_locs <- snpsById(SNPlocs.Hsapiens.dbSNP150.GRCh38, ids = pull(susiex, SNP))
 susiex_snps <- susiex_locs |>
   as.data.frame() |>
   as_tibble() |>
+  left_join(susiex, by = c("RefSNP_id" = "SNP")) |>
   transmute(CHROM = str_c("chr", as.character(seqnames)),
             POS = pos, 
-            ID = RefSNP_id)
+            ID = RefSNP_id,
+            REF = REF_ALLELE_AFR, ALT = ALT_ALLELE_AFR)
 ```
 
 Merge unique SNPs

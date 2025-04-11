@@ -60,7 +60,7 @@ workflow {
     .collect()
 
   // make forest plots
-  FOREST_CH = FOREST(EXTRACT_CH, METASET_NAME_CH)
+  FOREST_CH = FOREST(EXTRACT_CH, SNPLIST_CH, METASET_NAME_CH)
   
 }
 
@@ -106,6 +106,7 @@ process FOREST {
 
   input:
   path(sumstats)
+  path(snplist)
   val(metaset)
 
   output:
@@ -125,6 +126,11 @@ process FOREST {
   paths <- str_split("${sumstats}", pattern = " ")[[1]]
   sumstats_list <- lapply(paths, read_tsv)
   sumstats <- bind_rows(sumstats_list)
+
+  # list of SNPs to be plotted
+  snplist <- read_tsv("${snplist}",
+                      col_names = c("CHROM", "POS", "ID",
+                                    "REF", "ALT"))
   
   cohorts <- sumstats |>
     distinct(cohort) |>
@@ -132,8 +138,10 @@ process FOREST {
     arrange(desc(cohort)) |>
     pull(cohort)
 
+  # match 
   # remove unused phenotype, sort by cohort then meta
   sumstats_meta <- sumstats |>
+    inner_join(snplist) |>
     filter(pheno != "N06AX") |>
     mutate(Cohort = factor(cohort,
                            levels = c("fixed", cohorts),
