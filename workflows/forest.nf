@@ -174,7 +174,7 @@ process FOREST {
     theme_bw() +
     theme(strip.text.y = element_text(angle = 0))
 
-    ggsave(filename, plot = g, width = 7, height = 10)
+    ggsave(filename, plot = g, width = 7, height = 1 + 0.25 * nrow(sumstats))
 
     return(list(variant = variant, sumstats = sumstats, forest = g))
 
