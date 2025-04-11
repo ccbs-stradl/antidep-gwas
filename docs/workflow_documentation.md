@@ -256,4 +256,12 @@ cd scripts
 Rscript -e "rmarkdown::render('fixed.Rmd')"
 Rscript -e "rmarkdown::render('multi.Rmd')"
 Rscript -e "rmarkdown::render('forest_snplist.Rmd')"
+cd ..
+```
+
+Run workflow to make plots.
+```sh
+nextflow run workflows/forest.nf -resume \
+work-dir $workdir \
+-c $config
 ```
