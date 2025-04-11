@@ -120,6 +120,7 @@ process FOREST {
   library(readr)
   library(stringr)
   library(ggplot2)
+  library(RColorBrewer)
 
   # parse filenames from inputs string, read in tables, and 
   # bind together
@@ -138,6 +139,10 @@ process FOREST {
     arrange(desc(cohort)) |>
     pull(cohort)
 
+  cohort_colours = c(brewer.pal(n = length(cohorts), 'Dark2'), 'black')
+  names(cohort_colours) <- c(cohorts, 'fixed')
+
+
   # match 
   # remove unused phenotype, sort by cohort then meta
   sumstats_meta <- sumstats |>
@@ -152,29 +157,29 @@ process FOREST {
     group_by(CHROM, POS, ID, ALT, REF)
 
   # plotting function on a subset of variants
-  forest_plot <- function(sumstats, variant) {
+  forest_plot <- function(sumstats, variant, cohort_colours) {
 
     title <- variant |> mutate(title = str_glue("{CHROM}:{POS}:{REF}:{ALT} - {ID}")) |> pull(title)
     filename <- variant |> mutate(filename = str_glue("{CHROM}_{POS}_{REF}_{ALT}-{ID}.png")) |> pull(filename)
 
     g <- ggplot(sumstats, aes(x = Cohort, colour = cohort, y = exp(ES), ymin = exp(ES - SE), ymax = exp(ES + SE))) +
+    geom_hline(yintercept = 1, colour = 'grey') +
     geom_pointrange() +
     #geom_linerange(aes(y = ES, ymin = ES + qnorm(2.5e-8) * SE, ymax = ES + qnorm(1-2.5e-8) * SE), linetype = "dashed") +
     facet_grid(pheno + cluster ~ ., scales = "free", space = "free") +
     scale_y_continuous("Odds Ratio") +
-    # scale_colour_manual(values = c("AllOfUs" = "#4E9CD7", "BBJ" = "#CE3F7F", "FinnGen" = "#3900CF", "GenScot" = "#0B5EB0", "UKB" = "#0C5276", "fixed" = "black")) +
-    scale_colour_manual(values = c("AllOfUs" = hsv(206/360, .64, 1), "BBJ" = hsv(333/360, .69, 1), "FinnGen" = hsv(257/360, 1, 1), "GenScot" = hsv(210/360, .94, 1), "UKB" = hsv(192/360, .71, 1), "fixed" = "black")) +
+    scale_colour_manual(values = cohort_colours, guide = "none") +
     coord_flip() +
     ggtitle(title) +
-    theme_minimal() +
+    theme_bw() +
     theme(strip.text.y = element_text(angle = 0))
 
-    ggsave(filename, plot = g)
+    ggsave(filename, plot = g, width = 7, height = 10)
 
     return(list(variant = variant, sumstats = sumstats, forest = g))
 
   }
 
-  sumstats_forest <- sumstats_variants |> group_map(.f = forest_plot)
+  sumstats_forest <- sumstats_variants |> group_map(.f = forest_plot, cohort_colours = cohort_colours)
   """
 }
