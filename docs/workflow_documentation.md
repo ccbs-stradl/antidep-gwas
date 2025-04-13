@@ -281,6 +281,18 @@ for i in $(seq 1 5); do
 done
 ```
 
+#### With external phenotypes
+
+```sh
+nextflow run workflows/ldsc.nf -resume \
+--source "results/txt/munged/meta/*EUR.sumstats.gz" \
+--target "reference/munged/EUR/*.sumstats.gz" \
+--w_ld_chr "reference/UKBB.ALL.ldscore/UKBB.EUR" \
+--out meta/external \
+-work-dir $workdir \
+-c $config
+```
+
 ### 17. Prepare sumstats for drug targetor
 
 Prepare the sumstats into a format used as input for drug targetor
