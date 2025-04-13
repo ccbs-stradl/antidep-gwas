@@ -225,6 +225,8 @@ Rscript scripts/fine_mapping_plots.R
 
 ### 16. Run LDSC
 
+#### Between GWAS
+
 Munge the sumstats
 ```sh
 nextflow run workflows/txt.nf -resume \
@@ -246,6 +248,34 @@ for i in $(seq 0 4); do
   --target "results/txt/munged/gwas/*${CLUSTER}*.sumstats.gz" \
   --w_ld_chr "reference/UKBB.ALL.ldscore/UKBB.${REF}" \
   --out gwas \
+  -work-dir $workdir \
+  -c $config
+done
+```
+
+#### Between meta
+
+Munge the sumstats
+```sh
+nextflow run workflows/txt.nf -resume \
+ --sumstats "results/vcf/meta/GRCh38/antidep-2501-fixed-*.{vcf.gz,vcf.gz.tbi}" \
+ --format ldsc --out meta \
+-work-dir $workdir \
+-c $config
+```
+
+Estimate LDSC genetic correlations within each cluster
+```sh
+clusters=("AFR" "AMR" "EAS" "EUR" "SAS")
+refs=("AFR" "AMR" "EAS" "EUR" "CSA")
+for i in $(seq 1 5); do
+  CLUSTER=${clusters[$i]}
+  REF=${refs[$i]}
+  nextflow run workflows/ldsc.nf -resume \
+  --source "results/txt/munged/meta/*${CLUSTER}*.sumstats.gz" \
+  --target "results/txt/munged/meta/*${CLUSTER}*.sumstats.gz" \
+  --w_ld_chr "reference/UKBB.ALL.ldscore/UKBB.${REF}" \
+  --out meta \
   -work-dir $workdir \
   -c $config
 done
