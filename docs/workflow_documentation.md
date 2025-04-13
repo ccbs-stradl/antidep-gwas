@@ -174,10 +174,22 @@ nextflow run genes.nf -resume \
 
 ### 12. Run popcorn
 
-Run the popcorn pipeline.
+Run the popcorn pipeline on GWAS sumstats
 
 ```sh
-nextflow run popcorn.nf -resume \
+nextflow run workflows/popcorn.nf -resume \
+--vcf "results/vcf/gwas/GRCh38/antidep-2501-fixed-*.{csv,json,vcf.gz,vcf.gz.tbi}" \
+--output "gwas" \
+-work-dir $workdir \
+-c $config
+```
+
+Run the popcorn pipeline on fixed effects meta sumstats
+
+```sh
+nextflow run workflows/popcorn.nf -resume \
+--vcf "results/vcf/meta/GRCh38/*.{csv,json,vcf.gz,vcf.gz.tbi}" \
+--output "meta" \
 -work-dir $workdir \
 -c $config
 ```
@@ -211,7 +223,7 @@ Plot the results of SuSiEx using R.
 Rscript scripts/fine_mapping_plots.R
 ```
 
-### 16. Run LDSC on GWAS
+### 16. Run LDSC
 
 Munge the sumstats
 ```sh

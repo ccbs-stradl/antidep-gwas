@@ -5,6 +5,7 @@
 params.vcf = "results/vcf/gwas/GRCh38/*.{csv,json,vcf.gz,vcf.gz.tbi}"
 params.reference = "reference/all_hg38.{pgen,psam,pvar.zst}"
 params.exclude = "https://raw.githubusercontent.com/gabraham/flashpca/refs/heads/master/exclusion_regions_hg19.txt"
+params.output = ""
 
 import groovy.json.JsonSlurper
 
@@ -104,8 +105,8 @@ process QC {
     --rm-dup 'exclude-all' \
     --exclude 'bed1' ${exclude} \
     --out ${cluster} \
-	  --threads ${task.cpus} \
-	  --memory ${task.memory.bytes.intdiv(1000000)}
+	--threads ${task.cpus} \
+	--memory ${task.memory.bytes.intdiv(1000000)}
     """
 }
 
@@ -168,7 +169,7 @@ process FIT {
     tag "${dataset1}_${dataset2}"
     label "popcorn"
 
-    publishDir "results/models/popcorn", mode: "copy"
+    publishDir "results/models/popcorn/${params.output}", mode: "copy"
 
     errorStrategy 'ignore'
 
