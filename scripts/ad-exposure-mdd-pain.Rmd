@@ -14,7 +14,7 @@ build_all <- FALSE
 ## Sumstats
 
 - pain: "Back pain", Sakaue et al doi:[10.1038/s41588-021-00931-x](https://doi.org/10.1038/s41588-021-00931-x), [hum0197-v3-220](https://humandbs.dbcls.jp/en/hum0197-v3-220).
-- depression: "Majore depression", Meng et al doi:[10.1038/s41588-023-01596-4](https://www.nature.com/articles/s41588-023-01596-4), [mdd2023diverse](https://figshare.com/articles/dataset/mdd2023diverse/24799299); Als et al doi:[10.1038/s41591-023-02352-1](https://www.nature.com/articles/s41591-023-02352-1), [Depression GWAS (2023)](https://ipsych.dk/en/research/downloads/).
+- depression: "Major depression", Meng et al doi:[10.1038/s41588-023-01596-4](https://www.nature.com/articles/s41588-023-01596-4), [mdd2023diverse](https://figshare.com/articles/dataset/mdd2023diverse/24799299); Als et al doi:[10.1038/s41591-023-02352-1](https://www.nature.com/articles/s41591-023-02352-1), [Depression GWAS (2023)](https://ipsych.dk/en/research/downloads/).
 
 ### Backpain
 

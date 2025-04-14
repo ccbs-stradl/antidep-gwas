@@ -1,0 +1,20 @@
+Abbreviation,Phenotype,Reference,Publication,Source,Download
+ADHD,ADHD,Demontis 2019,https://pubmed.ncbi.nlm.nih.gov/30478444/,PGC,https://figshare.com/articles/dataset/adhd2019/14671965
+ALC,Alcohol dependence,Walters 2018,https://www.nature.com/articles/s41593-018-0275-1,PGC,https://doi.org/10.6084/m9.figshare.14672187
+AN,Anorexia nervosa,Watson 2019,https://pubmed.ncbi.nlm.nih.gov/31308545/,PGC,https://figshare.com/articles/dataset/an2019/14671980
+ANX,Anxiety (Panic disorder),Forstner 2021,https://pubmed.ncbi.nlm.nih.gov/31712720/,PGC,https://figshare.com/articles/dataset/panic2019/16602218
+ASD,Autism spectrum disorder,Grove 2019,https://pubmed.ncbi.nlm.nih.gov/30804558/,PGC,https://figshare.com/articles/dataset/asd2019/14671989
+BIP,Bipolar disorder,O'Connell 2025,https://pubmed.ncbi.nlm.nih.gov/39843750/,PGC,https://figshare.com/articles/dataset/bip2024/27216117/1
+CAD,Coronary artery disease,van der Harst 2018,https://doi.org/10.1161/CIRCRESAHA.117.312086,CardiOmics,https://data.mendeley.com/datasets/gbbsrpx6bs/1
+CRP,C-reactive protein,Said 2022,https://www.nature.com/articles/s41467-022-29650-5,IEU,https://gwas.mrcieu.ac.uk/datasets/ieu-b-35/
+MDD,Major depressive disorder,Adams 2025,https://pubmed.ncbi.nlm.nih.gov/39814019/,PGC,https://doi.org/10.6084/m9.figshare.27061255.v1
+MDDClin,MDD Clinical/Interview,Adams 2025,https://pubmed.ncbi.nlm.nih.gov/39814019/,PGC,https://doi.org/10.6084/m9.figshare.27061255.v1
+MDDEHR,MDD EHR,Adams 2025,https://pubmed.ncbi.nlm.nih.gov/39814019/,PGC,https://doi.org/10.6084/m9.figshare.27061255.v1
+MDDQuest,MDD Questionaire/Interview,Adams 2025,https://pubmed.ncbi.nlm.nih.gov/39814019/,PGC,https://doi.org/10.6084/m9.figshare.27061255.v1
+MDDHelp,MDD Help-seeking,Howard 2018,https://pubmed.ncbi.nlm.nih.gov/29662059/,UoE,https://datashare.ed.ac.uk/handle/10283/3083
+Neu,Neuroticism,Nagel 2018,https://www.nature.com/articles/s41588-018-0151-7,CNCR,https://cncr.nl/research/summary_statistics/
+Pain,Back pain,Sakaue 2021,https://doi.org/10.1038/s41588-021-00931-x,NBCD,https://humandbs.dbcls.jp/en/hum0197-v3-220
+PTSD,PTSD,Nievergelt 2019,https://pubmed.ncbi.nlm.nih.gov/31594949/,PGC,https://figshare.com/articles/dataset/ptsd2019/14672133,
+SCZ,Schizophrenia,Trubetskoy 2022,https://doi.org/10.1038/s41586-022-04434-5,PGC,https://figshare.com/articles/dataset/scz2022/19426775
+Smoke,Smoking,Liu 2019,https://www.nature.com/articles/s41588-018-0307-5,UofM,https://conservancy.umn.edu/handle/11299/201564
+T2D,Type 2 diabetes,Mahajan 2022,https://www.nature.com/articles/s41588-022-01058-3,DIAGRAM,http://diagram-consortium.org/downloads.html

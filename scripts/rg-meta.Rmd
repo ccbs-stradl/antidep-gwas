@@ -1,0 +1,44 @@
+---
+title: Meta genetic correlations
+output: github_document
+---
+
+LDSC genetic correlations with external phenotypes.
+
+```{r library}
+library(dplyr)
+library(readr)
+library(ggplot2)
+```
+
+LDSC tables
+```{r tables}
+ldsc_external <- read_csv(here::here("manuscript/tables/rg_ldsc_meta_external.csv"))
+```
+
+Plot
+
+```{r meta_ldsc_ext, fig.width=7, fig.height=12}
+ggplot(ldsc_external, aes(x = factor(p1_pheno, levels = rev(unique(p1_pheno))), y = rg, ymin = rg + qnorm(0.025)*se, ymax = rg + qnorm(0.975)*se)) +
+geom_pointrange() +
+facet_grid(p2_pheno ~ .) +
+scale_x_discrete('') +
+coord_flip() +
+theme_bw() +
+theme(strip.text.y = element_text(angle = 0))
+```
+
+Get subsets for description
+```{r subsets}
+n06a <- ldsc_external |>
+  filter(p1_pheno == "N06A") |>
+  mutate(r_g = round(rg, 3), r_g_se = round(se, 3))
+n06aa <- ldsc_external |>
+  filter(p1_pheno == "N06AA") |>
+  mutate(r_g = round(rg, 3), r_g_se = round(se, 3))
+n06ab <- ldsc_external |>
+  filter(p1_pheno == "N06AB") |>
+  mutate(r_g = round(rg, 3), r_g_se = round(se, 3))
+```
+
+Of the phenotypes tested, antidepressant exposure was most strongly genetically correlated with MDD ($r_g$ = `r n06a |> filter(p2_pheno == 'MDD') |> pull(r_g)`, SE = `r n06a |> filter(p2_pheno == 'MDD') |> pull(r_g_se)`), PTSD ($r_g$ = `r n06a |> filter(p2_pheno == 'PTSD') |> pull(r_g)`, SE = `r n06a |> filter(p2_pheno == 'PTSD') |> pull(r_g_se)`), and back pain ($r_g$ = `r n06a |> filter(p2_pheno == 'Pain') |> pull(r_g)`, SE = `r n06a |> filter(p2_pheno == 'Pain') |> pull(r_g_se)`). Among different definitions of major depression, AD exposure was most strongly genetically correlated with EHR diagnosis ($r_g$ = `r n06a |> filter(p2_pheno == 'MDDEHR') |> pull(r_g)`, SE = `r n06a |> filter(p2_pheno == 'MDDEHR') |> pull(r_g_se)`) and least with clinically-ascertained depression ($r_g$ = `r n06a |> filter(p2_pheno == 'MDDClin') |> pull(r_g)`, SE = `r n06a |> filter(p2_pheno == 'MDDClin') |> pull(r_g_se)`). Exposure to N06AA antidepressants was less strongly correlated than N06AB to MDD (N06A: $r_g$ = `r n06aa |> filter(p2_pheno == 'MDD') |> pull(r_g)`, SE = `r n06aa |> filter(p2_pheno == 'MDD') |> pull(r_g_se)`; N06AB: $r_g$ = `r n06ab |> filter(p2_pheno == 'MDD') |> pull(r_g)`, SE = `r n06ab |> filter(p2_pheno == 'MDD') |> pull(r_g_se)`) but more strongly correlated with back pain (N06A: $r_g$ = `r n06aa |> filter(p2_pheno == 'Pain') |> pull(r_g)`, SE = `r n06aa |> filter(p2_pheno == 'Pain') |> pull(r_g_se)`; N06AB: $r_g$ = `r n06ab |> filter(p2_pheno == 'Pain') |> pull(r_g)`, SE = `r n06ab |> filter(p2_pheno == 'Pain') |> pull(r_g_se)`).
