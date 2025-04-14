@@ -7,17 +7,17 @@ nextflow.enable.dsl=2
 
 params.bt = null // binary phenotypes file
 params.qt = null // quantitative phenotypes file 
-params.keep = "/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/input_filters/similarity_clusters/rf_hgdp1kg_clusters.keep"
-params.remove = "/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/input_filters/v2/PGC.remove"
-params.bfile = "/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/impv2/bfile/autosome-grch38/ukb_v2-grch38.{bed,bim,fam}"
-params.clusters = "/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/input_filters/similarity_clusters/ukb_randomforest_clusters.tsv"
-params.covar = "/exports/igmm/eddie/GenScotDepression/data/ukb/genetics/input_filters/similarity_clusters/ukb_randomforest_clusters.covar"
+params.keep = "data/ukb/genetics/input_filters/similarity_clusters/rf_hgdp1kg_clusters.keep"
+params.remove = "data/ukb/genetics/input_filters/v2/PGC.remove"
+params.bfile = "data/ukb/genetics/impv2/bfile/autosome-grch38/ukb_v2-grch38.{bed,bim,fam}"
+params.clusters = "data/ukb/genetics/input_filters/similarity_clusters/ukb_randomforest_clusters.tsv"
+params.covar = "data/ukb/genetics/input_filters/similarity_clusters/ukb_randomforest_clusters.covar"
 params.covar_list = "PC1,PC2,PC3,PC4,PC5,PC6"
 params.covar_cat_list = "sex,genotyping"
 params.min_cases = 80
 
 // reference file parameters
-params.dbsnp = "/exports/igmm/eddie/GenScotDepression/data/resources/dbSNP/dbsnp.v153.hg38.vcf.{gz,gz.tbi}"
+params.dbsnp = "data/resources/dbSNP/dbsnp.v153.hg38.vcf.{gz,gz.tbi}"
 
 workflow {
 	// participants to analyze
