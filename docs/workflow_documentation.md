@@ -293,6 +293,11 @@ nextflow run workflows/ldsc.nf -resume \
 -c $config
 ```
 
+Compile tables together
+```sh
+Rscript manuscript/scripts/tables_rg_ldsc_meta.R
+```
+
 ### 17. Prepare sumstats for drug targetor
 
 Prepare the sumstats into a format used as input for drug targetor

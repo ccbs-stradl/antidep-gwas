@@ -1,0 +1,378 @@
+---
+title: Sumstats for external phenotypes
+output: github_document
+---
+
+## Introduction
+
+Process sumstats for external phenotypes to use as targets for LD Score genetic correlations with antidepressant phenotypes.
+
+
+|Phenotype|Reference|Download|
+|----------------|----------------------|------------------|
+|ADHD|[Demontis 2019](https://pubmed.ncbi.nlm.nih.gov/30478444/)|[PGC](https://figshare.com/articles/dataset/adhd2019/14671965)|
+|Alcohol dependence|[Walters 2018](https://www.nature.com/articles/s41593-018-0275-1)|[PGC](https://doi.org/10.6084/m9.figshare.14672187)|
+|Anorexia nervosa|[Watson 2019](https://pubmed.ncbi.nlm.nih.gov/31308545/)|[PGC](https://figshare.com/articles/dataset/an2019/14671980)|
+|Anxiety (Panic disorder) |[Forstner 2021](https://pubmed.ncbi.nlm.nih.gov/31712720/)|[PGC](https://figshare.com/articles/dataset/panic2019/16602218)|
+|Autism spectrum disorder|[Grove 2019](https://pubmed.ncbi.nlm.nih.gov/30804558/)|[PGC](https://figshare.com/articles/dataset/asd2019/14671989)|
+|Bipolar disorder|[O'Connell 2025](https://pubmed.ncbi.nlm.nih.gov/39843750/)|[PGC](https://figshare.com/articles/dataset/bip2024/27216117/1)
+|Coronary artery disease|[van der Harst 2018](https://doi.org/10.1161/CIRCRESAHA.117.312086)|[CardiOmics](https://data.mendeley.com/datasets/gbbsrpx6bs/1)
+|C-reactive protein|[Said 2022](https://www.nature.com/articles/s41467-022-29650-5)|[IEU](https://gwas.mrcieu.ac.uk/datasets/ieu-b-35/)
+|MDD|[Adams 2025](https://pubmed.ncbi.nlm.nih.gov/39814019/)|[PGC](https://doi.org/10.6084/m9.figshare.27061255.v1)|
+|MDD Clinical/Interview|[Adams 2025](https://pubmed.ncbi.nlm.nih.gov/39814019/)|[PGC](https://doi.org/10.6084/m9.figshare.27061255.v1)|
+|MDD EHR|[Adams 2025](https://pubmed.ncbi.nlm.nih.gov/39814019/)|[PGC](https://doi.org/10.6084/m9.figshare.27061255.v1)|
+|MDD Questionaire/Interview|[Adams 2025](https://pubmed.ncbi.nlm.nih.gov/39814019/)|[PGC](https://doi.org/10.6084/m9.figshare.27061255.v1)|
+|MDD Help-seeking|[Howard 2018](https://pubmed.ncbi.nlm.nih.gov/29662059/)|[UoE](https://datashare.ed.ac.uk/handle/10283/3083)|
+|Neuroticism|[Nagel 2018](https://www.nature.com/articles/s41588-018-0151-7)|[CNCR](https://cncr.nl/research/summary_statistics/)|
+|Pain (Back pain)|[Sakaue 2021](https://doi.org/10.1038/s41588-021-00931-x)|[NBCD](https://humandbs.dbcls.jp/en/hum0197-v3-220)|
+|PTSD|[Nievergelt 2019](https://pubmed.ncbi.nlm.nih.gov/31594949/)|[PGC](https://figshare.com/articles/dataset/ptsd2019/14672133)|
+|Schizophrenia|[Trubetskoy 2022](https://doi.org/10.1038/s41586-022-04434-5)|[PGC](https://figshare.com/articles/dataset/scz2022/19426775)
+|Smoking|[Liu 2019](https://www.nature.com/articles/s41588-018-0307-5)|[UofM](https://conservancy.umn.edu/handle/11299/201564)|
+|Type 2 diabetes|[Mahajan 2022](https://www.nature.com/articles/s41588-022-01058-3)|[DIAGRAM](http://diagram-consortium.org/downloads.html)
+
+#### Requirements
+
+- [Tidyverse](https://www.tidyverse.org)
+- [gwasvcf](https://github.com/MRCIEU/gwasvcf)
+- [GenomicSEM](https://github.com/GenomicSEM/GenomicSEM)
+
+## Pre-processing {.tabset}
+
+Format the summary statistics for munging with columns `SNP`, `A1` (effect allele), `A2` (non-effect allele), `BETA`/`OR`, `P`, `MAF`, `INFO`, and `N`.
+
+```{r sumstats}
+
+library(dplyr)
+library(readr)
+library(tidyr)
+library(stringr)
+
+# set to TRUE if sumstats need to be processed
+# and munged
+process_sumstats=TRUE
+```
+
+HM3 snplist
+```{r hm3, eval=process_sumstats}
+hm3 <- read_tsv(here::here("reference/w_hm3.snplist"), show_col_types = FALSE)
+
+# convert frequency to maf
+maf <- function(frq) if_else(frq <= 0.5, true=frq, false=1-frq)
+
+```
+
+Read in each set of sumstats and format them. Where available, we calculate [per-SNP sample size from the sum of effective sample sizes](https://www.medrxiv.org/content/10.1101/2021.09.22.21263909v1).
+
+
+```{r samplesize}
+
+sample_sizes <- read_csv(
+"
+Pheno,Nca,Nco,Neff
+ADHD,19099,34194,45684.86
+AN,16992,55525,46321.9
+ANX,2147,7760,6665.06
+ALC,NA,NA,26853.43
+ASD,18381,27969,44366.62
+BIP,59287,781022,163367
+CAD,95830,385536,285937.77
+CRP,NA,NA,204402
+MDDClin,26778,51857,62534.02
+MDDEHR,311831,1180439,858540.6
+MDDQuest,70887,339597,222675.7
+MDDHelp,113769,208811,294577.7
+Neu,NA,NA,390278
+Pain,14893,342765,57091.4
+PTSD,23212,151447,140475
+SCZ,53386,77258,117498.3
+Smoking,NA,NA,263954
+T2D,80154,853816,251739.50
+"
+)
+
+```
+
+### Sample sizes
+
+```{r samplesizetable}
+
+knitr::kable(sample_sizes)
+
+```
+
+### MDD3
+
+```{r mdd3, eval=process_sumstats}
+
+for(mdd_pheno in c('no23andMe', 'Clin', 'EHR', 'Quest')) {
+    
+    # input sumstats
+    mdd_gz <- here::here('inputs/external', str_glue('pgc-mdd2025_{mdd_pheno}_eur_v3-49-24-11.tsv.gz'))
+    # output sumstats
+    mdd_txt <- here::here('inputs/external', str_glue('{mdd_pheno}.txt'))
+    
+    if(!file.exists(mdd_txt)) {
+        mdd <- read_tsv(mdd_gz, comment = "##")
+        mdd_sumstats <- mdd %>%
+            filter(ID %in% hm3$SNP) %>%
+            transmute(SNP=ID, A1=EA, A2=NEA, OR=exp(BETA), SE, P=PVAL,
+                   INFO=IMPINFO, MAF=maf(FCON), N=NEFF)
+        write_tsv(mdd_sumstats, mdd_txt)
+    }
+}
+
+```
+
+### Help-seeking MDD
+
+```{r help, eval=process_sumstats}
+help_gz <- here::here('inputs/external', 'UKBiobank_broad_7May18.txt')
+help_txt <- here::here('inputs/external', 'Help.txt')
+if(!file.exists(help_txt)) {
+    help <- read_table(help_gz)
+    help_nca <- 113769
+    help_nco <- 208811
+    help_n <- 4*help_nca*help_nco / (help_nca + help_nco)
+    help_sumstats <- help %>% filter(rsid %in% hm3$SNP) %>%
+        transmute(SNP=rsid, A1, A2,
+                 BETA=TransformedLogOR,
+                 SE=TransformedStandardError, 
+                 MAF=maf(AlleleFreq),
+                 P, N=help_n)
+    write_tsv(help_sumstats, help_txt)
+}
+```
+
+### ADHD
+
+```{r adhd, eval=process_sumstats}
+adhd_gz <- here::here('inputs/external', 'daner_adhd_meta_filtered_NA_iPSYCH23_PGC11_sigPCs_woSEX_2ell6sd_EUR_Neff_70.meta.gz')
+adhd_txt <- here::here('inputs/external', 'ADHD.txt')
+if(!file.exists(adhd_txt)) {
+    adhd <- read_table(adhd_gz)
+    adhd_sumstats <- adhd %>%
+        filter(SNP %in% hm3$SNP) %>%
+        select(SNP, A1, A2, OR, P, INFO, FRQ=starts_with('FRQ_U'), Neff) %>%
+        transmute(SNP, A1, A2, OR, P, INFO, MAF=maf(FRQ), N=2*Neff)
+    write_tsv(adhd_sumstats, adhd_txt)
+}
+```
+
+
+### Anorexia nervosa
+
+
+```{r an, eval=process_sumstats}
+an_gz <- here::here('inputs/external', 'pgcAN2.2019-07.vcf.tsv.gz')
+an_txt <- here::here('inputs/external', 'AN.txt')
+if(!file.exists(an_txt)) {
+    an <- read_table(an_gz, comment='##')
+    an_sumstats <- an %>%
+        transmute(SNP=ID, A1=ALT, A2=REF, BETA, P=PVAL, INFO=IMPINFO, N=2*NEFFDIV2) %>%
+        filter(SNP %in% hm3$SNP)
+    write_tsv(an_sumstats, an_txt)
+}
+```
+
+### Alcohol dependence
+
+```{r alc, eval=process_sumstats}
+alc_gz <- here::here('inputs/external', 'pgc_alcdep.aug2018_release/pgc_alcdep.eur_discovery.aug2018_release.txt.gz')
+alc_txt <- here::here('inputs/external', 'ALC.txt')
+if(!file.exists(alc_txt)) {
+    alc <- read_table(alc_gz)
+    alc_sumstats <- alc %>%
+        mutate(SNP=str_split_fixed(SNP, pattern=":", n=2)[,1]) %>%
+        select(SNP, A1, A2, BETA=Z, P, N=Weight) %>%
+        filter(SNP %in% hm3$SNP)
+    write_tsv(alc_sumstats, alc_txt)
+}
+```
+
+### Autism spectrum disorder
+
+```{r asd, eval=process_sumstats}
+asd_gz <- here::here('inputs/external', 'iPSYCH-PGC_ASD_Nov2017.gz')
+asd_txt <- here::here('inputs/external', 'ASD.txt')
+if(!file.exists(asd_txt)) {
+    asd_nca <- 18381
+    asd_nco <- 27969
+    asd_n <- 4*(asd_nca*asd_nco)/(asd_nca + asd_nco)
+    asd <- read_table(asd_gz)
+    asd_sumstats <- asd %>%
+        transmute(SNP, A1, A2, OR, P, INFO, N=asd_n) %>%
+        filter(SNP %in% hm3$SNP)
+    write_tsv(asd_sumstats, asd_txt)
+}
+```
+
+### Bipolar disorder
+
+```{r bip, eval=process_sumstats}
+bip_gz <- here::here('inputs/external', 'bip2024_eur_no23andMe.gz')
+bip_txt <- here::here('inputs/external', 'BIP.txt')
+if(!file.exists(bip_txt)) {
+    bip <- read_table(bip_gz)
+    bip_sumstats <- bip %>%
+        filter(SNP %in% hm3$SNP) %>%
+        transmute(SNP, A1, A2, OR, SE, P, MAF=maf(HRC_FRQ_A1), INFO, N=2*Neff_half)
+    write_tsv(bip_sumstats, bip_txt)
+}
+```
+
+### Cardiovascular disease
+
+```{r cad, eval=process_sumstats}
+cad_gz <- here::here('inputs/external', 'CAD_META.gz')
+cad_txt <- here::here('inputs/external', 'CAD.txt')
+if(!file.exists(cad_txt)) {
+    cad <- read_table(cad_gz)
+    cad_sumstats <- cad %>%
+    filter(oldID %in% hm3$SNP) %>%
+    transmute(SNP=oldID, A1=str_to_upper(Allele1), A2=str_to_upper(Allele2), BETA=Effect, SE=StdErr, P=`P-value`, MAF=maf(Freq1), N=285937.77)
+    write_tsv(cad_sumstats, cad_txt)
+}
+```
+
+### C-reactive protein
+
+```{r crp, eval=process_sumstats}
+crp_gz <- here::here('inputs/external', 'ieu-b-35.vcf.gz')
+crp_txt <- here::here('inputs/external', 'CRP.txt')
+if(!file.exists(crp_txt)) {
+    crp_vcf <- VariantAnnotation::readVcf(crp_gz)
+    crp <- gwasvcf::vcf_to_granges(crp_vcf) %>% as_tibble()
+    crp_sumstats <- crp %>%
+        filter(ID %in% hm3$SNP) %>%
+        transmute(SNP=ID, A1=ALT, A2=REF, BETA=ES, SE=SE, P=10^(-LP), N=SS, MAF=maf(AF))
+    write_tsv(crp_sumstats, crp_txt)
+}
+```
+
+
+### Neuroticism
+
+```{r neu, eval=process_sumstats}
+neu_gz <- here::here('inputs/external', 'sumstats_neuroticism_ctg_format.txt.gz')
+neu_txt <- here::here('inputs/external', 'Neu.txt')
+if(!file.exists(neu_txt)) {
+    neu <- read_tsv(neu_gz)
+    neu_sumstats <- neu %>%
+        filter(!is.na(INFO_UKB), RSID %in% hm3$SNP) %>%
+        select(SNP=RSID, A1, A2, BETA=Z, P, MAF=MAF_UKB, INFO=INFO_UKB, N)
+    write_tsv(neu_sumstats, neu_txt)
+}
+```
+
+### Anxiety (Panic disorder)
+
+```{r pd, eval=process_sumstats}
+pd_gz <- here::here('inputs/external', 'pgc-panic2019.vcf.tsv.gz')
+pd_txt <- here::here('inputs/external', 'ANX.txt')
+if(!file.exists(pd_txt)) {
+    pd <- read_table(pd_gz, comment='##')
+    pd_sumstats <- pd %>%
+        transmute(SNP=ID, A1, A2, BETA, P=PVAL, MAF=maf(FCON), INFO=IMPINFO, N=2*NEFFDIV2) %>%
+        filter(SNP %in% hm3$SNP)
+    write_tsv(pd_sumstats, pd_txt)
+}
+```
+
+### Post-traumatic stress disorder
+
+```{r ptsd, eval=process_sumstats}
+ptsd_gz <- here::here('inputs/external', 'pts_eur_freeze2_overall.results.gz')
+ptsd_txt <- here::here('inputs/external', 'PTSD.txt')
+if(!file.exists(ptsd_txt)) {
+    ptsd <- read_tsv(ptsd_gz)
+    ptsd_sumstats <- ptsd %>%
+        filter(SNP %in% hm3$SNP) %>%
+        select(SNP, A1, A2, OR, SE, P, INFO, FRQ=starts_with('FRQ_U'), Neff) %>%
+        transmute(SNP,  A1, A2, OR, SE, P, MAF=maf(FRQ), INFO, N=2*Neff)
+    write_tsv(ptsd_sumstats, ptsd_txt)   
+}
+```
+
+### Schizophrenia
+
+```{r scz, eval=process_sumstats}
+scz_gz <- here::here('inputs/external', 'PGC3_SCZ_wave3.european.autosome.public.v3.vcf.tsv.gz')
+scz_txt <- here::here('inputs/external', 'SCZ.txt')
+if(!file.exists(scz_txt)) {
+    scz <- read_table(scz_gz, comment='##')
+    scz_sumstats <- scz %>%
+        transmute(SNP=ID, A1, A2, BETA, P=PVAL, MAF=maf(FCON), INFO=IMPINFO, N=2*NEFF) %>%
+        filter(SNP %in% hm3$SNP)
+    write_tsv(scz_sumstats, scz_txt)
+}
+```
+
+### Smoking
+
+```{r smoking, eval=process_sumstats}
+smoking_gz <- here::here('inputs/external', 'CigarettesPerDay.txt.gz')
+smoking_txt <- here::here('inputs/external', 'Smoking.txt')
+if(!file.exists(smoking_txt)) {
+    smoking <- read_table(smoking_gz)
+    smoking_sumstats <- smoking %>%
+        filter(RSID %in% hm3$SNP) %>%
+        transmute(SNP=RSID, A1=ALT, A2=REF, BETA, SE,
+                  P=PVALUE, MAF=maf(AF), N) 
+    write_tsv(smoking_sumstats, smoking_txt)
+}
+```
+
+### Type 2 diabetes
+
+```{r t2d, eval=process_sumstats}
+t2d_gz <- here::here('inputs/external', 'DIAMANTE-EUR.sumstat.txt')
+t2d_txt <- here::here('inputs/external', 'T2D.txt')
+if(!file.exists(t2d_txt)) {
+    t2d <- read_table(t2d_gz)
+    t2d_sumstats <- t2d %>%
+        transmute(SNP=rsID, A1=str_to_upper(effect_allele), A2=str_to_upper(other_allele),
+        BETA=`Fixed-effects_beta`, SE=`Fixed-effects_SE`,
+        P=`Fixed-effects_p-value`, N=251739.50)
+    write_tsv(t2d_sumstats, t2d_txt)
+}
+```
+
+## Munge
+
+Specify the population prevalences of each phenotype.
+
+```{r ext}
+
+mdd_traits <- c("MDD"=0.15, "Clin"=0.15, "EHR"=0.15, "Quest"=0.15, "Help"=0.3)
+mdd_names <- names(mdd_traits)
+other_traits <- c("ADHD"=0.03, "ALC"=0.16, "AN"=0.01,
+                 "ASD"=0.01, "BIP"=0.01,"CAD"=0.05,
+                 "CRP"=NA, "Neu"=NA, "ANX"=0.03,
+                 "PTSD"=0.3,  "SCZ"=0.01, "Smoking"=NA,
+                 "T2D"=0.06)
+other_names <- names(other_traits)
+traits <- c(mdd_traits, other_traits)
+trait_names <- c(mdd_names, other_names)
+
+```
+
+Munge the sumstats. Check which files have already been munged.
+
+```{r munge, eval=process_sumstats}
+# construct input filenames as data/TRAIT.txt
+# and output filesnames as TRAIT.sumstats.gz
+gwas_files <- here::here('inputs/external', paste(trait_names, 'txt', sep='.'))
+sumstats_files <- here::here(paste(trait_names, 'sumstats', 'gz', sep='.'))
+
+# determine which traits have not been munged
+gwas_to_munge <- which(!file.exists(sumstats_files))
+
+# perform munging 
+if(length(gwas_to_munge) > 0) {
+    munge(gwas_files[gwas_to_munge],
+        trait.names=trait_names[gwas_to_munge],
+        hm3=here::here("reference", "w_hm3.snplist"),
+        info.filter = 0.9, maf.filter = 0.01)
+}
+
+```
