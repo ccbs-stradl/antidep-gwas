@@ -1,0 +1,115 @@
+---
+title: Antidepressant exposure
+---
+
+Prescription of any antidepressant.
+
+```{r lib}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(stringr)
+library(xml2)
+```
+
+## Data
+
+Prescribing data
+
+```{r pis}
+pis <- readRDS(here::here("data/patient/PIS_processed/pis_processed.rds"))
+
+linkage <- read_tsv(here::here("data/patient/smr20/linkage.tsv.gz")) |>
+filter(id != "NULL")
+
+linkage_ids <- unique(c(as.character(pull(pis, id)), as.character(pull(linkage, id))))
+```
+
+Drug names and IDs
+
+```{r amp}
+
+amp2_xml <- read_xml(here::here("data/reference/TRUD/dmd/nhsbsa_dmd_7.2.0_20230717000001/f_amp2_3130723.xml"))
+
+amp_xml <- xml_find_all(amp2_xml, ".//AMP")
+amp_list <- as_list(amp_xml)
+
+amp <- bind_rows(lapply(amp_list, unlist))
+
+vpids_names <- amp |>
+distinct(VPID, NM) |>
+mutate(drug=str_to_upper(sapply(str_split(NM, pattern=" "), first))) |>
+group_by(drug) |>
+slice_head(n=1) |>
+ungroup() |>
+select(-NM)
+
+```
+
+BNF/ATC code reference
+
+```{r bnf_atc}
+bnf_xml <- read_xml(here::here("data/reference/TRUD/dmdbonus/nhsbsa_dmdbonus_7.1.0_20230710000001/week282023-r2_3-BNF/f_bnf1_0060723.xml"))
+
+bnf_list <- as_list(xml_find_first(dmd, "VMPS"))
+
+bnf_atc <- bind_rows(lapply(bnf_list, unlist)) |>
+filter(!is.na(ATC), ATC != "n/a", !is.na(BNF)) 
+
+bnf_atc_code <- bnf_atc |>
+mutate(bnf_code = str_sub(BNF, 0, 7),
+      atc_code = str_sub(ATC, 0, 5)) |>
+distinct(VPID, bnf_code, atc_code)
+```
+
+[ATC N06A](https://www.whocc.no/atc_ddd_index/?code=N06A)
+
+```{r n06a}
+
+n06a <-
+bnf_atc |>
+filter(str_detect(atc_code, "^N06A")) |>
+inner_join(vpids_names, by="VPID", multiple = "all")
+
+```
+
+## Antidepressants
+
+```{r ad_pis}
+antidepressants_pis <- pis |>
+filter(str_detect(bnf, "^04030")) |>
+distinct(id, approved, bnf) |>
+mutate(drug=sapply(str_split(approved, pattern=" "), first))
+```
+
+Match with ATC codes, fill non-matching by hand
+```{r atc}
+antidepressants_atc <-
+antidepressants_pis |>
+left_join(n06a, by="drug") |>
+mutate(atc_code = case_when(drug == "REBOXETINE" ~ "N06AX",
+                            drug == "VORTIOXETINE" ~ "N06AX",
+							TRUE ~ atc_code)) |>
+filter(!is.na(atc_code)) |>
+distinct(id, atc_code) |> 
+arrange(atc_code) |>
+mutate(value = 1) |>
+pivot_wider(names_from = "atc_code", values_from = "value", values_fill = 0) |>
+mutate(id = as.character(id))
+
+```
+
+Phenotypes
+```{r pheno}
+ad_exposure <- 
+tibble(id = linkage_ids) |>
+left_join(antidepressants_atc, by = "id") |>
+mutate(across(starts_with("N06A"), ~ coalesce(.x, 0))) |>
+mutate(N06A = if_any(starts_with("N06A"), ~ .x == 1)) |>
+mutate(N06A = as.numeric(N06A)) |>
+select(IID=id, N06AA, N06AB, N06A)
+
+
+dir.create(here::here("derived/ad-exposure"))
+write_tsv(ad_exposure, here::here("derived/ad-exposure/ad_exposure_N06A.tsv"))
+```
