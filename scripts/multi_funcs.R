@@ -2,7 +2,7 @@
 
 # Plot ancestry PCs: eg. plot_ancestry_PCs("antidep-2501-mrmega-N06A.log")
 plot_ancestry_PCs <- function(log_file_name){
-  mrmega_log <- read_lines(here::here("meta","antidep-2501", log_file_name))
+  mrmega_log <- read_lines(here::here("results", "meta","antidep-2501", log_file_name))
   
   pcs_start_idx <- which(mrmega_log == "Principal components:") + 1
   pcs_end_idx <- which(mrmega_log == "Analysis finished.") - 1
@@ -20,7 +20,7 @@ plot_ancestry_PCs <- function(log_file_name){
 
 # Get sumstats. eg. get_sumstats("antidep-2501-mrmega-N06A.gz")
 get_sumstats <- function(gz_file_name){
-  mrmega <- read_tsv(here::here("meta", "antidep-2501", gz_file_name))
+  mrmega <- read_tsv(here::here("results", "meta", "antidep-2501", gz_file_name))
   return(mrmega)
 }
 
@@ -46,7 +46,7 @@ plot_manhat <- function(mrmega_assoc){
 
 # Get clumps. eg. get_clumps("antidep-2501-mrmega-N06A.clumps")
 get_clumps <- function(clump_file_name, mrmega){
-  clumps <- read_tsv(here::here("meta", "antidep-2501", clump_file_name))
+  clumps <- read_tsv(here::here("results", "meta", "antidep-2501", clump_file_name), col_types = cols(CHR = col_character()))
   
   names(clumps)[names(clumps) == "P-value_association"] <- "P"
   
