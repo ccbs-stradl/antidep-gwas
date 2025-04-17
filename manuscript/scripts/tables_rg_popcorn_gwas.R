@@ -6,8 +6,8 @@ library(readr)
 library(stringr)
 
 
-# ldsc log directory
-log_dir = here::here("results/models/popcorn")
+# popcorn log directory
+log_dir = here::here("results/models/popcorn/gwas")
 
 # metaset to analyse
 metaset <- read_csv(here::here("metasets/antidep-2501.csv"))

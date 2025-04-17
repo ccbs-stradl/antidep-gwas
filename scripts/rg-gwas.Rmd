@@ -11,7 +11,7 @@ library(corrplot)
 library(stringr)
 ```
 
-Read in LDSC (within-ancestry) and Popcorn (cross ancestry) genetic correlation estimates.
+Read in LDSC (within-ancestry) and Popcorn (cross ancestry) genetic correlation estimates. Retain only estimates where $se <= 1/1.96 = 0.51$ (i.e., if $r_g = 1$ it could be distinguished from zero).
 
 ```{r tables}
 ldsc <- read_csv(here::here("manuscript/tables/rg_ldsc_gwas.csv"))
@@ -21,7 +21,8 @@ rgs <-
 bind_rows(
     ldsc,
     rename(popcorns, rg = pgi, se = SE, z = Z, p = `P (Z)`)
-)
+) |>
+filter(se <= 1/qnorm(0.975))
 ```
 
 Set up dataset names for correlation matrix
@@ -72,79 +73,32 @@ corrplot(rg_matrix, is.corr = FALSE)
 corrplot(rg_matrix_squish)
 ```
 
-Text to paste in manuscript results section
-```{r text}
-# Get all ancestry names
-ancestries <- unique(str_split(colnames(rg_matrix_squish), "-", simplify = TRUE)[,3])
-drug_classes <- unique(str_split(colnames(rg_matrix_squish), "-", simplify = TRUE)[,2])
+Text to paste in manuscript results section for min/max observed correlations.
+```{r text, results='asis'}
+# get unique rgs
+rgs_distinct <- rgs |>
+  filter(p1_cohort <= p2_cohort, p1_pheno <= p2_pheno, p1_cluster <= p2_cluster) |>
+  mutate(rg = signif(rg, digits = 3))
 
-# ------------------------
-# helper functions
-# Subset table by ancestry
-subset_by_ancestry <- function(df, anc) {
-  ancestry <- sub(".*-", "", colnames(df))
-  df[ancestry == anc, ancestry == anc]
+# within ancestry, cross cohort
+rg_w_anc_x_cohort <- rgs_distinct |>
+  filter(p1_cluster == p2_cluster, p1_cohort != p2_cohort)
+# cross ancestry, within cohort
+rg_x_anc_w_cohort <- rgs_distinct |>
+  filter(p1_cluster != p2_cluster, p1_cohort == p2_cohort)
+# cross ancestry, cross cohort
+rg_x_anc_x_cohort <- rgs_distinct |>
+  filter(p1_cluster != p2_cluster, p1_cohort != p2_cohort)
+
+correlation_text <- function(correlations, intro_text) {
+  cmin <- correlations |>
+    filter(rg == min(rg))
+  cmax <- correlations |>
+    filter(rg == max(rg))
+
+  str_glue("{intro_text} r_g ranged from {cmin$rg} between {cmin$p1_pheno} in {cmin$p1_cohort} {cmin$p1_cluster} and {cmin$p2_pheno} in {cmin$p2_cohort} {cmin$p2_cluster} to {cmax$rg} between {cmax$p1_pheno} in {cmax$p1_cohort} {cmax$p1_cluster} and {cmax$p2_pheno} in {cmax$p2_cohort} {cmax$p2_cluster}.")
 }
 
-# subset table by drug class
-subset_by_drug <- function(df, drug) {
-  drug_class <- str_split_fixed(colnames(df), "-", 3)[, 2]
-  df[drug_class == drug, drug_class == drug]
-}
-
-# ------------------------
-# Range of correlations:
-# within an ancestry (across multiple cohorts) and within a drug class
-lapply(1:length(ancestries), function(i){
-  sapply(1:length(drug_classes), function(j){
-  subset_rg <- subset_by_ancestry(as.data.frame(rg_matrix_squish), ancestries[i]) %>%
-    subset_by_drug(., drug_classes[j]) 
-  
-  # extract min and max and print statement with col names for min and max
-  subset_rg_long <- as.data.frame(as.table(as.matrix(subset_rg)))
-  
-  # Remove correlation with self
-  subset_rg_long <- subset_rg_long %>% filter(Var1 != Var2)
-  
-  # Find min and max
-  min_row <- subset_rg_long %>% filter(Freq == min(Freq, na.rm = TRUE)) %>% slice(1)
-  max_row <- subset_rg_long %>% filter(Freq == max(Freq, na.rm = TRUE)) %>% slice(1)
-  
-  # Print results
-  paste0("Min correlation: ", min_row$Freq, " between ", min_row$Var1, " and ", min_row$Var2, 
-        ". Max correlation: ", max_row$Freq, " between ", max_row$Var1, " and ", max_row$Var2)
-  })
-})
-
-# ------------------------
-pairwise_results <- lapply(1:length(drug_classes), function(j){
-  subset_rg <- as.data.frame(rg_matrix_squish) %>%
-    subset_by_drug(., drug_classes[j]) 
-  
-  subset_rg_long <- as.data.frame(as.table(as.matrix(subset_rg))) %>%
-    filter(Var1 != Var2)
-
-  # Extract ancestries from Var1 and Var2
-  subset_rg_long <- subset_rg_long %>%
-    mutate(
-      anc1 = str_split_fixed(as.character(Var1), "-", 3)[,3],
-      anc2 = str_split_fixed(as.character(Var2), "-", 3)[,3]
-    ) %>%
-    # Keep only pairs with different ancestries
-    filter(anc1 != anc2)
-
-  # Find min and max correlations between ancestries
-  min_row <- subset_rg_long %>% filter(Freq == min(Freq, na.rm = TRUE))
-  max_row <- subset_rg_long %>% filter(Freq == max(Freq, na.rm = TRUE))
-
-  # Add drug class label for clarity
-  min_row$drug_class <- drug_classes[j]
-  max_row$drug_class <- drug_classes[j]
-
-  rbind(min_row, max_row) %>%
-    arrange(anc1, anc2)
-})
-
-pairwise_results
+cat(correlation_text(rg_w_anc_x_cohort, "Within clusters and across cohorts,"), " ", correlation_text(rg_x_anc_x_cohort, "Across clusters and cohorts,"))
 ```
 
