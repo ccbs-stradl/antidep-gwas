@@ -1,0 +1,65 @@
+---
+title: ATC codes for antidepressant exposure
+---
+
+Get drug names for [ATC N06A](https://www.whocc.no/atc_ddd_index/?code=N06A).
+
+```{r lib}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(stringr)
+library(xml2)
+```
+
+Drug names and IDs
+
+```{r amp}
+
+amp2_xml <- read_xml(here::here("data/reference/TRUD/dmd/nhsbsa_dmd_7.2.0_20230717000001/f_amp2_3130723.xml"))
+
+amp_xml <- xml_find_all(amp2_xml, ".//AMP")
+amp_list <- as_list(amp_xml)
+
+amp <- bind_rows(lapply(amp_list, unlist))
+
+vpids_names <- amp |>
+distinct(VPID, NM) |>
+mutate(drug=str_to_upper(sapply(str_split(NM, pattern=" "), first))) |>
+group_by(drug) |>
+slice_head(n=1) |>
+ungroup() |>
+select(-NM)
+
+```
+
+BNF/ATC code reference
+
+```{r bnf_atc}
+bnf_xml <- read_xml(here::here("data/reference/TRUD/dmdbonus/nhsbsa_dmdbonus_7.1.0_20230710000001/week282023-r2_3-BNF/f_bnf1_0060723.xml"))
+
+bnf_list <- as_list(xml_find_first(bnf_xml, "VMPS"))
+
+bnf_atc <- bind_rows(lapply(bnf_list, unlist)) |>
+filter(!is.na(ATC), ATC != "n/a", !is.na(BNF)) 
+
+bnf_atc_code <- bnf_atc |>
+mutate(BNF_section = str_sub(BNF, 0, 4),
+       BNF_para = str_sub(BNF, 0, 7),
+       ATC_pharm = str_sub(ATC, 0, 4),
+       ATC_chem = str_sub(ATC, 0, 5)) |>
+distinct(VPID, BNF, BNF_para, BNF_section, ATC, ATC_pharm, ATC_chem)
+```
+
+[ATC N06A](https://www.whocc.no/atc_ddd_index/?code=N06A)
+
+```{r n06a}
+
+n06a <-
+bnf_atc_code |>
+filter(str_detect(ATC_pharm, "^N06A")) |>
+inner_join(vpids_names, by="VPID", multiple = "all") |>
+distinct(drug, ATC, ATC_pharm, ATC_chem) |>
+arrange(ATC, drug)
+
+```
