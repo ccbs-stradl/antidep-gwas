@@ -12,7 +12,9 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```{r counter}
 library(dplyr)
 library(readr)
+library(readxl)
 library(tidyr)
+library(stringr)
 library(knitr)
 
 n <- 0
@@ -49,4 +51,16 @@ bind_rows(summary_table_fixed, summary_table_mrmega) |>
 ```{r sample_size_table}
 kable(sample_size_table,
       format.args = list(big.mark = ","))
+```
+
+```{r drug_targets}
+# top drug target associations.
+drug_target_table_n <- n <- n + 1
+drug_targets_class <- read_excel(here::here("manuscript/tables/antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllp.drugclass_with4.selp.xls"))
+drug_targets_all <- read_excel(here::here("manuscript/tables/antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllpEUR.pathway.output_drugsAllp.xls"))
+```
+
+<!-- **Table `r drug_target_table_n`:** Drug target enrichment. -->
+
+```{r drug_targets_table}
 ```
