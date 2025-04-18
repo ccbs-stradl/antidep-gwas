@@ -81,3 +81,19 @@ Therapeutic Chemical classification subgroup. AUC = Area Under the Curve. Q = Si
 ```{r drug_targets_table}
 drug_targets
 ```
+
+```{r gwas_summary}
+# summary of comparisons with MDD GWAS
+gwas_summary_table_n <- n <- n + 1
+gwas_summary <- read_csv(here::here("manuscript/tables/antidep_gwas_mdd_gwas_summary_table.csv")) |>
+  rename("N06A (MR-MEGA)" = `cross-ancestry_N06A`,
+          "N06A (EUR)" = EUR_N06A,
+          "N06AA (EUR)" = EUR_N06AA,
+          "N06AB (EUR)" = EUR_N06AB)
+names(gwas_summary)[1] <- ""
+```
+
+**Table `r gwas_summary_table_n`:** Comparison of results to major depression GWAS.
+```{r gwas_summary_table}
+gwas_summary
+```

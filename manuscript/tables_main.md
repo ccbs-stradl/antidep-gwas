@@ -36,3 +36,10 @@ Significance corrected for multiple testing (Benjamini & Hochberg).
 | J01MA | Fluoroquinolones         |  20 | 0.7802542 | 0.0336333 |
 | N05   | Psycholeptics            | 171 | 0.5866233 | 0.0350475 |
 | S01A  | Antiinfectives           |  61 | 0.6332489 | 0.0350475 |
+
+**Table 3:** Comparison of results to major depression GWAS.
+
+|  | N06A (MR-MEGA) | N06A (EUR) | N06AA (EUR) | N06AB (EUR) |
+|:-----------|:--------------|:-----------------|:-----------|:-----------------|
+| positional_mapping | NA | 25/255 (9.8%) p-value=2.58e-15 | 0/9 (0%) p-value=1 | 4/14 (28.57%) p-value=2.32e-05 |
+| fine_mapping | 1/2 (50%) p-value=0.0249 | NA | NA | NA |
