@@ -29,17 +29,25 @@ serotonin reuptake inhibitors).
 Chemical classification subgroup. AUC = Area Under the Curve. Q =
 Significance corrected for multiple testing (Benjamini & Hochberg).
 
-| ATC   | Name                     |   N |       AUC |   Q value |
-|:------|:-------------------------|----:|----------:|----------:|
-| N05A  | Antipsychotics           |  66 | 0.6456991 | 0.0096398 |
-| J01M  | Quinolone Antibacterials |  28 | 0.7640544 | 0.0096398 |
-| J01MA | Fluoroquinolones         |  20 | 0.7802542 | 0.0336333 |
-| N05   | Psycholeptics            | 171 | 0.5866233 | 0.0350475 |
-| S01A  | Antiinfectives           |  61 | 0.6332489 | 0.0350475 |
+<div class="kable-table">
+
+| ATC   | Name                     |   N | round(AUC, 3) | Q value |
+|:------|:-------------------------|----:|--------------:|--------:|
+| N05A  | Antipsychotics           |  66 |         0.646 |   0.010 |
+| J01M  | Quinolone Antibacterials |  28 |         0.764 |   0.010 |
+| J01MA | Fluoroquinolones         |  20 |         0.780 |   0.034 |
+| N05   | Psycholeptics            | 171 |         0.587 |   0.035 |
+| S01A  | Antiinfectives           |  61 |         0.633 |   0.035 |
+
+</div>
 
 **Table 3:** Comparison of results to major depression GWAS.
 
+<div class="kable-table">
+
 |  | N06A (MR-MEGA) | N06A (EUR) | N06AA (EUR) | N06AB (EUR) |
-|:-----------|:--------------|:-----------------|:-----------|:-----------------|
-| positional_mapping | NA | 25/255 (9.8%) p-value=2.58e-15 | 0/9 (0%) p-value=1 | 4/14 (28.57%) p-value=2.32e-05 |
-| fine_mapping | 1/2 (50%) p-value=0.0249 | NA | NA | NA |
+|:---|:---|:---|:---|:---|
+| positional_mapping | — | 25/255 (9.8%) p-value=2.58e-15 | 0/9 (0%) p-value=1 | 4/14 (28.57%) p-value=2.32e-05 |
+| fine_mapping | 1/2 (50%) p-value=0.0249 | — | — | — |
+
+</div>
