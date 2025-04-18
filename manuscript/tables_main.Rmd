@@ -38,12 +38,12 @@ bind_rows(summary_table_fixed, summary_table_mrmega) |>
   summarize(N = sum(N, na.rm = TRUE)) |>
   pivot_wider(names_from = status, values_from = N) |>
   transmute(ATC, Cluster=if_else(method == "mrmega", true = "MR-MEGA", false = Cluster),
-            Cases = cases, Controls = controls, `Neff/2` = round(neff, 2)) |>
+            Cases = cases, Controls = controls, `Neff/2` = round(neff/2, 2)) |>
   ungroup() |>
   select(-method)
 ```
 
-**Table `r sample_size_table_n`:** Sample sizes for meta-analyses
+**Table `r sample_size_table_n`:** Sample sizes for GWAS meta-analyses. Fixed-effects analyses are listed separately for each population cluster (AFR, AMR, EAS, EUR, MID, and SAS) and totals are given for the multi-ancestry analysis (MR-MEGA). Neff/2 = half effective sample size.
 
 ```{r sample_size_table}
 sample_size_table
