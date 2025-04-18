@@ -69,9 +69,15 @@ kable(sample_size_table,
 drug_target_table_n <- n <- n + 1
 drug_targets_class <- read_excel(here::here("manuscript/tables/antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllp.drugclass_with4.selp.xls"))
 drug_targets_all <- read_excel(here::here("manuscript/tables/antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllpEUR.pathway.output_drugsAllp.xls"))
+
+drug_targets <- drug_targets_class |>
+  filter(q_valueBH <= 0.05) |>
+  transmute(ATC = CODE, Name = str_to_title(NAME), N, AUC, `Q value` = q_valueBH)
 ```
 
-<!-- **Table `r drug_target_table_n`:** Drug target enrichment. -->
+**Table `r drug_target_table_n`:** Drug target enrichment. ATC = Anatomical
+Therapeutic Chemical classification subgroup. AUC = Area Under the Curve. Q = Significance corrected for multiple testing (Benjamini & Hochberg).
 
 ```{r drug_targets_table}
+drug_targets
 ```

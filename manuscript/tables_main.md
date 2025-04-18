@@ -25,4 +25,14 @@ serotonin reuptake inhibitors).
 | N06AA | MR-MEGA |        10 |  59,080 |  384,869 | 100,205.27 |
 | N06AB | MR-MEGA |        11 |  80,934 |  363,887 | 130,706.98 |
 
-<!-- **Table 2:** Drug target enrichment. -->
+**Table 2:** Drug target enrichment. ATC = Anatomical Therapeutic
+Chemical classification subgroup. AUC = Area Under the Curve. Q =
+Significance corrected for multiple testing (Benjamini & Hochberg).
+
+| ATC   | Name                     |   N |       AUC |   Q value |
+|:------|:-------------------------|----:|----------:|----------:|
+| N05A  | Antipsychotics           |  66 | 0.6456991 | 0.0096398 |
+| J01M  | Quinolone Antibacterials |  28 | 0.7640544 | 0.0096398 |
+| J01MA | Fluoroquinolones         |  20 | 0.7802542 | 0.0336333 |
+| N05   | Psycholeptics            | 171 | 0.5866233 | 0.0350475 |
+| S01A  | Antiinfectives           |  61 | 0.6332489 | 0.0350475 |
