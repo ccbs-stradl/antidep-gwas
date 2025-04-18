@@ -18,21 +18,29 @@ n <- 0
 ```
 
 ```{r sample_size}
+# summary sample size counts for fixed and mr-mega analyis
+# break down by cluster for fixed, just show totals for MR-MEGA
 sample_size_table_n <- n <- n + 1
-summary_table_fixed <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_fixed.csv"))
-summary_table_mrmega <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_mrmega.csv"))
+summary_table_fixed <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_fixed.csv")) |>
+  mutate(method = "fixed")
+summary_table_mrmega <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_mrmega.csv")) |>
+  mutate(method = "mrmega") |>
+  select(-cluster)
 
 sample_size_table <-
-summary_table_fixed |>
-  pivot_longer(cols = !meta_analysis,
+bind_rows(summary_table_fixed, summary_table_mrmega) |>
+  pivot_longer(cols = !any_of(c("meta_analysis", "method")),
                names_to = c("cohort", "status"),
                names_sep = "_",
                values_to = "N") |>
   separate(meta_analysis, into = c("meta", "version", "method", "ATC", "Cluster")) |>
-  group_by(ATC, Cluster, status) |>
+  group_by(method, ATC, Cluster, status) |>
   summarize(N = sum(N, na.rm = TRUE)) |>
   pivot_wider(names_from = status, values_from = N) |>
-  transmute(ATC, Cluster, Cases = cases, Controls = controls, `Neff/2` = round(neff, 2))
+  transmute(ATC, Cluster=if_else(method == "mrmega", true = "MR-MEGA", false = Cluster),
+            Cases = cases, Controls = controls, `Neff/2` = round(neff, 2)) |>
+  ungroup() |>
+  select(-method)
 ```
 
 **Table `r sample_size_table_n`:** Sample sizes for meta-analyses
