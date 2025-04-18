@@ -23,25 +23,32 @@ n <- 0
 ```{r sample_size}
 # summary sample size counts for fixed and mr-mega analyis
 # break down by cluster for fixed, just show totals for MR-MEGA
+# count number of cohorts and sample sizes for case, control, and neff
 sample_size_table_n <- n <- n + 1
 summary_table_fixed <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_fixed.csv")) |>
-  mutate(method = "fixed")
+  mutate(method = "fixed") |>
+  separate(meta_analysis,
+           into = c("meta", "version", "method", "ATC", "cluster"))
+
 summary_table_mrmega <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_mrmega.csv")) |>
   mutate(method = "mrmega") |>
-  select(-cluster)
+  separate(meta_analysis, into = c("meta", "version", "method", "ATC"))
 
 sample_size_table <-
 bind_rows(summary_table_fixed, summary_table_mrmega) |>
-  pivot_longer(cols = !any_of(c("meta_analysis", "method")),
+  pivot_longer(cols = matches("(cases|controls|neff)"),
                names_to = c("cohort", "status"),
                names_sep = "_",
                values_to = "N") |>
-  separate(meta_analysis, into = c("meta", "version", "method", "ATC", "Cluster")) |>
-  group_by(method, ATC, Cluster, status) |>
-  summarize(N = sum(N, na.rm = TRUE)) |>
+  filter(!is.na(N)) |>
   pivot_wider(names_from = status, values_from = N) |>
-  transmute(ATC, Cluster=if_else(method == "mrmega", true = "MR-MEGA", false = Cluster),
-            Cases = cases, Controls = controls, `Neff/2` = round(neff/2, 2)) |>
+  mutate(Cluster=if_else(method == "mrmega",
+                         true = "MR-MEGA",
+                         false = cluster)) |>
+  group_by(method, ATC, Cluster) |>
+  summarize(`N studies` = n(), across(cases:neff, sum)) |>
+  transmute(ATC, Cluster, `N studies`, Cases = cases, Controls = controls,
+            `Neff/2` = round(neff/2, 2)) |>
   ungroup() |>
   select(-method)
 ```
@@ -49,6 +56,7 @@ bind_rows(summary_table_fixed, summary_table_mrmega) |>
 **Table `r sample_size_table_n`:** Sample sizes for GWAS meta-analyses. Fixed-effects analyses are listed separately for each population cluster (AFR, AMR, EAS, EUR, MID, and SAS) and totals are given for the multi-ancestry analysis (MR-MEGA). Neff/2 = half effective sample size. ATC = Anatomical Therapeutic Chemical classification subgroups (N06A: antidepressants; N06AA: non-selective monoamine reuptake inhibitors; N06AB: selective serotonin reuptake inhibitors).
 
 ```{r sample_size_table}
+# print thousands seperator
 kable(sample_size_table,
       format.args = list(big.mark = ","))
 ```
