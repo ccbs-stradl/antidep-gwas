@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(dplyr)
 library(readr)
 library(tidyr)
+library(knitr)
 
 n <- 0
 ```
@@ -43,8 +44,9 @@ bind_rows(summary_table_fixed, summary_table_mrmega) |>
   select(-method)
 ```
 
-**Table `r sample_size_table_n`:** Sample sizes for GWAS meta-analyses. Fixed-effects analyses are listed separately for each population cluster (AFR, AMR, EAS, EUR, MID, and SAS) and totals are given for the multi-ancestry analysis (MR-MEGA). Neff/2 = half effective sample size.
+**Table `r sample_size_table_n`:** Sample sizes for GWAS meta-analyses. Fixed-effects analyses are listed separately for each population cluster (AFR, AMR, EAS, EUR, MID, and SAS) and totals are given for the multi-ancestry analysis (MR-MEGA). Neff/2 = half effective sample size. ATC = Anatomical Therapeutic Chemical classification subgroups (N06A: antidepressants; N06AA: non-selective monoamine reuptake inhibitors; N06AB: selective serotonin reuptake inhibitors).
 
 ```{r sample_size_table}
-sample_size_table
+kable(sample_size_table,
+      format.args = list(big.mark = ","))
 ```
