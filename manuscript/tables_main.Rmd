@@ -2,7 +2,10 @@
 title: Tables for main manuscript
 output:
     word_document:
-        df_print: kable
+      df_print: kable
+    md_document:
+      variant: markdown_github
+      df_print: kable
 ---
 
 ```{r, setup, include=FALSE}
