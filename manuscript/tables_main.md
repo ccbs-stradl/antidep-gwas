@@ -31,13 +31,13 @@ Significance corrected for multiple testing (Benjamini & Hochberg).
 
 <div class="kable-table">
 
-| ATC   | Name                     |   N | round(AUC, 3) | Q value |
-|:------|:-------------------------|----:|--------------:|--------:|
-| N05A  | Antipsychotics           |  66 |         0.646 |   0.010 |
-| J01M  | Quinolone Antibacterials |  28 |         0.764 |   0.010 |
-| J01MA | Fluoroquinolones         |  20 |         0.780 |   0.034 |
-| N05   | Psycholeptics            | 171 |         0.587 |   0.035 |
-| S01A  | Antiinfectives           |  61 |         0.633 |   0.035 |
+| ATC   | Name                     |   N |   AUC | Q value |
+|:------|:-------------------------|----:|------:|--------:|
+| N05A  | Antipsychotics           |  66 | 0.646 |   0.010 |
+| J01M  | Quinolone Antibacterials |  28 | 0.764 |   0.010 |
+| J01MA | Fluoroquinolones         |  20 | 0.780 |   0.034 |
+| N05   | Psycholeptics            | 171 | 0.587 |   0.035 |
+| S01A  | Antiinfectives           |  61 | 0.633 |   0.035 |
 
 </div>
 

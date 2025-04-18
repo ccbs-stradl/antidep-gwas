@@ -74,7 +74,7 @@ drug_targets_all <- read_excel(here::here("manuscript/tables/antidep-2501-fixed-
 
 drug_targets <- drug_targets_class |>
   filter(q_valueBH <= 0.05) |>
-  transmute(ATC = CODE, Name = str_to_title(NAME), N, round(AUC, 3), `Q value` = round(q_valueBH, 3))
+  transmute(ATC = CODE, Name = str_to_title(NAME), N, AUC = round(AUC, 3), `Q value` = round(q_valueBH, 3))
 ```
 
 **Table `r drug_target_table_idx`:** Drug target enrichment. ATC = Anatomical
