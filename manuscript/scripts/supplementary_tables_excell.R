@@ -55,7 +55,9 @@ read_file <- function(path, file){
 # function takes:
 # a vector of strings for the full path of csv/tsv files
 list_tables <- function(full_path_vector){
-  lapply(full_path_vector, read_file)
+  list_tables <- lapply(full_path_vector, read_file)
+  names(list_tables) <- basename(full_path_vector)
+  return(list_tables)
 }
 
 main <- function(){
@@ -67,6 +69,7 @@ main <- function(){
                  "susiex_significant")
   
   # Read these tables and store as a list of data frames
+  # the names of this list are the file names
   results_list <- list_tables(c(clumps, finemapping))
 
   return(results_list)
