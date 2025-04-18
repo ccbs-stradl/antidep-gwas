@@ -20,6 +20,7 @@ library(openxlsx)
 library(dplyr)
 library(tidyr)
 library(stringr)
+library(tools)
 
 # Load in functions
 source(here("manuscript/scripts/supplementary_tables_excell_functions.R"))
@@ -54,13 +55,68 @@ read_file <- function(path, file){
 # these tables can then be inserted into the excell sheets
 # function takes:
 # a vector of strings for the full path of csv/tsv files
-list_tables <- function(full_path_vector){
-  list_tables <- lapply(full_path_vector, read_file)
-  names(list_tables) <- basename(full_path_vector)
-  return(list_tables)
+tables_list <- function(full_path_vector){
+  tables_list <- lapply(full_path_vector, read_file)
+  # get basename without file extension
+  sheet_name <- file_path_sans_ext(basename(full_path_vector))
+  # sheet name is max 31 characters, if any are above this then truncate them
+  if(any(nchar(sheet_name) > 31)){
+    sheet_name <- str_trunc(sheet_name, 31)
+  }
+  # rename items in list by this name, which will later be the sheet name
+  names(tables_list) <- sheet_name
+  return(tables_list)
 }
 
-main <- function(){
+# function that creates README for first sheet in excell spreadsheet
+add_readme <- function(tables_list, wb, sup_table_num){
+  # Create a readme sheet
+  addWorksheet(wb, sheetName = "README")
+  
+  # Write the readme text
+  writeData(wb, sheet = "README", "Table Legend Placeholder")
+  
+  # Make first col width wider
+  setColWidths(wb, sheet = "README", cols = 1, widths = 30)
+  
+  # Make first row width longer
+  setRowHeights(wb, sheet = "README", rows = 1, heights = 127)
+  
+  # Add text wrapping style to the first cell
+  wrap_style <- createStyle(wrapText = TRUE)
+  addStyle(wb, sheet = "README", style = wrap_style, rows = 1, cols = 1)
+  
+  # List the Supplementary Table Names:
+  supplementary_tables <- paste("Supplementary Table ", sup_table_num, LETTERS[1:length(tables_list)])
+  
+  writeData(wb, sheet = "README", supplementary_tables, startRow = 2, startCol = 1)
+  
+  # List the names of the tables_list next to the table number
+  writeData(wb, sheet = "README", names(tables_list), startRow = 2, startCol = 2)
+  
+}
+
+# function that creates an excell spreadshseet 
+# it inserts a readme in the first sheet
+# and inserts tables in list of tables for all subsequent sheets
+# Create an excell spreadsheet with a new sheet for each file
+make_excell <- function(tables_list, file_name, sup_table_num){
+  wb <- createWorkbook()
+  
+  # Add a readme for the first sheet
+  add_readme(tables_list, wb, sup_table_num)
+  
+  # Add each table to a new sheet
+  for (i in seq_along(tables_list)) {
+    addWorksheet(wb, sheetName = names(tables_list)[i])
+    writeData(wb, sheet = names(tables_list)[i], tables_list[[i]], startRow = 1, colNames = TRUE)
+  }
+  
+  saveWorkbook(wb, file_name, overwrite = TRUE)
+}
+
+
+create_meta_finemapping <- function(excell_file_name, sup_table_num){
 
   # Read in full paths for where clumps and fine mapping results are stored
   clumps <- get_file_names("results/meta/antidep-2501",
@@ -70,10 +126,17 @@ main <- function(){
   
   # Read these tables and store as a list of data frames
   # the names of this list are the file names
-  results_list <- list_tables(c(clumps, finemapping))
+  results_list <- tables_list(c(clumps, finemapping))
 
-  return(results_list)
+  # Make excell spreadsheet
+  make_excell(results_list, excell_file_name, sup_table_num)
   
 }
+
+main <- function(){
+  create_meta_finemapping(here::here("manuscript/tables/Supplementary_Table_X_clumps_finemap.xlsx"),
+                          "XX") # supplementary table number placeholder
+}
+
 
 main()
