@@ -40,6 +40,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
 
 ### Loci
 
+Collate all clump files together and mark which meta-analysis they are from.
 ```{r loci}
 clumps_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.clumps\\.tsv"), full.names = TRUE)
 clump_prefixes <- str_remove(basename(clumps_paths), ".clumps.tsv")
@@ -48,7 +49,43 @@ names(clumps_paths) <- str_remove(clump_prefixes, str_c(metaset, "-fixed-"))
 clumps <- lapply(clumps_paths, read_table, col_types = cols(REF = col_character(), ALT = col_character()))
 
 clumps_table <- bind_rows(clumps, .id = "dataset")
-write_csv(clumps_table, here::here("manuscript", "tables", str_c("clumps_fixed_", metaset, ".clumps.csv")))
+```
+
+Write out clump file and column descriptions.
+```{r table}
+table_basename <- str_glue("clumps_fixed_{metaset}.clumps")
+write_csv(clumps_table, here::here("manuscript", "tables", str_glue("{table_basename}.csv")))
+
+colname_descriptions <-
+  c("dataset" = "meta-analysis dataset (phenotype-cluster)",
+    "LOCUS" = "locus number from clumping analysis",
+    "CHROM" = "chromosome",
+    "POS" = "base position in hg38",
+    "ID" = "variant identifier",
+    "REF" = "reference allele",
+    "ALT" = "alternate allele",
+    "studies" = "number of studies",
+    "BETA" = "beta estimate",
+    "SE" = "standard error of beta estimate",
+    "CHISQ" = "chi-squared statistic",
+    "P" = "p-value",
+    "Q" = "Q statistic",
+    "QP" = "Q p-value",
+    "INFO" = "imputation accuracy",
+    "AFCAS" = "allele frequency in cases",
+    "AFCON" = "allele frequency in controls",
+    "NCAS" = "number of cases",
+    "NCON" = "number of controls",
+    "NEFF" = "effective sample size",
+    "NTOT" = "total sample size",
+    "start" = "start position of the locus",
+    "end" =  "end position of the locus")
+
+colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
+
+# check that all names match
+all(names(clumps_table) == names(colname_descriptions))
+write_tsv(colname_descriptions_table, here::here("manuscript", "tables", str_glue("{table_basename}.cols")))
 ```
 
 ## Manhattan plot
