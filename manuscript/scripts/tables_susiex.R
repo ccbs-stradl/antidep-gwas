@@ -6,6 +6,7 @@ library(dplyr)
 library(tidyr)
 library(purrr)
 library(stringr)
+library(readr)
 
 # ---------------------
 # Read in the results from the susiex analysis
@@ -41,6 +42,55 @@ significant_snps_summary <- results$summary %>%
 
 write.csv(significant_snps_summary, here::here('manuscript/tables/susiex_significant_summary.csv'), row.names = FALSE, quote = FALSE)
 
+# Write out column descriptions
+colname_descriptions <- c(
+  "CHR" = "Chromosome",
+  "BP_START" = "Start position of the finemapping region",
+  "BP_END" = "End position of the finemapping region",
+  "CS_ID" = "Credible Set ID",
+  "CS_LENGTH" = "Size (number of SNPs) of the credible set",
+  "CS_PURITY" = "Purity of the credible set",
+  "MAX_PIP_SNP" = "SNP in the credible set that had the largest posterior inclusion probability (PIP)",
+  "BP" = "The base pair coordinate of the MAX_PIP_SNP in Gr37",
+  setNames(
+    paste0("Reference allele of the MAX_PIP_SNP for ancestry: ", ancestries_susiex_order),
+    paste0("REF_ALLELE_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("Alternate allele of the MAX_PIP_SNP for ancestry: ", ancestries_susiex_order),
+    paste0("ALT_ALLELE_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("Reference allele frequency for ancestry: ", ancestries_susiex_order),
+    paste0("REF_FRQ_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("Marginal per-allele effect size of the MAX_PIP_SNP with respect to the reference allele for ancestry: ", ancestries_susiex_order),
+    paste0("BETA_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("Standard error of the marginal per-allele effect size of the MAX_PIP_SNP for ancestry: ", ancestries_susiex_order),
+    paste0("SE_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("-log10 of the marginal p-value of the MAX_PIP_SNP for ancestry: ", ancestries_susiex_order),
+    paste0("-LOG10P_", ancestries_susiex_order)
+  ),
+  "MAX_PIP" = "Maximum posterior inclusion probability (PIP) in the credible set.",
+  setNames(
+    paste0("Post hoc probability credible set manifest causal in population: ", ancestries_susiex_order),
+    paste0("POST-HOC_PROB_POP_", ancestries_susiex_order)
+  )
+)
+
+
+colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
+
+if(all(colname_descriptions_table$column != colnames(significant_snps_summary))){
+  stop("Column names in manuscript/tables/susiex_significant_summary.csv are not all described in colname_descriptions")
+}
+
+write_tsv(colname_descriptions_table, here::here('manuscript/tables/susiex_significant_summary.cols'))
 
 items_to_keep <- sapply(results$cs, function(results_table){
   sig <- results_table %>%
@@ -61,6 +111,50 @@ significant_snps_cs <- results$cs[items_to_keep] %>%
   separate(`-LOG10P`, into = paste0("-LOG10P_", ancestries_susiex_order), sep = ",")
 
 write.csv(significant_snps_cs, here::here('manuscript/tables/susiex_significant_cs.csv'), row.names = FALSE, quote = FALSE)
+
+# Write out column descriptions
+# clear environment
+rm(colname_descriptions_table)
+rm(colname_descriptions)
+
+colname_descriptions <- c(
+  "CS_ID" = "Credible Set ID",
+  "CHR" = "Chromosome",
+  "BP_START" = "Start position of the finemapping region",
+  "BP_END" = "End position of the finemapping region",
+  setNames(
+    paste0("Reference allele for ancestry: ", ancestries_susiex_order),
+    paste0("REF_ALLELE_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("Alternate allele for ancestry: ", ancestries_susiex_order),
+    paste0("ALT_ALLELE_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("Reference allele frequency for ancestry: ", ancestries_susiex_order),
+    paste0("REF_FRQ_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("Effect size for ancestry: ", ancestries_susiex_order),
+    paste0("BETA_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("Standard error for ancestry: ", ancestries_susiex_order),
+    paste0("SE_", ancestries_susiex_order)
+  ),
+  setNames(
+    paste0("-log10(p-value) for ancestry: ", ancestries_susiex_order),
+    paste0("-LOG10P_", ancestries_susiex_order)
+  )
+)
+
+colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
+
+if(all(colname_descriptions_table$column == colnames(significant_snps_summary))){
+  stop("Column names in manuscript/tables/susiex_significant_cs.csv are not all described in colname_descriptions")
+}
+
+write_tsv(colname_descriptions_table, here::here('manuscript/tables/susiex_significant_cs.cols'))
 
 # ---------------------
 # .snp files
