@@ -89,11 +89,9 @@ add_readme <- function(tables_list, wb, sup_table_num){
   writeData(wb, sheet = "README", "Table Legend Placeholder")
   
   # Make first col width wider
-  setColWidths(wb, sheet = "README", cols = 1, widths = 30)
   setColWidths(wb, sheet = "README", cols = 1, widths = cell_title_width)
   
   # Make first row width longer
-  setRowHeights(wb, sheet = "README", rows = 1, heights = 127)
   setRowHeights(wb, sheet = "README", rows = 1, heights = cell_title_height)
   
   # Add text wrapping style to the first cell (table legend)
