@@ -96,12 +96,16 @@ add_readme <- function(tables_list, wb, sup_table_num){
   setRowHeights(wb, sheet = "README", rows = 1, heights = 127)
   setRowHeights(wb, sheet = "README", rows = 1, heights = cell_title_height)
   
-  # Add text wrapping style to the first cell
+  # Add text wrapping style to the first cell (table legend)
   wrap_style <- createStyle(wrapText = TRUE)
-  addStyle(wb, sheet = "README", style = wrap_style, rows = 1, cols = 1)
+  # use stack = TRUE to ensure multiple styles can be added, else it will overwrite
+  addStyle(wb, sheet = "README", style = wrap_style, rows = 1, cols = 1, stack = TRUE) 
   
   # List the Supplementary Table Names:
   supplementary_tables <- paste("Supplementary Table ", sup_table_num, LETTERS[1:length(tables_list)])
+  # Add bold font style to first cell (table legend)
+  bold_style <- createStyle(textDecoration = "bold")
+  addStyle(wb, sheet = "README", style = bold_style, rows = 1, cols = 1, stack = TRUE)
   
   writeData(wb, sheet = "README", supplementary_tables, startRow = 2, startCol = 1)
   
