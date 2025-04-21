@@ -80,9 +80,11 @@ add_readme <- function(tables_list, wb, sup_table_num){
   
   # Make first col width wider
   setColWidths(wb, sheet = "README", cols = 1, widths = 30)
+  setColWidths(wb, sheet = "README", cols = 1, widths = cell_title_width)
   
   # Make first row width longer
   setRowHeights(wb, sheet = "README", rows = 1, heights = 127)
+  setRowHeights(wb, sheet = "README", rows = 1, heights = cell_title_height)
   
   # Add text wrapping style to the first cell
   wrap_style <- createStyle(wrapText = TRUE)
@@ -144,6 +146,8 @@ main <- function(){
                           table_index,
                           glue("Table S{table_index}. Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS."),
                           glue("Clumping results are divided into"),
+                          cell_title_width = 30,
+                          cell_title_height = 50,
   # Set table index to 2
   table_index <- update_table_index(table_index)
 }
