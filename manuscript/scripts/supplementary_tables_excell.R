@@ -80,13 +80,43 @@ tables_list <- function(full_path_vector){
   return(tables_list)
 }
 
+# function that gets column names from data frames in the sheets and returns
+# a dataframe with two columns:
+# first column are column names in sheets, second column is a description.
+col_name_descriptions <- function(tables_list, colname_descriptions){
+  
+  # Get all unique column names from the list of data frames
+  # Note this assumes the descriptions are the same for duplicate column names
+  # the user needs to check this when they create the descriptions variable
+  col_names <- unique(unlist(lapply(tables_list, colnames)))
+  
+  # Create a data frame with column names and match with descriptions
+  col_name_df <- data.frame(
+    `column name` = col_names,
+    `description` = sapply(col_names, function(name) {
+      if (name %in% names(colname_descriptions)) {
+        colname_descriptions[[name]] # get the description that matches the col name
+      } else {
+        ""
+      }
+    }),
+    stringsAsFactors = FALSE
+  )
+  
+  return(col_name_df)
+}
+  
 # function that creates README for first sheet in excell spreadsheet
-add_readme <- function(tables_list, wb, sup_table_num){
+add_readme <- function(tables_list, wb, table_index, legend_title, legend_text, 
+                       cell_title_width, cell_title_height, colname_descriptions){
   # Create a readme sheet
   addWorksheet(wb, sheetName = "README")
   
-  # Write the readme text
-  writeData(wb, sheet = "README", "Table Legend Placeholder")
+  # Write the table legend title
+  writeData(wb, sheet = "README", as.character(legend_title), startRow = 1, startCol = 1)
+  
+  # Write the table legend text
+  writeData(wb, sheet = "README", as.character(legend_text), startRow = 2, startCol = 1)
   
   # Make first col width wider
   setColWidths(wb, sheet = "README", cols = 1, widths = cell_title_width)
@@ -99,16 +129,26 @@ add_readme <- function(tables_list, wb, sup_table_num){
   # use stack = TRUE to ensure multiple styles can be added, else it will overwrite
   addStyle(wb, sheet = "README", style = wrap_style, rows = 1, cols = 1, stack = TRUE) 
   
-  # List the Supplementary Table Names:
-  supplementary_tables <- paste("Supplementary Table ", sup_table_num, LETTERS[1:length(tables_list)])
   # Add bold font style to first cell (table legend)
   bold_style <- createStyle(textDecoration = "bold")
   addStyle(wb, sheet = "README", style = bold_style, rows = 1, cols = 1, stack = TRUE)
   
-  writeData(wb, sheet = "README", supplementary_tables, startRow = 2, startCol = 1)
+  # Explain what the column names in each of the sheets mean
+  # for column names that are the same across sheets collapse these into one table
+  col_name_descriptions <- col_name_descriptions(tables_list, colname_descriptions)
   
-  # List the names of the tables_list next to the table number
-  writeData(wb, sheet = "README", names(tables_list), startRow = 2, startCol = 2)
+  writeData(wb, sheet = "README", col_name_descriptions, startRow = 3, startCol = 1)
+  
+  # make row with column name and descriptions bold
+  addStyle(wb, sheet = "README", style = bold_style, rows = 3, cols = 1:2, stack = TRUE)
+  
+  # # List the Supplementary Table Names:
+  # supplementary_tables <- paste("Supplementary Table ", table_index, LETTERS[1:length(tables_list)])
+  # 
+  # writeData(wb, sheet = "README", supplementary_tables, startRow = 3, startCol = 1)
+  # 
+  # # List the names of the tables_list next to the table number
+  # writeData(wb, sheet = "README", names(tables_list), startRow = 3, startCol = 2)
   
 }
 
@@ -116,11 +156,13 @@ add_readme <- function(tables_list, wb, sup_table_num){
 # it inserts a readme in the first sheet
 # and inserts tables in list of tables for all subsequent sheets
 # Create an excell spreadsheet with a new sheet for each file
-make_excell <- function(tables_list, file_name, sup_table_num){
+make_excell <- function(tables_list, file_name, table_index, legend_title, legend_text,
+                        cell_title_width, cell_title_height, colname_descriptions){
   wb <- createWorkbook()
   
   # Add a readme for the first sheet
-  add_readme(tables_list, wb, sup_table_num)
+  add_readme(tables_list, wb, table_index, legend_title, legend_text,
+             cell_title_width, cell_title_height, colname_descriptions)
   
   # Add each table to a new sheet
   for (i in seq_along(tables_list)) {
@@ -131,38 +173,53 @@ make_excell <- function(tables_list, file_name, sup_table_num){
   saveWorkbook(wb, file_name, overwrite = TRUE)
 }
 
-
-create_meta_finemapping <- function(excell_file_name, sup_table_num){
+# Create the first supplementary table for the clumps and fine mapping results
+create_meta_finemapping <- function(excell_file_name, table_index, legend_title, legend_text,
+                                    cell_title_width, cell_title_height, colname_descriptions){
 
   # Read in full paths for where clumps and fine mapping results are stored
-  clumps <- get_file_names("results/meta/antidep-2501",
-                 "clumps")
-  finemapping <- get_file_names("manuscript/tables",
-                 "susiex_significant")
+  clumps_path <- "results/meta/antidep-2501"
+  clumps_regex <- "clumps"
+  clumps <- get_file_names(clumps_path,
+                           clumps_regex)
+  if(length(clumps) == 0){
+    stop(paste0("No files found at: ", clumps_path, " with regex: ", clumps_regex))
+  }
+  finemapping_path <- "manuscript/tables"
+  finemapping_regex <- "susiex_significant"
+  finemapping <- get_file_names(finemapping_path,
+                               finemapping_regex)
+  if(length(finemapping) == 0){
+    stop(paste0("No files found at: ", finemapping_path, " with regex: ", finemapping_regex))
+  }
   
   # Read these tables and store as a list of data frames
   # the names of this list are the file names
   results_list <- tables_list(c(clumps, finemapping))
 
   # Make excell spreadsheet
-  make_excell(results_list, excell_file_name, sup_table_num)
+  make_excell(results_list, excell_file_name, table_index, legend_title, legend_text,
+              cell_title_width, cell_title_height, colname_descriptions)
   
 }
 
 main <- function(){
-  create_meta_finemapping(here::here("manuscript/tables/Supplementary_Table_X_clumps_finemap.xlsx"),
-                          "XX") # supplementary table number placeholder
   # Set table_index to 1
   table_index <- update_table_index(0)
+  
+  # Create the first supplementary table for the clumps and fine mapping results
   create_meta_finemapping(here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
                           table_index,
                           glue("Table S{table_index}. Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS."),
                           glue("Clumping results are divided into"),
                           cell_title_width = 30,
                           cell_title_height = 50,
+                          colname_descriptions = meta_finemapping_colname_descriptions)
+  
   # Set table index to 2
   table_index <- update_table_index(table_index)
 }
 
-
+# Run the main function
 main()
+
