@@ -32,6 +32,16 @@ source(here("manuscript/scripts/supplementary_tables_excell_colname_descriptions
 ###############################################
 #### Meta-analysis and fine mapping table #####
 ###############################################
+# Update table index
+update_table_index <- function(table_index){
+  # check table_index is numeric
+  if(!is.numeric(table_index)){
+    stop("table_index must be numeric")
+  }
+  table_index <- table_index + 1
+  return(table_index)
+}
+
 # Create excell table with 
 # readme as the first sheet with table legend
 # clumping tables
