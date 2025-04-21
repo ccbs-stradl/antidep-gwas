@@ -20,9 +20,6 @@ library(tools)
 # Load in functions
 source(here("manuscript/scripts/supplementary_tables_excell_functions.R"))
 
-# Load in descriptions for the column names that will be inserted into the README sheets
-source(here("manuscript/scripts/supplementary_tables_excell_colname_descriptions.R"))
-
 ###############################################
 #### Meta-analysis and fine mapping table #####
 ###############################################
@@ -172,17 +169,25 @@ create_meta_finemapping <- function(excell_file_name, table_index, legend_title,
                                     cell_title_width, cell_title_height, colname_descriptions){
 
   # Read in full paths for where clumps and fine mapping results are stored
-  clumps_path <- "results/meta/antidep-2501"
-  clumps_regex <- "clumps"
-  clumps <- get_file_names(clumps_path,
+  clumps_path <- "manuscript/tables"
+  clumps_regex <- "antidep-2501.clumps"
+  clumps_files <- get_file_names(clumps_path,
                            clumps_regex)
+  # split files into .csv and .cols
+  clumps <- str_subset(clumps_files, ".csv")
+  clumps_cols <- str_subset(clumps_files, ".cols")
+  
   if(length(clumps) == 0){
     stop(paste0("No files found at: ", clumps_path, " with regex: ", clumps_regex))
   }
   finemapping_path <- "manuscript/tables"
   finemapping_regex <- "susiex_significant"
-  finemapping <- get_file_names(finemapping_path,
+  finemapping_files <- get_file_names(finemapping_path,
                                finemapping_regex)
+  # split files into .csv and .cols
+  finemapping <- str_subset(clumps_files, ".csv")
+  finemapping_cols <- str_subset(clumps_files, ".cols")
+  
   if(length(finemapping) == 0){
     stop(paste0("No files found at: ", finemapping_path, " with regex: ", finemapping_regex))
   }
@@ -190,6 +195,10 @@ create_meta_finemapping <- function(excell_file_name, table_index, legend_title,
   # Read these tables and store as a list of data frames
   # the names of this list are the file names
   results_list <- tables_list(c(clumps, finemapping))
+  
+  # Create colname_descriptions from the *_cols variable
+  colname_descriptions <- tables_list(c(clumps_cols, finemapping_cols)) %>%
+                            do.call(rbind, .)
 
   # Make excell spreadsheet
   make_excell(results_list, excell_file_name, table_index, legend_title, legend_text,
@@ -207,8 +216,7 @@ main <- function(){
                           glue("Table S{table_index}. Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS."),
                           glue("Clumping results are divided into"),
                           cell_title_width = 30,
-                          cell_title_height = 50,
-                          colname_descriptions = meta_finemapping_colname_descriptions)
+                          cell_title_height = 50)
   
   # Set table index to 2
   table_index <- update_table_index(table_index)
