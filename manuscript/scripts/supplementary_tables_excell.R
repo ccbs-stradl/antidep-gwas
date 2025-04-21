@@ -7,12 +7,6 @@
 # Full drug targetor
 #
 # --------------------------------------------
-# Create sym links to results
-# meta analysis results:
-system("ln -s /Volumes/GenScotDepression/data/AMBER/antidep-gwas/meta results") 
-# fine mapping results:
-system("ln -s /Volumes/GenScotDepression/data/AMBER/antidep-gwas/meta results") 
-
 # Load libraries
 library(data.table)
 library(glue)
