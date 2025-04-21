@@ -1,0 +1,102 @@
+---
+title: Tables for main manuscript
+output:
+    word_document:
+      df_print: kable
+    md_document:
+      variant: gfm
+      df_print: kable
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+options(knitr.kable.NA = '—')
+```
+
+```{r counter}
+library(dplyr)
+library(readr)
+library(readxl)
+library(tidyr)
+library(stringr)
+library(knitr)
+
+# table index
+table_index <- 0
+```
+
+```{r sample_size}
+# summary sample size counts for fixed and mr-mega analyis
+# break down by cluster for fixed, just show totals for MR-MEGA
+# count number of cohorts and sample sizes for case, control, and neff
+sample_size_table_idx <- table_index <- table_index + 1
+summary_table_fixed <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_fixed.csv")) |>
+  mutate(method = "fixed") |>
+  separate(meta_analysis,
+           into = c("meta", "version", "method", "ATC", "cluster"))
+
+summary_table_mrmega <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_mrmega.csv")) |>
+  mutate(method = "mrmega") |>
+  separate(meta_analysis, into = c("meta", "version", "method", "ATC"))
+
+sample_size_table <-
+bind_rows(summary_table_fixed, summary_table_mrmega) |>
+  pivot_longer(cols = matches("(cases|controls|neff)"),
+               names_to = c("cohort", "status"),
+               names_sep = "_",
+               values_to = "N") |>
+  filter(!is.na(N)) |>
+  pivot_wider(names_from = status, values_from = N) |>
+  mutate(Cluster=if_else(method == "mrmega",
+                         true = "MR-MEGA",
+                         false = cluster)) |>
+  group_by(method, ATC, Cluster) |>
+  summarize(`N studies` = n(), across(cases:neff, sum)) |>
+  transmute(ATC, Cluster, `N studies`, Cases = cases, Controls = controls,
+            `Neff/2` = round(neff/2, 2)) |>
+  ungroup() |>
+  select(-method)
+```
+
+**Table `r sample_size_table_idx`:** Sample sizes for GWAS meta-analyses. Fixed-effects analyses are listed separately for each population cluster (AFR, AMR, EAS, EUR, MID, and SAS) and totals are given for the multi-ancestry analysis (MR-MEGA). Neff/2 = half effective sample size. ATC = Anatomical Therapeutic Chemical classification subgroups (N06A: antidepressants; N06AA: non-selective monoamine reuptake inhibitors; N06AB: selective serotonin reuptake inhibitors).
+
+```{r sample_size_table}
+# print thousands seperator
+kable(sample_size_table,
+      format.args = list(big.mark = ","))
+```
+
+```{r drug_targets}
+# top drug target associations.
+drug_target_table_idx <- table_index <- table_index + 1
+drug_targets_class <- read_excel(here::here("manuscript/tables/antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllp.drugclass_with4.selp.xls"))
+drug_targets_all <- read_excel(here::here("manuscript/tables/antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllpEUR.pathway.output_drugsAllp.xls"))
+
+drug_targets <- drug_targets_class |>
+  filter(q_valueBH <= 0.05) |>
+  transmute(ATC = CODE, Name = str_to_title(NAME), N, AUC = round(AUC, 3), `Q value` = round(q_valueBH, 3))
+```
+
+**Table `r drug_target_table_idx`:** Drug target enrichment. ATC = Anatomical
+Therapeutic Chemical classification subgroup. AUC = Area Under the Curve. Q = Significance corrected for multiple testing (Benjamini & Hochberg).
+
+```{r drug_targets_table}
+drug_targets
+```
+
+```{r gwas_summary}
+# summary of comparisons with MDD GWAS
+gwas_summary_table_idx <- table_index <- table_index + 1
+gwas_summary <- read_csv(here::here("manuscript/tables/antidep_gwas_mdd_gwas_summary_table.csv")) |>
+  rename("N06A (MR-MEGA)" = `cross-ancestry_N06A`,
+          "N06A (EUR)" = EUR_N06A,
+          "N06AA (EUR)" = EUR_N06AA,
+          "N06AB (EUR)" = EUR_N06AB)
+# set name of row names to empty
+names(gwas_summary)[1] <- ""
+```
+
+**Table `r gwas_summary_table_idx`:** Comparison of results to major depression GWAS.
+```{r gwas_summary_table}
+gwas_summary
+```
