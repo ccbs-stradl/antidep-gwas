@@ -25,7 +25,8 @@ library(tools)
 # Load in functions
 source(here("manuscript/scripts/supplementary_tables_excell_functions.R"))
 
-# Set up counter for keeping track of supplementary table number
+# Load in descriptions for the column names that will be inserted into the README sheets
+source(here("manuscript/scripts/supplementary_tables_excell_colname_descriptions.R"))
 
 ###############################################
 #### Meta-analysis and fine mapping table #####
@@ -136,6 +137,11 @@ create_meta_finemapping <- function(excell_file_name, sup_table_num){
 main <- function(){
   create_meta_finemapping(here::here("manuscript/tables/Supplementary_Table_X_clumps_finemap.xlsx"),
                           "XX") # supplementary table number placeholder
+  # Set table_index to 1
+  table_index <- update_table_index(0)
+                          table_index,
+  # Set table index to 2
+  table_index <- update_table_index(table_index)
 }
 
 
