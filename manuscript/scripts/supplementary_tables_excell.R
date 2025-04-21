@@ -15,6 +15,7 @@ system("ln -s /Volumes/GenScotDepression/data/AMBER/antidep-gwas/meta results")
 
 # Load libraries
 library(data.table)
+library(glue)
 library(here)
 library(openxlsx)
 library(dplyr)
@@ -139,7 +140,10 @@ main <- function(){
                           "XX") # supplementary table number placeholder
   # Set table_index to 1
   table_index <- update_table_index(0)
+  create_meta_finemapping(here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
                           table_index,
+                          glue("Table S{table_index}. Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS."),
+                          glue("Clumping results are divided into"),
   # Set table index to 2
   table_index <- update_table_index(table_index)
 }
