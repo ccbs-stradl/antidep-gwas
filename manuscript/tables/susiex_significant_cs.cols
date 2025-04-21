@@ -1,0 +1,23 @@
+column	description
+CS_ID	Credible Set ID
+CHR	Chromosome
+BP_START	Start position of the finemapping region
+BP_END	End position of the finemapping region
+REF_ALLELE_AFR	Reference allele for ancestry: AFR
+REF_ALLELE_SAS	Reference allele for ancestry: SAS
+REF_ALLELE_EUR	Reference allele for ancestry: EUR
+ALT_ALLELE_AFR	Alternate allele for ancestry: AFR
+ALT_ALLELE_SAS	Alternate allele for ancestry: SAS
+ALT_ALLELE_EUR	Alternate allele for ancestry: EUR
+REF_FRQ_AFR	Reference allele frequency for ancestry: AFR
+REF_FRQ_SAS	Reference allele frequency for ancestry: SAS
+REF_FRQ_EUR	Reference allele frequency for ancestry: EUR
+BETA_AFR	Effect size for ancestry: AFR
+BETA_SAS	Effect size for ancestry: SAS
+BETA_EUR	Effect size for ancestry: EUR
+SE_AFR	Standard error for ancestry: AFR
+SE_SAS	Standard error for ancestry: SAS
+SE_EUR	Standard error for ancestry: EUR
+-LOG10P_AFR	-log10(p-value) for ancestry: AFR
+-LOG10P_SAS	-log10(p-value) for ancestry: SAS
+-LOG10P_EUR	-log10(p-value) for ancestry: EUR
