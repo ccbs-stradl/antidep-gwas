@@ -204,7 +204,7 @@ main <- function(){
   
   # Create the first supplementary table for the clumps and fine mapping results
   create_table(paths = c("manuscript/tables", "manuscript/tables"),
-               regex = c("susiex_significant", "clumps_fixed_antidep-2501.clumps"),
+               regex = c("clumps_fixed_antidep-2501.clumps", "susiex_significant"),
                here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
                table_index,
                glue("Table S{table_index}. Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS."),
