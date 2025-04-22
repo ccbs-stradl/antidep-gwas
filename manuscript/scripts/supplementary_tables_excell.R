@@ -187,7 +187,14 @@ add_readme <- function(results, wb, table_index, letter_index, legend_title,
   # Each item in 'results' contains a 'meta' data frame describing column names 
   # (from .cols sidecar files).
   # Extract that meta data and combine them into a single data frame:
-  col_name_descriptions <- do.call(rbind, lapply(results, function(x) x$meta))
+  # add a column for which sheet the column name is from ie. results name
+  col_name_descriptions <- do.call(rbind, lapply(1:length(results), function(i) {
+    results[[i]]$meta %>%
+      mutate(sheet_name = names(results[i])) %>%
+      relocate(sheet_name)
+  }))
+  
+  
   
   writeData(wb, sheet = "README", col_name_descriptions, startRow = 3, startCol = 1)
   
@@ -197,7 +204,7 @@ add_readme <- function(results, wb, table_index, letter_index, legend_title,
 }
 
 ###############################################
-#### Meta-analysis and fine mapping table #####
+#### Create table #############################
 ###############################################
 create_table <- function(paths, regex, 
                         sheet_names,
