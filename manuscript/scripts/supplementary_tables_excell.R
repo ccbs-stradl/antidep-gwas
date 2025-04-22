@@ -86,9 +86,9 @@ read_results <- function(full_path){
 
 # ---------------------------------------------
 # function that creates a list of results tables
-# and names them by the file name
+# and names them by the sheet name
 
-tables_list <- function(full_path_vector){
+tables_list <- function(full_path_vector, sheet_names){
   
   # Check if full_path_vector is a character vector
   if(!is.character(full_path_vector)){
@@ -99,11 +99,8 @@ tables_list <- function(full_path_vector){
   # each item in the list is a list with 1) main results and 2) meta data
   results <- lapply(full_path_vector, read_results)
   
-  # add file name as attribute to each results table
-  # get basename without file extension
-  results_names <- file_path_sans_ext(basename(full_path_vector))
-
-  names(results) <- results_names
+  # rename results with the sheet name (based on the file name
+  names(results) <- sheet_names
 
   return(results)
 }
@@ -113,12 +110,14 @@ tables_list <- function(full_path_vector){
 # it inserts a readme in the first sheet
 # and inserts tables in list of tables for all subsequent sheets
 # Create an excel spreadsheet with a new sheet for each file
-make_excel <- function(results, file_name, table_index, legend_title, legend_text,
+make_excel <- function(results, file_name, table_index, letter_index, legend_title, 
+                       legend_text_prefix, legend_text_sections,
                         cell_title_width, cell_title_height){
   wb <- createWorkbook()
   
   # Add a readme for the first sheet
-  add_readme(results, wb, table_index, legend_title, legend_text,
+  add_readme(results, wb, table_index, letter_index, legend_title, 
+             legend_text_prefix, legend_text_sections,
              cell_title_width, cell_title_height)
   
   # Add each table to a new sheet
@@ -132,16 +131,43 @@ make_excel <- function(results, file_name, table_index, legend_title, legend_tex
 
 # ---------------------------------------------
 # function that creates README for first sheet in excel spreadsheet
-add_readme <- function(results, wb, table_index, legend_title, legend_text, 
+add_readme <- function(results, wb, table_index, letter_index, legend_title, 
+                       legend_text_prefix, legend_text_sections,
                        cell_title_width, cell_title_height){
   # Create a readme sheet
   addWorksheet(wb, sheetName = "README")
   
+  # Update legend_title
+  legend_title <- as.character(glue("Table S{table_index}. {legend_title}"))
+  
   # Write the table legend title
-  writeData(wb, sheet = "README", as.character(legend_title), startRow = 1, startCol = 1)
+  writeData(wb, sheet = "README", legend_title, startRow = 1, startCol = 1)
+  
+  # Create legend_text, using appropriate grammar depending on number of sections
+  number_of_sections <- length(legend_text_sections)
+  if(number_of_sections == 1){
+    legend_text <- paste0(legend_text_prefix, 
+                          "(", letter_index[1], ") ",
+                          legend_text_sections[1],
+                          ".")
+  } else if(number_of_sections == 2){
+    legend_text <- paste0(legend_text_prefix, 
+                          "(", letter_index[1], ") ",
+                          legend_text_sections[1], 
+                          " and (", letter_index[2], ") ",
+                          legend_text_sections[2],
+                          ".")
+  } else if(number_of_sections > 2){
+    legend_text <- paste0(legend_text_prefix, 
+                          paste0("(", letter_index[1:(number_of_sections-1)], ") ",
+                                 legend_text_sections[1:(number_of_sections)-1], collapse = ", "),
+                          " and (", letter_index[number_of_sections], ") ",
+                          legend_text_sections[number_of_sections],
+                          ".")
+  }
   
   # Write the table legend text
-  writeData(wb, sheet = "README", as.character(legend_text), startRow = 2, startCol = 1)
+  writeData(wb, sheet = "README", legend_text, startRow = 2, startCol = 1)
   
   # Make first col width wider
   setColWidths(wb, sheet = "README", cols = 1, widths = cell_title_width)
@@ -174,11 +200,32 @@ add_readme <- function(results, wb, table_index, legend_title, legend_text,
 #### Meta-analysis and fine mapping table #####
 ###############################################
 create_table <- function(paths, regex, 
+                        sheet_names,
                         excel_file_name, 
                         table_index, 
-                        legend_title, legend_text,
+                        legend_title, 
+                        legend_text_prefix, legend_text_sections,
                         cell_title_width, cell_title_height){
 
+  # Check inputs for paths, regex and sheet names are all the same length
+  if(length(paths) != length(regex) | length(paths) != length(sheet_names)){
+    stop("paths, regex and sheet_names must all be the same length")
+  }
+  
+  # Get supplementary table character index, eg. A, B, C etc.
+  letter_index <- LETTERS[1:length(sheet_names)]
+  
+  # Create sheet names with suffix for table index and A, B, C etc.
+  sheet_names <- paste0(glue("Table S{paste0(table_index, letter_index)} "), sheet_names)
+  
+  # Excel sheet names must be less than 31 characters
+  # If they are, stop with error, stating which sheet name is more than 31 chars
+  if(any(nchar(sheet_names) > 31)){
+    stop(paste0("Excel sheet names must be less than 31 characters. ",
+                "The following sheet names are too long: ", 
+                paste(sheet_names[nchar(sheet_names) > 31], collapse = ", ")))
+  }
+  
   # Read in full paths for where results are stored
   # get .csv/.tsv and sidecar .cols file (with column name descriptions)
   files <- mapply(get_main_file_names, paths, regex) %>%
@@ -187,10 +234,11 @@ create_table <- function(paths, regex,
   # Read these tables and store as a list of data frames
   # where each dataframe has an assocaited sidecar .cols file
   # the names of this list are the file names
-  results <- tables_list(files)
+  results <- tables_list(files, sheet_names)
   
   # Make excel spreadsheet
-  make_excel(results, excel_file_name, table_index, legend_title, legend_text,
+  make_excel(results, excel_file_name, table_index, letter_index, legend_title, 
+             legend_text_prefix, legend_text_sections,
               cell_title_width, cell_title_height)
   
 }
@@ -203,12 +251,20 @@ main <- function(){
   table_index <- update_table_index(0)
   
   # Create the first supplementary table for the clumps and fine mapping results
-  create_table(paths = c("manuscript/tables", "manuscript/tables"),
-               regex = c("clumps_fixed_antidep-2501.clumps", "susiex_significant"),
-               here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
+  create_table(paths = rep("manuscript/tables", 3),
+               regex = c("clumps_fixed_antidep-2501.clumps",
+                         "susiex_significant_summary",
+                         "susiex_significant_cs"),
+               sheet_names = c("clumps fixed",
+                               "SuSiEx summary",
+                               "SuSiEx credible sets"),
+               excel_file_name = here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
                table_index,
-               glue("Table S{table_index}. Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS."),
-               glue("Clumping results are divided into"),
+               legend_title = "Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS.",
+               legend_text_prefix = "Results are divided into ",
+               legend_text_sections = c("fixed clumping results across all ancestries and antidepressant phenotypes",
+                                         "significant SuSiEx summary statistics",
+                                         "significant SuSiEx credible sets"),
                cell_title_width = 30,
                cell_title_height = 50)
   
