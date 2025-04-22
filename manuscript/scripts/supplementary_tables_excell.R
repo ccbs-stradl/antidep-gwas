@@ -137,12 +137,37 @@ add_readme <- function(results, wb, table_index, letter_index, legend_title,
   # Create a readme sheet
   addWorksheet(wb, sheetName = "README")
   
+  # Add legend title
+  add_legend_title(table_index, legend_title, wb)
+  
+  # Add legend text
+  add_legend_text(legend_text_sections, 
+                  legend_text_prefix, letter_index,
+                  wb)
+  
+  # Add meta data on column names 
+  add_metadata(results, wb)
+
+  # Style the readme
+  style_readme(wb, cell_title_width, cell_title_height)
+  
+}
+
+# --------------------------------------------
+# function to add legend title
+add_legend_title <- function(table_index, legend_title, wb){
   # Update legend_title
   legend_title <- as.character(glue("Table S{table_index}. {legend_title}"))
   
   # Write the table legend title
   writeData(wb, sheet = "README", legend_title, startRow = 1, startCol = 1)
-  
+}
+
+# --------------------------------------------
+# function to add legend text
+add_legend_text <- function(legend_text_sections, 
+                            legend_text_prefix, letter_index,
+                            wb){
   # Create legend_text, using appropriate grammar depending on number of sections
   number_of_sections <- length(legend_text_sections)
   if(number_of_sections == 1){
@@ -168,7 +193,27 @@ add_readme <- function(results, wb, table_index, letter_index, legend_title,
   
   # Write the table legend text
   writeData(wb, sheet = "README", legend_text, startRow = 2, startCol = 1)
-  
+}
+
+# --------------------------------------------
+# function to add column description metadata
+# Each item in 'results' contains a 'meta' data frame describing column names 
+# (from .cols sidecar files).
+# Extract that meta data and combine them into a single data frame:
+# add a column for which sheet the column name is from ie. results name
+add_metadata <- function(results, wb){
+col_name_descriptions <- do.call(rbind, lapply(1:length(results), function(i) {
+  results[[i]]$meta %>%
+    mutate(sheet_name = names(results[i])) %>%
+    relocate(sheet_name)
+}))
+
+writeData(wb, sheet = "README", col_name_descriptions, startRow = 3, startCol = 1)
+}
+
+# --------------------------------------------
+# function to set style in README file
+style_readme <- function(wb, cell_title_width, cell_title_height){
   # Make first col width wider
   setColWidths(wb, sheet = "README", cols = 1, widths = cell_title_width)
   
@@ -184,23 +229,8 @@ add_readme <- function(results, wb, table_index, letter_index, legend_title,
   bold_style <- createStyle(textDecoration = "bold")
   addStyle(wb, sheet = "README", style = bold_style, rows = 1, cols = 1, stack = TRUE)
   
-  # Each item in 'results' contains a 'meta' data frame describing column names 
-  # (from .cols sidecar files).
-  # Extract that meta data and combine them into a single data frame:
-  # add a column for which sheet the column name is from ie. results name
-  col_name_descriptions <- do.call(rbind, lapply(1:length(results), function(i) {
-    results[[i]]$meta %>%
-      mutate(sheet_name = names(results[i])) %>%
-      relocate(sheet_name)
-  }))
-  
-  
-  
-  writeData(wb, sheet = "README", col_name_descriptions, startRow = 3, startCol = 1)
-  
   # make row with column name and descriptions bold
   addStyle(wb, sheet = "README", style = bold_style, rows = 3, cols = 1:2, stack = TRUE)
-  
 }
 
 ###############################################
