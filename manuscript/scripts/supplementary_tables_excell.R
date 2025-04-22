@@ -182,7 +182,7 @@ create_table <- function(paths, regex,
   # Read in full paths for where results are stored
   # get .csv/.tsv and sidecar .cols file (with column name descriptions)
   files <- mapply(get_main_file_names, paths, regex) %>%
-            as.vector()
+            unlist(use.names = FALSE)
 
   # Read these tables and store as a list of data frames
   # where each dataframe has an assocaited sidecar .cols file
@@ -203,8 +203,8 @@ main <- function(){
   table_index <- update_table_index(0)
   
   # Create the first supplementary table for the clumps and fine mapping results
-  create_table(paths = c("manuscript/tables"),
-               regex = c("susiex_significant"),
+  create_table(paths = c("manuscript/tables", "manuscript/tables"),
+               regex = c("susiex_significant", "clumps_fixed_antidep-2501.clumps"),
                here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
                table_index,
                glue("Table S{table_index}. Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS."),
