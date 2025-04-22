@@ -291,11 +291,13 @@ main <- function(){
   table_index <- update_table_index(0)
   
   # Create the first supplementary table for the clumps and fine mapping results
-  create_table(paths = rep("manuscript/tables", 3),
+  create_table(paths = rep("manuscript/tables", 4),
                regex = c("clumps_fixed_antidep-2501.clumps",
+                         "clumps_mrmega_antidep-2501.clumps",
                          "susiex_significant_summary",
                          "susiex_significant_cs"),
                sheet_names = c("clumps fixed",
+                               "clumps MR-MEGA",
                                "SuSiEx summary",
                                "SuSiEx credible sets"),
                excel_file_name = here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
@@ -303,6 +305,7 @@ main <- function(){
                legend_title = "Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS.",
                legend_text_prefix = "Results are divided into ",
                legend_text_sections = c("fixed clumping results across all ancestries and antidepressant phenotypes",
+                                        "MR-MEGA clumping results",
                                          "significant SuSiEx summary statistics",
                                          "significant SuSiEx credible sets"),
                cell_title_width = 30,
