@@ -1,0 +1,4 @@
+column,description
+dataset,meta-analysis dataset (phenotype-cluster)
+DISEASE/TRAIT,name of disease or trait phenotype
+SNP,variant identifier

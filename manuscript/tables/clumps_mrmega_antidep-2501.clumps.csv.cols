@@ -1,0 +1,34 @@
+column,description
+dataset,meta-analysis dataset (phenotype-cluster)
+Locus,locus number from clumping analysis
+MarkerName,variant identifier
+Chromosome,chromosome (numeric)
+Position,base position in hg38
+EA,effect allele
+NEA,non-effect allele
+EAF,frequency of effect allele
+Nsample,effective sample size
+Ncohort,number of cohorts
+Effects,direction of effects
+beta_0,effect of first PC of meta regression
+se_0,standard error of beta_0
+beta_1,effect of second PC of meta regression
+se_1,standard error of beta_1
+beta_2,effect of third PC of meta regression
+se_2,standard error of beta_2
+beta_3,effect of fourth PC of meta regression
+se_3,standard error of beta_3
+chisq_association,assocation test statistics
+ndf_association,association degrees of freedom
+P,association p-value
+chisq_ancestry_het,ancestry heterogeneity test statistic
+ndf_ancestry_het,ancestry heterogeneity degress of freedom
+P-value_ancestry_het,ancestry heterogeneity p-value
+chisq_residual_het,residual heterogeneity test statistic
+ndf_residual_het,residual heterogeneity degress of freedom
+P-value_residual_het,residual heterogeneity p-value
+lnBF,log of Bayes Factor
+Comments,Reason if marker was not analyzed
+CHR,chromosome (character)
+start,start position of the locus
+end,end position of the locus
