@@ -84,7 +84,10 @@ colname_descriptions <-
 colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
 
 # check that all names match
-all(names(clumps_table) == names(colname_descriptions))
+if(any(names(clumps_table) != names(colname_descriptions))) {
+    stop(str_glue("column names in {table_basename}.csv are not all in colname_descriptions"))
+}
+
 write_tsv(colname_descriptions_table, here::here("manuscript", "tables", str_glue("{table_basename}.cols")))
 ```
 
