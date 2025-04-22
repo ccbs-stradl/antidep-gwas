@@ -744,8 +744,8 @@ are from.</p>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
 <span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>clumps_table <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(clumps, <span class="at">.id =</span> <span class="st">&quot;dataset&quot;</span>)</span></code></pre></div>
 <p>Write out clump file and column descriptions.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>table_basename <span class="ot">&lt;-</span> <span class="fu">str_glue</span>(<span class="st">&quot;clumps_fixed_{metaset}.clumps&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">write_csv</span>(clumps_table, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;manuscript&quot;</span>, <span class="st">&quot;tables&quot;</span>, <span class="fu">str_glue</span>(<span class="st">&quot;{table_basename}.csv&quot;</span>)))</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>table_basename <span class="ot">&lt;-</span> <span class="fu">str_glue</span>(<span class="st">&quot;clumps_fixed_{metaset}.clumps.csv&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">write_csv</span>(clumps_table, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;manuscript&quot;</span>, <span class="st">&quot;tables&quot;</span>, table_basename))</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>colname_descriptions <span class="ot">&lt;-</span></span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;dataset&quot;</span> <span class="ot">=</span> <span class="st">&quot;meta-analysis dataset (phenotype-cluster)&quot;</span>,</span>
