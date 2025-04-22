@@ -39,8 +39,8 @@ significant_snps_summary <- results$summary %>%
                                            .init = .x,
                                            ~ str_replace(.x, as.character(.y), paste0("_", ancestries_susiex_order[.y]))),
                                   starts_with("POST-HOC_PROB_POP"))
-
-write.csv(significant_snps_summary, here::here('manuscript/tables/susiex_significant_summary.csv'), row.names = FALSE, quote = FALSE)
+file_name_summary <- 'manuscript/tables/susiex_significant_summary.csv'
+write.csv(significant_snps_summary, here::here(file_name_summary), row.names = FALSE, quote = FALSE)
 
 # Write out column descriptions
 colname_descriptions <- c(
@@ -86,11 +86,11 @@ colname_descriptions <- c(
 
 colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
 
-if(all(colname_descriptions_table$column != colnames(significant_snps_summary))){
-  stop("Column names in manuscript/tables/susiex_significant_summary.csv are not all described in colname_descriptions")
+if(any(colname_descriptions_table$column != colnames(significant_snps_summary))){
+  stop(glue("Column names in {file_name_summary} are not all described in colname_descriptions"))
 }
 
-write_tsv(colname_descriptions_table, here::here('manuscript/tables/susiex_significant_summary.cols'))
+write_tsv(colname_descriptions_table, here::here(glue('{file_name_summary}.cols')))
 
 items_to_keep <- sapply(results$cs, function(results_table){
   sig <- results_table %>%
@@ -110,7 +110,8 @@ significant_snps_cs <- results$cs[items_to_keep] %>%
   separate(SE, into = paste0("SE_", ancestries_susiex_order), sep = ",") %>%
   separate(`-LOG10P`, into = paste0("-LOG10P_", ancestries_susiex_order), sep = ",")
 
-write.csv(significant_snps_cs, here::here('manuscript/tables/susiex_significant_cs.csv'), row.names = FALSE, quote = FALSE)
+file_name_cs <- 'manuscript/tables/susiex_significant_cs.csv'
+write.csv(significant_snps_cs, here::here(file_name_cs), row.names = FALSE, quote = FALSE)
 
 # Write out column descriptions
 # clear environment
@@ -118,16 +119,18 @@ rm(colname_descriptions_table)
 rm(colname_descriptions)
 
 colname_descriptions <- c(
-  "CS_ID" = "Credible Set ID",
   "CHR" = "Chromosome",
   "BP_START" = "Start position of the finemapping region",
   "BP_END" = "End position of the finemapping region",
+  "CS_ID" = "Credible Set ID",
+  "SNP" = "SNP identifier",
+  "BP" = "The base pair coordinate of the SNP in Gr37",
   setNames(
-    paste0("Reference allele for ancestry: ", ancestries_susiex_order),
+    paste0("Reference allele of the SNP for ancestry: ", ancestries_susiex_order),
     paste0("REF_ALLELE_", ancestries_susiex_order)
   ),
   setNames(
-    paste0("Alternate allele for ancestry: ", ancestries_susiex_order),
+    paste0("Alternate allele of the SNP for ancestry: ", ancestries_susiex_order),
     paste0("ALT_ALLELE_", ancestries_susiex_order)
   ),
   setNames(
@@ -135,7 +138,7 @@ colname_descriptions <- c(
     paste0("REF_FRQ_", ancestries_susiex_order)
   ),
   setNames(
-    paste0("Effect size for ancestry: ", ancestries_susiex_order),
+    paste0("Marginal per-allele effect size of the SNP with respect to the reference allele for ancestry: ", ancestries_susiex_order),
     paste0("BETA_", ancestries_susiex_order)
   ),
   setNames(
@@ -145,18 +148,16 @@ colname_descriptions <- c(
   setNames(
     paste0("-log10(p-value) for ancestry: ", ancestries_susiex_order),
     paste0("-LOG10P_", ancestries_susiex_order)
-  )
+  ),
+  "CS_PIP" = "Posterior inclusion probability (PIP) of the SNP in the credible set.",
+  "OVRL_PIP" = "Posterior inclusion probability (PIP) of the SNP in the entire region."
 )
 
 colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
 
-if(all(colname_descriptions_table$column == colnames(significant_snps_summary))){
-  stop("Column names in manuscript/tables/susiex_significant_cs.csv are not all described in colname_descriptions")
+if(any(colname_descriptions_table$column != colnames(significant_snps_cs))){
+  stop(glue("Column names in {file_name_cs} are not all described in colname_descriptions"))
 }
 
-write_tsv(colname_descriptions_table, here::here('manuscript/tables/susiex_significant_cs.cols'))
-
-# ---------------------
-# .snp files
-results$snp[items_to_keep] # this is a big file with all the SNPs, not sure if it's necessary to put in supplementary?
+write_tsv(colname_descriptions_table, here::here(glue('{file_name_cs}.cols')))
 
