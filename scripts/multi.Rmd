@@ -72,6 +72,7 @@ plot_manhat(mrmega_n06ab_assoc)
 
 ## Clumps
 
+Get clumps for all phenotypes and merge together.
 ```{r clumps}
 clumps_N06A <- get_clumps("antidep-2501-mrmega-N06A-DIV.clumps.tsv")
 clumps_N06AA <- get_clumps("antidep-2501-mrmega-N06AA-DIV.clumps.tsv")
@@ -85,12 +86,62 @@ clumps <- bind_rows(list("N06A-DIV" = clumps_N06A,
                          "N06AA-DIV" = clumps_N06AA,
                          "N06AB-DIV" = clumps_N06AB),
                     .id = "dataset")
+```
 
-write_csv(clumps, here::here("manuscript", "tables", str_c("clumps_mrmega_", "antidep-2501", ".clumps.csv")))
+Write out table and column descriptions
+```{r table}
+clumps_table_basename <- str_c("clumps_mrmega_", "antidep-2501", ".clumps.csv")
+
+clumps_colname_descriptions <- 
+c("dataset" = "meta-analysis dataset (phenotype-cluster)",
+"Locus" = "locus number from clumping analysis",
+"MarkerName" = "variant identifier",
+"Chromosome" = "chromosome (numeric)",
+"Position" = "base position in hg38", 
+"EA" = "effect allele",
+"NEA" = "non-effect allele",
+"EAF" = "frequency of effect allele",
+"Nsample" = "effective sample size",
+"Ncohort" = "number of cohorts",
+"Effects" = "direction of effects",
+"beta_0" = "effect of first PC of meta regression", 
+"se_0" = "standard error of beta_0",
+"beta_1" = "effect of second PC of meta regression",
+"se_1" = "standard error of beta_1",
+"beta_2" = "effect of third PC of meta regression",
+"se_2" = "standard error of beta_2",
+"beta_3" = "effect of fourth PC of meta regression",
+"se_3" = "standard error of beta_3", 
+"chisq_association" = "assocation test statistics",
+"ndf_association" = "association degrees of freedom",
+"P" = "association p-value",
+"chisq_ancestry_het" = "ancestry heterogeneity test statistic", 
+"ndf_ancestry_het" = "ancestry heterogeneity degress of freedom",
+"P-value_ancestry_het" = "ancestry heterogeneity p-value",
+"chisq_residual_het" = "residual heterogeneity test statistic", 
+"ndf_residual_het" = "residual heterogeneity degress of freedom",
+"P-value_residual_het" = "residual heterogeneity p-value",
+"lnBF" = "log of Bayes Factor",
+"Comments" = "Reason if marker was not analyzed", 
+"CHR" = "chromosome (character)",
+"start" = "start position of the locus",
+"end" = "end position of the locus")
+
+clumps_colname_descriptions_table <- tibble(column = names(clumps_colname_descriptions), description = clumps_colname_descriptions)
+
+# check that all names match
+if(any(names(clumps) != names(clumps_colname_descriptions))) {
+    stop(str_glue("column names in {clumps_table_basename}are not all in colname_descriptions"))
+}
+
+write_csv(clumps, here::here("manuscript", "tables", clumps_table_basename))
+write_csv(clumps_colname_descriptions_table, here::here("manuscript", "tables", str_glue("{clumps_table_basename}.cols")))
+
 ```
 
 ## Catalogue
 
+Lookup results in GWAS Catalog
 ```{r gwascat, cache = TRUE}
 
 gwcat <- get_cached_gwascat()
@@ -98,9 +149,29 @@ gwcat <- get_cached_gwascat()
 gwascat_N06A_table <- look_up_snps(clumps_N06A, gwcat)
 gwascat_N06AA_table <- look_up_snps(clumps_N06AA, gwcat)
 gwascat_N06AB_table <- look_up_snps(clumps_N06AB, gwcat)
+```
 
-write.csv(gwascat_N06A_table, "multi_files/gwas_cat_N06A_table.csv", quote = F, row.names = F)
-write.csv(gwascat_N06AA_table, "multi_files/gwas_cat_N06AA_table.csv", quote = F, row.names = F)
-write.csv(gwascat_N06AB_table, "multi_files/gwas_cat_N06AB_table.csv", quote = F, row.names = F)
+Write out table and column descriptions
+```{r gwas_table}
+gwascat_basename <- "gwascat_mrmega_antidep-2501.csv"
+gwascat_table <- bind_rows(list("N06A-DIV" = gwascat_N06A_table,
+                         "N06AA-DIV" = gwascat_N06AA_table,
+                         "N06AB-DIV" = gwascat_N06AB_table),
+                    .id = "dataset")
 
+gwascat_colname_descriptions <- 
+c("dataset" = "meta-analysis dataset (phenotype-cluster)",
+  "DISEASE/TRAIT" = "name of disease or trait phenotype",
+  "SNP" = "variant identifier"
+)
+
+gwascat_colname_descriptions_table <- tibble(column = names(gwascat_colname_descriptions), description = gwascat_colname_descriptions)
+
+# check that all names match
+if(any(names(gwascat_table) != names(gwascat_colname_descriptions))) {
+    stop(str_glue("column names in {gwascat_basename} are not all in colname_descriptions"))
+}
+
+write_csv(gwascat_table, here::here("manuscript", "tables", gwascat_basename))
+write_csv(gwascat_colname_descriptions_table, here::here("manuscript", "tables", str_glue("{gwascat_basename}.cols")))
 ```
