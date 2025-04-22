@@ -53,8 +53,8 @@ clumps_table <- bind_rows(clumps, .id = "dataset")
 
 Write out clump file and column descriptions.
 ```{r table}
-table_basename <- str_glue("clumps_fixed_{metaset}.clumps")
-write_csv(clumps_table, here::here("manuscript", "tables", str_glue("{table_basename}.csv")))
+table_basename <- str_glue("clumps_fixed_{metaset}.clumps.csv")
+write_csv(clumps_table, here::here("manuscript", "tables", table_basename))
 
 colname_descriptions <-
   c("dataset" = "meta-analysis dataset (phenotype-cluster)",
