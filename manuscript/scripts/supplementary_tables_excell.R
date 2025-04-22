@@ -231,6 +231,9 @@ style_readme <- function(wb, cell_title_width, cell_title_height){
   
   # make row with column name and descriptions bold
   addStyle(wb, sheet = "README", style = bold_style, rows = 3, cols = 1:2, stack = TRUE)
+  
+  # autofit 2nd and 3rd columns to width of cell
+  setColWidths(wb, sheet = "README", cols = 2:3, widths = "auto")
 }
 
 ###############################################
