@@ -1,0 +1,27 @@
+column	description
+CHR	Chromosome
+BP_START	Start position of the finemapping region
+BP_END	End position of the finemapping region
+CS_ID	Credible Set ID
+SNP	SNP identifier
+BP	The base pair coordinate of the SNP in Gr37
+REF_ALLELE_AFR	Reference allele of the SNP for ancestry: AFR
+REF_ALLELE_SAS	Reference allele of the SNP for ancestry: SAS
+REF_ALLELE_EUR	Reference allele of the SNP for ancestry: EUR
+ALT_ALLELE_AFR	Alternate allele of the SNP for ancestry: AFR
+ALT_ALLELE_SAS	Alternate allele of the SNP for ancestry: SAS
+ALT_ALLELE_EUR	Alternate allele of the SNP for ancestry: EUR
+REF_FRQ_AFR	Reference allele frequency for ancestry: AFR
+REF_FRQ_SAS	Reference allele frequency for ancestry: SAS
+REF_FRQ_EUR	Reference allele frequency for ancestry: EUR
+BETA_AFR	Marginal per-allele effect size of the SNP with respect to the reference allele for ancestry: AFR
+BETA_SAS	Marginal per-allele effect size of the SNP with respect to the reference allele for ancestry: SAS
+BETA_EUR	Marginal per-allele effect size of the SNP with respect to the reference allele for ancestry: EUR
+SE_AFR	Standard error for ancestry: AFR
+SE_SAS	Standard error for ancestry: SAS
+SE_EUR	Standard error for ancestry: EUR
+-LOG10P_AFR	-log10(p-value) for ancestry: AFR
+-LOG10P_SAS	-log10(p-value) for ancestry: SAS
+-LOG10P_EUR	-log10(p-value) for ancestry: EUR
+CS_PIP	Posterior inclusion probability (PIP) of the SNP in the credible set.
+OVRL_PIP	Posterior inclusion probability (PIP) of the SNP in the entire region.
