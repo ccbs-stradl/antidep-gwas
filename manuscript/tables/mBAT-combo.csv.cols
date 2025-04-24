@@ -1,0 +1,20 @@
+column	description
+phenotype	anti-depressant ATC code
+ancestry	genetic ancestry
+Gene	Ensembl gene ID
+gene_name	gene name
+Chr	chromosome
+Start	start base position of the gene (Gr37)
+End	end base position of the gene (Gr37)
+No.SNPs	Number of SNPs in gene
+SNP_start	rsID of SNP at atart of the gene
+SNP_end	rsID of SNP at end of the gene
+TopSNP	rsID of the top SNP in the gene
+TopSNP_Pvalue	p-value of the top SNP in the gene
+No.Eigenvalues	number of eigenvalues corresponding to the gamma parameter in mBAT
+Chisq_mBAT	Chi-squared statistic for mBAT
+P_mBATcombo	p-value for mBAT-combo
+P_mBAT	p-value for mBAT
+Chisq_fastBAT	Chi-squared statistic for fastBAT
+P_fastBAT	p-value for fastBAT
+P_mBATcombo_bonferroni	Bonferroni corrected p-value for mBAT-combo
