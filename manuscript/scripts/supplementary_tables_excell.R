@@ -59,7 +59,7 @@ main <- function(){
                table_index,
                legend_title = "Positional mapping results for EUR, AFR and SAS fixed meta-analyses of the antidepressant GWAS (N06A, N06AA and N06AB).",
                legend_text_prefix = "",
-               legend_text_sections = c("Rows in bold highlight genes with Bonferroni corrected mBAT-combo p-value < 0.05"),
+               legend_text_sections = c("Results shown for Bonferroni corrected mBAT-combo p-value < 0.05"),
                cell_title_width = 39,
                cell_title_height = 49)
   
