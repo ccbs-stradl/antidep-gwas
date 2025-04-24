@@ -1,12 +1,17 @@
 ---
 title: "Supplementary Material"
-output: word_document
+output: 
+  word_document:
+    df_print: kable
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(glue)
+library(readr)
 library(stringr)
+library(tidyr)
+library(dplyr)
 
 
 # ------------------------
@@ -38,6 +43,22 @@ offset <- 0
 ```
 
 # Methods
+
+## Fixed-effects meta-analysis cohort sample sizes
+
+```{r fixedn, echo = FALSE, warning = FALSE, message = FALSE}
+cohort_summary_fixed <- read_csv(here::here("manuscript/tables/meta_analysis_cohort_summary_table_fixed.csv"))
+cohort_summary_fixed |>
+  separate(meta_analysis,
+           into = c("meta", "version", "method", "ATC", "cluster")) |>
+  pivot_longer(cols = matches("(cases|controls|neff)"),
+               names_to = c("cohort", "status"),
+               names_sep = "_",
+               values_to = "N") |>
+  filter(!is.na(N)) |>
+  pivot_wider(names_from = status, values_from = N) |>
+  select(ATC, cluster, cohort, cases, controls, neff)
+```
 
 ## mBAT-combo analysis
 
