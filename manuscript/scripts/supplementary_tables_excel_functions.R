@@ -223,6 +223,44 @@ style_readme <- function(wb, cell_title_width, cell_title_height){
 }
 
 # --------------------------------------------
+# function to style significant rows as bold
+bold_rows <- function(wb, results, bold_significant){
+  if(!is.null(bold_significant)){
+    
+    # Check if the column name exists in all sheets
+    for (sheet in names(results)) {
+      if (!bold_significant %in% colnames(results[[sheet]]$main)) {
+        stop(paste0("Column '", bold_significant, "' not found in sheet '", sheet, "'"))
+      }
+    }
+
+    # Loop through each sheet and make significant rows bold
+    for (sheet in names(results)) {
+      # Get the column index of the significant column
+      col_index <- which(colnames(results[[sheet]]$main) == bold_significant)
+      
+      # Get the row index of the significant rows
+      row_index <- which(results[[sheet]]$main[[col_index]] < 0.05)
+      
+      # Make the significant rows bold
+      addStyle(wb, sheet = sheet, style = createStyle(textDecoration = "bold"), 
+               rows = row_index, cols = 1:ncol(results[[sheet]]$main), stack = TRUE)
+    }
+  }
+}
+
+# --------------------------------------------
+# auto-fit columns
+auto_fit_columns <- function(wb, results){
+  # Loop through each sheet and auto-fit columns
+  for (sheet in names(results)) {
+    # Auto-fit all columns
+    setColWidths(wb, sheet = sheet, cols = 1:ncol(results[[sheet]]$main), widths = "auto")
+  }
+}
+
+
+# --------------------------------------------
 create_table <- function(paths, regex, 
                          sheet_names,
                          excel_file_name, 
