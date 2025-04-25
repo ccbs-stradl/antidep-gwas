@@ -195,11 +195,14 @@ concatenate_comma_and <- function(strings) {
 # Extract that meta data and combine them into a single data frame:
 # add a column for which sheet the column name is from ie. results name
 add_metadata <- function(results, wb){
-  col_name_descriptions <- do.call(rbind, lapply(1:length(results), function(i) {
-    results[[i]]$meta %>%
-      mutate(sheet_name = names(results[i])) %>%
-      relocate(sheet_name)
-  }))
+  # extract the meta data from each results item
+  meta_list <- lapply(results, function(x) { x$meta })
+  
+  # rename list of meta tables with names of results so it can be used by bind_rows
+  names(meta_list) <- names(results)
+  
+  # combine all meta data into a single data frame and add id column
+  col_name_descriptions <- bind_rows(meta_list, .id = "sheet_name")
   
   writeData(wb, sheet = "README", col_name_descriptions, startRow = 3, startCol = 1)
 }
