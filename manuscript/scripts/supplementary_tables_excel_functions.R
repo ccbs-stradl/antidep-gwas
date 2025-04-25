@@ -154,31 +154,38 @@ add_legend_title <- function(table_index, legend_title, wb){
 add_legend_text <- function(legend_text_sections, 
                             legend_text_prefix, letter_index,
                             wb){
-  # Create legend_text, using appropriate grammar depending on number of sections
-  number_of_sections <- length(legend_text_sections)
-  if(number_of_sections == 1){
-    legend_text <- paste0(legend_text_prefix, 
-                          "(", letter_index[1], ") ",
-                          legend_text_sections[1],
-                          ".")
-  } else if(number_of_sections == 2){
-    legend_text <- paste0(legend_text_prefix, 
-                          "(", letter_index[1], ") ",
-                          legend_text_sections[1], 
-                          " and (", letter_index[2], ") ",
-                          legend_text_sections[2],
-                          ".")
-  } else if(number_of_sections > 2){
-    legend_text <- paste0(legend_text_prefix, 
-                          paste0("(", letter_index[1:(number_of_sections-1)], ") ",
-                                 legend_text_sections[1:(number_of_sections)-1], collapse = ", "),
-                          " and (", letter_index[number_of_sections], ") ",
-                          legend_text_sections[number_of_sections],
-                          ".")
+
+  # check letter_text_sections equals length of letter_index
+  if(length(legend_text_sections) != length(letter_index)){
+    stop("legend_text_sections and letter_index must be the same length")
   }
+  
+  # prepend each legend_text_section with the letter_index
+  legend_text_sections <- paste0("(", letter_index, ") ", legend_text_sections)
+  
+  # concatenate the legend_text_sections with commas & "and" for the last item
+  section_strings <- concatenate_comma_and(legend_text_sections)
+  
+  # concatenate the legend_text_prefix with the legend_text_sections
+  legend_text <- paste0(legend_text_prefix, section_strings)
   
   # Write the table legend text
   writeData(wb, sheet = "README", legend_text, startRow = 2, startCol = 1)
+}
+
+# --------------------------------------------
+# function that concatenates strings with commas and "and"
+concatenate_comma_and <- function(strings) {
+  # start with comma separators for each item
+  separators <- rep(", ", times = length(strings))
+  # replace last separator with "and"
+  separators[length(separators)] <- " and "
+  # replace first separator with empty string
+  # (separators proceed strings)
+  separators[1] <- ""
+  # concatenate: "a, b, and c" etc
+  text <- str_c(separators, strings, collapse = "")
+  return(text)
 }
 
 # --------------------------------------------
