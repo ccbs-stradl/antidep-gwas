@@ -1,0 +1,3 @@
+column	description
+DISEASE/TRAIT	name of disease or trait phenotype
+SNP	variant identifier
