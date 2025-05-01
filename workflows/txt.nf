@@ -18,6 +18,8 @@ workflow {
     TXT_CH = TXT(VCF_CH)
       .combine(MERGE_CH)
     MUNGE_CH = MUNGE(TXT_CH)
+  } else if(params.format == "gsmap") {
+    TXT_CH = GSMAP(VCF_CH)
   } else {
     TXT_CH = TXT(VCF_CH)
   }
@@ -95,4 +97,38 @@ process MUNGE {
     --merge-alleles ${merge} \
     --out ${dataset}
   """
+}
+
+/* output for gsMap
+   https://yanglab.westlake.edu.cn/gps_data/website_docs/html/data_format.html
+   Output columns: SNP A1 A2 Z N
+      SNP = ID
+      A1 = ALT (effect allele)
+      A2 = REF (non-effect allele)
+      Z = ES / SE (beta / standard error)
+      N = NE (Neff)
+   Output biallelic SNPs, MAF >= 0.01, INFO >= 0.9
+*/
+process GSMAP {
+  tag "${dataset}"
+  label 'tools'
+  
+  publishDir "results/txt/gsmap/${params.out}"
+  
+  input:
+  tuple val(dataset), path(vcf)
+  
+  output:
+  tuple val(dataset), path("*.sumstats.gz")
+  
+  shell:
+  '''
+  echo "SNP A1 A2 Z N" > !{dataset}.sumstats
+  bcftools view --min-alleles 2 --max-alleles 2 --types snps \
+  --include 'FORMAT/AFCON >= 0.01 && FORMAT/AFCON <= 0.99 && FORMAT/SI >= 0.9' \
+  --output-type u !{dataset}.vcf.gz |\
+  bcftools query \
+  -f "%ID %ALT %REF [%ES] [%SE] [%NE]\\n" | awk '{print $1, $2, $3, $4/$5, $6}' >> !{dataset}.sumstats
+  gzip !{dataset}.sumstats
+  '''
 }
