@@ -1,5 +1,5 @@
 # Create supplementary tables in excel spreadsheets for the following:
-# Clumping / finemapping
+# Clumping and finemapping
 # Gene mapping mBAT, cross method
 # GWAS catalog
 # LDSC/popcorn: between gwas, between meta, with external traits, reference table
@@ -66,7 +66,7 @@ main <- function() {
     sheet_names = c("mBAT-combo"),
     excel_file_name = here::here(glue("manuscript/tables/S{table_index}_gene_mapping.xlsx")),
     table_index,
-    legend_title = "Positional mapping results for EUR, AFR and SAS fixed meta-analyses of the antidepressant GWAS (N06A, N06AA and N06AB).",
+    legend_title = "Positional mapping results for EUR, AFR and SAS fixed meta-analyses of the antidepressant GWAS (N06A, N06AA and N06AB).", # nolint
     legend_text_prefix = "",
     legend_text_sections = c("Results shown for Bonferroni corrected mBAT-combo p-value < 0.05"),
     cell_title_width = 39,
