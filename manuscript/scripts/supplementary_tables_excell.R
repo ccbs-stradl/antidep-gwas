@@ -66,6 +66,51 @@ main <- function(){
   # Set table index to 3
   table_index <- update_table_index(table_index)
   
+  # Create the second supplementary table for the GWAS catalog
+  create_table(paths = rep("manuscript/tables",11),
+               regex = c("gwascat_fixed_table_N06A-AFR.csv",
+                         "gwascat_fixed_table_N06A-EAS.csv",
+                         "gwascat_fixed_table_N06A-EUR.csv",
+                         "gwascat_fixed_table_N06A-SAS.csv",
+                         "gwascat_fixed_table_N06AA-AFR.csv",
+                         "gwascat_fixed_table_N06AA-EUR.csv",
+                         "gwascat_fixed_table_N06AB-AFR.csv",
+                         "gwascat_fixed_table_N06AB-EUR.csv",
+                         "gwascat_fixed_table_N06AB-MID.csv",
+                         "gwascat_fixed_table_N06AB-SAS.csv",
+                         "gwascat_mrmega_antidep-2501.csv"),
+               sheet_names = c("N06A-AFR",
+                               "N06A-EAS",
+                               "N06A-EUR",
+                               "N06A-SAS",
+                               "N06AA-AFR",
+                               "N06AA-EUR",
+                               "N06AB-AFR",
+                               "N06AB-EUR",
+                               "N06AB-MID",
+                               "N06AB-SAS",
+                               "MRMEGA"),
+               excel_file_name = here::here(glue("manuscript/tables/S{table_index}_gwas_cat.xlsx")),
+               table_index,
+               legend_title = "NHGRI-EBI GWAS catalogue lookup for the antidepressant meta-analysis GWAS",
+               legend_text_prefix = "Results split by ancestries and phenotypes for fixed and MRMEGA meta-analysis GWAS.",
+               legend_text_sections = c("N06A-AFR",
+                                        "N06A-EAS",
+                                        "N06A-EUR",
+                                        "N06A-SAS",
+                                        "N06AA-AFR",
+                                        "N06AA-EUR",
+                                        "N06AB-AFR",
+                                        "N06AB-EUR",
+                                        "N06AB-MID",
+                                        "N06AB-SAS",
+                                        "MRMEGA"),
+               cell_title_width = 39,
+               cell_title_height = 49)
+  
+  # Set table index to 4
+  table_index <- update_table_index(table_index)
+  
 }
 
 # ---------------------------------------------
