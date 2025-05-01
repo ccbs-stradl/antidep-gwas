@@ -92,7 +92,7 @@ main <- function(){
                                "MRMEGA"),
                excel_file_name = here::here(glue("manuscript/tables/S{table_index}_gwas_cat.xlsx")),
                table_index,
-               legend_title = "NHGRI-EBI GWAS catalogue results for the antidepressant meta-analysis GWAS",
+               legend_title = "NHGRI-EBI GWAS catalogue lookup for the antidepressant meta-analysis GWAS",
                legend_text_prefix = "Results split by ancestries and phenotypes for fixed and MRMEGA meta-analysis GWAS.",
                legend_text_sections = c("N06A-AFR",
                                         "N06A-EAS",
