@@ -128,8 +128,48 @@ main <- function() {
 
   # Set table index to 4
   table_index <- update_table_index(table_index)
+
+  # Create the fourth supplementary table for the LDSC/popcorn results
+  create_table(
+    paths = rep("manuscript/tables", 6),
+    regex = c(
+      "rg_ldsc_gwas.csv",
+      "rg_ldsc_meta.csv",
+      "rg_ldsc_meta_external",
+      "rg_ldsc_external_references",
+      "rg_popcorn_gwas",
+      "rg_popcorn_meta"
+    ),
+    sheet_names = c(
+      "LDSC gwas",
+      "LDSC meta",
+      "LDSC meta external",
+      "GWAS references",
+      "Popcorn gwas",
+      "Popcorn meta"
+    ),
+    excel_file_name = here::here(glue("manuscript/tables/S{table_index}_ldsc_popcorn.xlsx")),
+    table_index,
+    legend_title = "Cross-ancestry genetic correlations (LDSC and popcorn) between cohorts, meta-analyses and external traits", # nolint
+    legend_text_prefix = "Results are divided into ",
+    legend_text_sections = c(
+      "LDSC of input cohort GWASs",
+      "LDSC of meta-analysed GWASs",
+      "LDSC of meta-analysed GWASs with external traits",
+      "References for external traits used in the LDSC analysis",
+      "Popcorn of input cohort GWASs",
+      "Popcorn of meta-analysed GWASs"
+    ),
+    cell_title_width = 47,
+    cell_title_height = 32
+  )
 }
 
 # ---------------------------------------------
 # Run the main function
 main()
+
+# ---------------------------------------------
+# Run lintr and styler
+lint(here("manuscript/scripts/supplementary_tables_excell.R"))
+style_file(here("manuscript/scripts/supplementary_tables_excell.R"))
