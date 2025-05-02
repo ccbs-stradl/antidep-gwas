@@ -32,4 +32,34 @@ popcorns <- bind_rows(popcorn_tables, .id = "filename") |>
 popcorns_keep <- popcorns |>
   filter(p1_cluster != p2_cluster)
 
-write_csv(popcorns_keep, here::here("manuscript/tables/rg_popcorn_meta.csv"))
+file_name <- here::here("manuscript/tables/rg_popcorn_meta.csv")
+write_csv(popcorns_keep, file_name)
+
+# create .cols sidecar meta data file
+popcorns_keep <- fread(file_name)
+
+# create .cols sidecar meta data file
+colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
+                          "p1_version" = "Version of first meta-analysed phenotype", 
+                          "p1_method" = "Method of meta-analysis for first phenotype", 
+                          "p1_pheno" = "Anti-depressant phenotype of first meta-analysed phenotype", 
+                          "p1_cluster" = "Ancestry cluster of first meta-analysed phenotype", 
+                          "p2_meta" = "Name of second meta-analysed phenotype", 
+                          "p2_version" = "Version of second meta-analysed phenotype", 
+                          "p2_method" = "Method of meta-analysis for second phenotype", 
+                          "p2_pheno" = "Anti-depressant phenotype of second meta-analysed phenotype", 
+                          "p2_cluster" = "Ancestry cluster of second meta-analysed phenotype", 
+                          "pgi" = "Genetic impact correlation",
+                          "SE" = "Standard error of genetic impact correlation",
+                          "Z" = "Z statistic of genetic impact correlation",
+                          "P (Z)" = "p-value of Z statistic of genetic impact correlation"
+)
+
+
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
+
+create_cols_meta(
+  file_name = file_name,
+  table_variable_name = popcorns_keep,
+  colname_descriptions = colname_descriptions
+)

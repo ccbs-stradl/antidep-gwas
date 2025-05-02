@@ -10,7 +10,7 @@ library(stringr)
 log_dir = here::here("results/models/rg/gwas")
 
 # metaset to analyse
-metaset <- read_csv(here::here("metasets/antidep-2501.csv"))
+metaset <- read_csv(here::here("inputs/metasets/antidep-2501.csv"))
 
 # ldsc log files
 ldsc_log_files <- list.files(log_dir,
@@ -52,4 +52,36 @@ ldsc_datasets_keep <- ldsc_datasets |>
   select(-ext) |>
   select(starts_with("p1"), starts_with("p2"), everything())
 
-write_csv(ldsc_datasets_keep, here::here("manuscript/tables/rg_ldsc_gwas.csv"))
+file_name <- here::here("manuscript/tables/rg_ldsc_gwas.csv")
+write_csv(ldsc_datasets_keep, file_name)
+
+# create .cols sidecar meta data file
+colname_descriptions <- c("p1_cohort" = "Name of first cohort",
+                          "p1_pheno" = "Anti-depressant phenotype of first cohort",
+                          "p1_cluster" = "Ancestry cluster of first cohort",
+                          "p1_version" = "Version of first cohort",
+                          "p2_cohort" = "Name of second cohort",
+                          "p2_pheno" = "Anti-depressant phenotype of second cohort",
+                          "p2_cluster" = "Ancestry cluster of second cohort",
+                          "p2_version" = "Version of second cohort",
+                          "rg" = "Genetic correlation",
+                          "se" = "Standard error of genetic correlation",
+                          "z" = "Z-score of genetic correlation",
+                          "p" = "p-value of genetic correlation", 
+                          "h2_obs" = "Observed scale heritability for second cohort",
+                          "h2_obs_se" = "Standard error of observed scale heritability for second cohort",
+                          "h2_int" = "Single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "h2_int_se" = "Standard error of single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "gcov_int" = "Cross-trait Linkage Disequilibrium Score regression intercept",
+                          "gcov_int_se" = "Standard error of cross-trait Linkage Disequilibrium Score regression intercept"
+)
+
+
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
+
+create_cols_meta(
+  file_name = file_name,
+  table_variable_name = ldsc_datasets_keep,
+  colname_descriptions = colname_descriptions
+)
+
