@@ -1,0 +1,13 @@
+column	description
+p1_cohort	Name of first cohort
+p1_pheno	Anti-depressant phenotype of first cohort
+p1_cluster	Ancestry cluster of first cohort
+p1_version	Version of first cohort
+p2_cohort	Name of second cohort
+p2_pheno	Anti-depressant phenotype of second cohort
+p2_cluster	Ancestry cluster of second cohort
+p2_version	Version of second cohort
+pgi	Genetic impact correlation
+SE	Standard error of genetic impact correlation
+Z	Z statistic of genetic impact correlation
+P (Z)	p-value of Z statistic of genetic impact correlation
