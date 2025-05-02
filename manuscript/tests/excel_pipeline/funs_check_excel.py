@@ -20,7 +20,7 @@ def check_readme_cell_contents_exist(file_path: str) -> bool:
     cols_to_check = ['A1:A10' , 'B3:B10', 'C3:C10']
     for col in cols_to_check:
         value = readme.range(col).value
-        if value is None or value == '':
+        if value is None or str(value).strip() == '':
             return False
         else:
             return True
