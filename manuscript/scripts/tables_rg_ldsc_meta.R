@@ -60,9 +60,9 @@ write_csv(ext_ldsc_datasets, here::here("manuscript/tables/rg_ldsc_meta_external
 
 ldsc_datasets <- fread(here::here("manuscript/tables/rg_ldsc_meta.csv"))
 
-# "manuscript/tables/rg_ldsc_meta.csv"
+# function to create .cols sidecar meta data file
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
 
-# create .cols sidecar meta data file
 colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
                           "p1_version" = "Version of first meta-analysed phenotype", 
                           "p1_method" = "Method of meta-analysis for first phenotype", 
@@ -85,19 +85,14 @@ colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
                           "gcov_int_se" = "Standard error of cross-trait Linkage Disequilibrium Score regression intercept"
 )
 
-colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
+create_cols_meta(
+  file_name = "manuscript/tables/rg_ldsc_meta.csv",
+  table_variable_name = ldsc_datasets,
+  colname_descriptions = colname_descriptions
+)
 
-if(any(colname_descriptions_table$column != colnames(ldsc_datasets))){
-  stop(glue("Column names in manuscript/tables/rg_ldsc_meta.csv are not all described in colname_descriptions"))
-}
 
-write_tsv(colname_descriptions_table, here::here("manuscript/tables/rg_ldsc_meta.csv.cols"))
-
-# "manuscript/tables/rg_ldsc_meta_external.csv"
-
-rm(colname_descriptions_table)
 rm(colname_descriptions)
-
 colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
                           "p1_version" = "Version of first meta-analysed phenotype", 
                           "p1_method" = "Method of meta-analysis for first phenotype", 
@@ -116,11 +111,8 @@ colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
                           "gcov_int_se" = "Standard error of cross-trait Linkage Disequilibrium Score regression intercept"
 )
 
-colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
-
-if(any(colname_descriptions_table$column != colnames(ext_ldsc_datasets))){
-  stop(glue("Column names in manuscript/tables/rg_ldsc_meta_external.csv are not all described in colname_descriptions"))
-}
-
-write_tsv(colname_descriptions_table, here::here("manuscript/tables/rg_ldsc_meta_external.csv.cols"))
-
+create_cols_meta(
+  file_name = "manuscript/tables/rg_ldsc_meta_external.csv",
+  table_variable_name = ext_ldsc_datasets,
+  colname_descriptions = colname_descriptions
+)
