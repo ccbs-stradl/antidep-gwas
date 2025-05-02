@@ -1,6 +1,6 @@
 # Make summary tables of cohorts included in the meta analyses
-# MR-MEGA table: rbind all the .csv files in meta/antidep-2501-mrmega* (N06A, N06AA, N06AB)
-# For the fixed effect tables: create a tale from meta/antidep-2501-fixed-* for each ancestry and each phenotype (N06A, N06AA, N06AB)
+# MR-MEGA table: rbind all the .csv files in results/meta/antidep-2501-mrmega* (N06A, N06AA, N06AB)
+# For the fixed effect tables: create a tale from results/meta/antidep-2501-fixed-* for each ancestry and each phenotype (N06A, N06AA, N06AB)
 
 # --------------------------------
 # Load libraries
@@ -77,13 +77,13 @@ makeWide <- function(summary_table, firstCols) {
     values_from = c(cases, controls, neff)
   ) %>%
     rename_with(~ gsub("(.+)_(.+)", "\\2_\\1", .), -c(firstCols)) %>% # Reorder names but exclude firsCols
-    select(all_of(firstCols), order(colnames(.)[-c(1:(length(firstCols)))]) + length(firstCols)) # Keep firstCols first and reorder the rest
+    select(all_of(firstCols), order(colnames(.)[-c(seq_len(firstCols))]) + length(firstCols)) # Keep firstCols first and reorder the rest
 }
 
 # --------------------------------
 create_table_MRMEGA <- function(summary_table_path) {
   # Read in MR-MEGA cohort csv files
-  dataframes <- read_files("meta", "mrmega")
+  dataframes <- read_files("results/meta/antidep-2501", "mrmega")
 
   # Concatenate the files together (rbind) and add column for the file name
   summary_table <- rbind_dataframes_list(dataframes, c("dataset", "build", "version", "pheno"))
@@ -101,7 +101,7 @@ create_table_MRMEGA <- function(summary_table_path) {
 # --------------------------------
 create_table_fixed <- function(summary_table_path) {
   # Read in files
-  dataframes <- read_files("meta", "fixed")
+  dataframes <- read_files("results/meta/antidep-2501", "fixed")
 
   # Concatenate the files together (rbind) and add column for the file name
   summary_table <- rbind_dataframes_list(dataframes, c("dataset", "build", "pheno", "version", "cluster"))
