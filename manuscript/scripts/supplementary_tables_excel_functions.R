@@ -51,9 +51,19 @@ get_main_file_names <- function(path, file_regex){
 # ---------------------------------------------
 # Function to read in the results tables and sidecar .cols files
 read_results <- function(full_path){
-  # Read in results tables
-  main <- fread(full_path)
   
+  # Sometimes fread does not read csvs correctly (when read_csv does) and returns a warning
+  # to reproduce the warning try reading in "manuscript/tables/rg_ldsc_external_references.csv"
+  # wrap in a tryCatch to catch this warning
+  tryCatch({
+    # Read in results tables
+    main <- fread(full_path)
+  }, warning = function(w) {
+    # Print the warning message
+    message("Warning: ", conditionMessage(w), "/nUsing read_csv() instead of fread()")
+    main <- read_csv(full_path)
+  })
+
   # Read in sidecar .cols files
   meta <- fread(paste0(full_path, ".cols"))
   
