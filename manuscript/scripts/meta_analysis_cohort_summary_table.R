@@ -11,7 +11,7 @@ library(tidyr) # pivot_wider
 
 # --------------------------------
 # Helper function to read in files
-read_files <- function(dir_name, pattern){
+read_files <- function(dir_name, pattern) {
   # Get full paths
   paths <- list.files(dir_name, pattern = paste0(pattern, ".*\\.csv$"), full.names = TRUE)
 
@@ -30,24 +30,23 @@ read_files <- function(dir_name, pattern){
 
 # --------------------------------
 # add the list item name in a new column
-add_name_as_col <- function(dataframe, dataframe_name){
+add_name_as_col <- function(dataframe, dataframe_name) {
   # add dataframe name as new column
   dataframe$meta_analysis <- dataframe_name
 
   # ensure meta-analysis name is the first column
   dataframe <- dataframe %>%
-                relocate(meta_analysis)
+    relocate(meta_analysis)
 
   return(dataframe)
 }
 
 # --------------------------------
 # rbind a list of dataframes
-rbind_dataframes_list <- function(dataframe_list, cols_to_rm){
-
+rbind_dataframes_list <- function(dataframe_list, cols_to_rm) {
   # Add item list name as a new column
   dataframe_list_named <- lapply(names(dataframe_list), function(name) {
-    add_name_as_col(dataframe_list[[name]], name)  # Apply function with dataframe and its name
+    add_name_as_col(dataframe_list[[name]], name) # Apply function with dataframe and its name
   })
 
   # rbind list of dataframes
@@ -58,15 +57,13 @@ rbind_dataframes_list <- function(dataframe_list, cols_to_rm){
     select(-all_of(cols_to_rm))
 
   return(summary_table)
-
 }
 
 # --------------------------------
 # save csv
-save_csv <- function(table, summary_tables_path, meta_type){
-
+save_csv <- function(table, summary_tables_path, meta_type) {
   # Check path exists, other exit with error
-  if(!dir.exists(summary_tables_path)){
+  if (!dir.exists(summary_tables_path)) {
     stop(paste0("Error: ", summary_tables_path, " directory does not exist."))
   }
 
@@ -74,16 +71,17 @@ save_csv <- function(table, summary_tables_path, meta_type){
 }
 
 # --------------------------------
-makeWide <- function(summary_table, firstCols){
+makeWide <- function(summary_table, firstCols) {
   pivot_wider(summary_table,
-              names_from = cohort,
-              values_from = c(cases, controls, neff)) %>%
-    rename_with(~ gsub("(.+)_(.+)", "\\2_\\1", .), -c(firstCols)) %>%  # Reorder names but exclude firsCols
-    select(all_of(firstCols), order(colnames(.)[-c(1:(length(firstCols)))]) + length(firstCols))  # Keep firstCols first and reorder the rest
+    names_from = cohort,
+    values_from = c(cases, controls, neff)
+  ) %>%
+    rename_with(~ gsub("(.+)_(.+)", "\\2_\\1", .), -c(firstCols)) %>% # Reorder names but exclude firsCols
+    select(all_of(firstCols), order(colnames(.)[-c(1:(length(firstCols)))]) + length(firstCols)) # Keep firstCols first and reorder the rest
 }
 
 # --------------------------------
-create_table_MRMEGA <- function(summary_table_path){
+create_table_MRMEGA <- function(summary_table_path) {
   # Read in MR-MEGA cohort csv files
   dataframes <- read_files("meta", "mrmega")
 
@@ -92,7 +90,7 @@ create_table_MRMEGA <- function(summary_table_path){
 
   # Make the table wider, with columns for cases, controls, and neff for each cohort
   # Keep ancestry as long format
-  summary_table_wide <-  makeWide(summary_table, c("meta_analysis", "cluster"))
+  summary_table_wide <- makeWide(summary_table, c("meta_analysis", "cluster"))
 
   # Write csv
   save_csv(summary_table_wide, summary_table_path, "mrmega")
@@ -101,7 +99,7 @@ create_table_MRMEGA <- function(summary_table_path){
 }
 
 # --------------------------------
-create_table_fixed <- function(summary_table_path){
+create_table_fixed <- function(summary_table_path) {
   # Read in files
   dataframes <- read_files("meta", "fixed")
 
@@ -118,12 +116,10 @@ create_table_fixed <- function(summary_table_path){
 
 # --------------------------------
 # Create tables and save them as csv files
-create_summary_tables <- function(summary_table_path){
-
+create_summary_tables <- function(summary_table_path) {
   create_table_MRMEGA(summary_table_path)
 
   create_table_fixed(summary_table_path)
-
 }
 
 # --------------------------------
@@ -132,5 +128,3 @@ create_summary_tables <- function(summary_table_path){
 # saves both summary tables to "manuscript/tables"
 
 create_summary_tables("manuscript/tables")
-
-
