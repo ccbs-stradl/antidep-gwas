@@ -57,3 +57,70 @@ ext_ldsc_datasets <- ext_ldsc_tables |>
 
 write_csv(ldsc_datasets, here::here("manuscript/tables/rg_ldsc_meta.csv"))
 write_csv(ext_ldsc_datasets, here::here("manuscript/tables/rg_ldsc_meta_external.csv"))
+
+ldsc_datasets <- fread(here::here("manuscript/tables/rg_ldsc_meta.csv"))
+
+# "manuscript/tables/rg_ldsc_meta.csv"
+
+# create .cols sidecar meta data file
+colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
+                          "p1_version" = "Version of first meta-analysed phenotype", 
+                          "p1_method" = "Method of meta-analysis for first phenotype", 
+                          "p1_pheno" = "Anti-depressant phenotype of first meta-analysed phenotype", 
+                          "p1_cluster" = "Ancestry cluster of first meta-analysed phenotype", 
+                          "p2_meta" = "Name of second meta-analysed phenotype", 
+                          "p2_version" = "Version of second meta-analysed phenotype", 
+                          "p2_method" = "Method of meta-analysis for second phenotype", 
+                          "p2_pheno" = "Anti-depressant phenotype of second meta-analysed phenotype", 
+                          "p2_cluster" = "Ancestry cluster of second meta-analysed phenotype", 
+                          "rg" = "Genetic correlation",
+                          "se" = "Standard error of genetic correlation",
+                          "z" = "Z-score of genetic correlation",
+                          "p" = "p-value of genetic correlation", 
+                          "h2_obs" = "Observed scale heritability for second cohort",
+                          "h2_obs_se" = "Standard error of observed scale heritability for second cohort",
+                          "h2_int" = "Single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "h2_int_se" = "Standard error of single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "gcov_int" = "Cross-trait Linkage Disequilibrium Score regression intercept",
+                          "gcov_int_se" = "Standard error of cross-trait Linkage Disequilibrium Score regression intercept"
+)
+
+colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
+
+if(any(colname_descriptions_table$column != colnames(ldsc_datasets))){
+  stop(glue("Column names in manuscript/tables/rg_ldsc_meta.csv are not all described in colname_descriptions"))
+}
+
+write_tsv(colname_descriptions_table, here::here("manuscript/tables/rg_ldsc_meta.csv.cols"))
+
+# "manuscript/tables/rg_ldsc_meta_external.csv"
+
+rm(colname_descriptions_table)
+rm(colname_descriptions)
+
+colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
+                          "p1_version" = "Version of first meta-analysed phenotype", 
+                          "p1_method" = "Method of meta-analysis for first phenotype", 
+                          "p1_pheno" = "Anti-depressant phenotype of first meta-analysed phenotype", 
+                          "p1_cluster" = "Ancestry cluster of first meta-analysed phenotype", 
+                          "p2_pheno" = "Anti-depressant phenotype of second meta-analysed phenotype", 
+                          "rg" = "Genetic correlation",
+                          "se" = "Standard error of genetic correlation",
+                          "z" = "Z-score of genetic correlation",
+                          "p" = "p-value of genetic correlation", 
+                          "h2_obs" = "Observed scale heritability for second cohort",
+                          "h2_obs_se" = "Standard error of observed scale heritability for second cohort",
+                          "h2_int" = "Single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "h2_int_se" = "Standard error of single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "gcov_int" = "Cross-trait Linkage Disequilibrium Score regression intercept",
+                          "gcov_int_se" = "Standard error of cross-trait Linkage Disequilibrium Score regression intercept"
+)
+
+colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
+
+if(any(colname_descriptions_table$column != colnames(ext_ldsc_datasets))){
+  stop(glue("Column names in manuscript/tables/rg_ldsc_meta_external.csv are not all described in colname_descriptions"))
+}
+
+write_tsv(colname_descriptions_table, here::here("manuscript/tables/rg_ldsc_meta_external.csv.cols"))
+
