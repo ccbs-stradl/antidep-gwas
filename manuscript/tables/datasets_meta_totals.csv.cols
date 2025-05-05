@@ -1,0 +1,9 @@
+column,description
+method,Meta-analysis method
+pheno,ATC subgroup
+cluster,Genetic similirity (ancestry) cluster
+cases,Number of cases
+controls,Number of controls
+neff,Effective sample size
+version,Meta-analysis version
+metaset,Meta-analysis filename

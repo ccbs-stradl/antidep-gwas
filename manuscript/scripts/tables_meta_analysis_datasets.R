@@ -50,6 +50,9 @@ if (any(gwas_descriptions_table$column != colnames(datasets_gwas))) {
   stop(glue("Column names in datasets_gwas are not all described"))
 }
 
+write_csv(datasets_gwas, here::here("manuscript/tables/datasets_gwas.csv"))
+write_csv(gwas_descriptions_table, here::here("manuscript/tables/datasets_gwas.csv.cols"))
+
 # datasets included in each fixed and mr-mega meta-analyses
 datasets_meta <- datasets |>
   rename(cohort_cluster = cluster) |>
@@ -90,6 +93,9 @@ meta_descriptions_table <- tibble(
 if (any(meta_descriptions_table$column != colnames(datasets_meta))) {
   stop(str_glue("Column names in datasets_meta are not all described"))
 }
+
+write_csv(datasets_meta, here::here("manuscript/tables/datasets_meta.csv"))
+write_csv(meta_descriptions_table, here::here("manuscript/tables/datasets_meta.csv.cols"))
 
 # subtotal and total case/control/neff counts
 datasets_meta_fixed <- datasets_meta |>
@@ -144,3 +150,6 @@ totals_descriptions_table <- tibble(
 if (any(totals_descriptions_table$column != colnames(datasets_meta_totals))) {
   stop(str_glue("Column names in datasets_meta_totals are not all described"))
 }
+
+write_csv(datasets_meta_totals, here::here("manuscript/tables/datasets_meta_totals.csv"))
+write_csv(totals_descriptions_table, here::here("manuscript/tables/datasets_meta_totals.csv.cols"))
