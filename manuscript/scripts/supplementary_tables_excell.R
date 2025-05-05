@@ -26,8 +26,39 @@ source(here("manuscript/scripts/supplementary_tables_excel_functions.R"))
 main <- function(){
   # Set table_index to 1
   table_index <- update_table_index(0)
-  
-  # Create the first supplementary table for the clumps and fine mapping results
+
+  # Create the supplementary for datasets and meta-analysis samples
+  create_table(
+    paths = rep("manuscript/tables", 3),
+    regex = c(
+      "datasets_gwas",
+      "datasets_meta_gwas",
+      "datasets_meta_totals"
+    ),
+    sheet_names = c(
+      "GWAS datasets",
+      "Meta datasets",
+      "Meta totals"
+    ),
+    excel_file_name = here::here(
+      glue("manuscript/tables/S{table_index}_datasets.xlsx")
+    ),
+    table_index,
+    legend_title = "GWAS datasets, meta-analysis inputs, and total sample sizes",
+    legend_text_prefix = "Datasets and sample sizes are listed for ",
+    legend_text_sections = c(
+      "per cohort and ancestry input GWAS",
+      "datasets included in each meta-analysis",
+      "subtotal and total sample sizes for each meta-analyis"
+    ),
+    cell_title_width = 30,
+    cell_title_height = 50
+  )
+
+  # Set table index to 2
+  table_index <- update_table_index(table_index)
+
+  # Create the supplementary table for the clumps and fine mapping results
   create_table(paths = rep("manuscript/tables", 4),
                regex = c("clumps_fixed_antidep-2501.clumps",
                          "clumps_mrmega_antidep-2501.clumps",
@@ -47,11 +78,11 @@ main <- function(){
                                          "significant SuSiEx credible sets"),
                cell_title_width = 30,
                cell_title_height = 50)
-  
-  # Set table index to 2
+
+  # Set table index to 3
   table_index <- update_table_index(table_index)
-  
-  # Create the second supplementary table for the gene mapping results
+
+  # Create the supplementary table for the gene mapping results
   create_table(paths = "manuscript/tables",
                regex = c("mBAT-combo.csv"),
                sheet_names = c("mBAT-combo"),
@@ -63,7 +94,7 @@ main <- function(){
                cell_title_width = 39,
                cell_title_height = 49)
   
-  # Set table index to 3
+  # Set table index to 4
   table_index <- update_table_index(table_index)
   
 }

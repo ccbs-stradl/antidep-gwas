@@ -94,8 +94,8 @@ if (any(meta_descriptions_table$column != colnames(datasets_meta))) {
   stop(str_glue("Column names in datasets_meta are not all described"))
 }
 
-write_csv(datasets_meta, here::here("manuscript/tables/datasets_meta.csv"))
-write_csv(meta_descriptions_table, here::here("manuscript/tables/datasets_meta.csv.cols"))
+write_csv(datasets_meta, here::here("manuscript/tables/datasets_meta_gwas.csv"))
+write_csv(meta_descriptions_table, here::here("manuscript/tables/datasets_meta_gwas.csv.cols"))
 
 # subtotal and total case/control/neff counts
 datasets_meta_fixed <- datasets_meta |>
