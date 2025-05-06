@@ -20,6 +20,8 @@ def test_legend_title_is_bold():
     assert check_cells_are_bold(file_path, 0, 'A1') is True
 
 # check cells in row 3 and cols 1-3 are bold
+def test_col_meta_headings_are_bold():
+    assert check_cells_are_bold(file_path, 0, 'A3:C3') is True
 
 # check cells in row 3 and cols 1-3 have the words: sheet_name, column and description in each cell
 
