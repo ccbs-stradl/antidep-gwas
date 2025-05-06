@@ -83,6 +83,7 @@ def check_cell_values_match_expected(file_path: str,
 
 # check that rows are bolded in any sheets (except README)
 # when they meet the specified condition(s) in the given column(s) (when supplied by the user)
+
 def check_conditional_bold_cells(file_path: str,
                                  sheet_indices: list,
                                  column_names: list,
@@ -98,52 +99,62 @@ def check_conditional_bold_cells(file_path: str,
         '!=': operator.ne
     }
 
+    # create empty list to store True/False values for each sheet
+    all_rows_are_bold_sheets_list = []
+
     # loop over each sheet in sheet_indices to check each sheet individually
     # for each sheet get all the values
-    sheet = get_cell_values(file_path,
-                            sheet_indices[0],
-                            'used_range')
+    for index in range(0, len(sheet_indices)):
 
-    # convert sheet contents from nested list to a dataframe
-    df = pd.DataFrame(sheet[1:], columns=sheet[0])
+        sheet = get_cell_values(file_path,
+                                sheet_indices[index],
+                                'used_range')
 
-    # for each item in column name, condition and threshold values
-    # get the condition which is to be met for a row to be bold
-    matched_rows = []
-    for col, cond, thresh in zip(column_names, condition, threshold):
-        # get the row indices which satisfy this condition
-        row_indices = df.index[ops[cond](df[col], thresh)].tolist()
-        # add 2 to account for starting at 0 and header row, gets actual row numbers
-        excel_row_indices = [index + 2 for index in row_indices]
-        matched_rows.append(excel_row_indices)
+        # convert sheet contents from nested list to a dataframe
+        df = pd.DataFrame(sheet[1:], columns=sheet[0])
 
-    # if there are multiple conditions to match,
-    # ie. multiple items in column_names, condition and threshold
-    # then take the intersection of these row indices
-    # so that only rows that match all conditions are returned
-    if len(matched_rows) > 1:
-        matched_rows = sorted(set.intersection(*map(set, matched_rows)))
-    else:
-        matched_rows = matched_rows[0]
+        # for each item in column name, condition and threshold values
+        # get the condition which is to be met for a row to be bold
+        matched_rows = []
+        for col, cond, thresh in zip(column_names, condition, threshold):
+            # get the row indices which satisfy this condition
+            row_indices = df.index[ops[cond](df[col], thresh)].tolist()
+            # add 2 to account for starting at 0 and header row, gets actual row numbers
+            excel_row_indices = [index + 2 for index in row_indices]
+            matched_rows.append(excel_row_indices)
 
-    # subset the cells to only those in these row indices
-    number_of_cols = len(df.columns)
-    max_col_letter = chr(ord('@') + number_of_cols)
+        # if there are multiple conditions to match,
+        # ie. multiple items in column_names, condition and threshold
+        # then take the intersection of these row indices
+        # so that only rows that match all conditions are returned
+        if len(matched_rows) > 1:
+            matched_rows = sorted(set.intersection(*map(set, matched_rows)))
+        else:
+            matched_rows = matched_rows[0]
 
-    # iterate over each row that should be bold
-    row_is_bold = []
-    for row in matched_rows:
-        cell_range = 'A' + str(row) + ':' + max_col_letter + str(row)
+        # subset the cells to only those in these row indices
+        number_of_cols = len(df.columns)
+        max_col_letter = chr(ord('@') + number_of_cols)
 
-        bold_row = check_cells_are_bold(file_path,
-                                        sheet_indices[0],
-                                        cell_range)
-        row_is_bold.append(bold_row)
+        # iterate over each row that should be bold
+        row_is_bold = []
+        for row in matched_rows:
+            cell_range = 'A' + str(row) + ':' + max_col_letter + str(row)
 
-    # check that all these cells are bold
-    all_rows_are_bold = all(row_is_bold)
+            bold_row = check_cells_are_bold(file_path,
+                                            sheet_indices[0],
+                                            cell_range)
+            row_is_bold.append(bold_row)
 
-    return all_rows_are_bold
+        # check that all these cells are bold
+        all_rows_are_bold = all(row_is_bold)
+
+        # append all_rows_are_bold to the sheet value
+        all_rows_are_bold_sheets_list.append(all_rows_are_bold)
+
+    all_rows_in_all_sheets_are_bold = all(all_rows_are_bold_sheets_list)
+
+    return all_rows_in_all_sheets_are_bold
 
 # ----------- SHEETS -------------------
 # check number of sheets
