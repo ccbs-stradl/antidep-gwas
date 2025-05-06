@@ -1,7 +1,8 @@
 from funs_check_excel import (check_file_exists,
                               check_readme_cell_contents_exist,
                               check_cells_are_bold,
-                              check_cell_values_match_expected)
+                              check_cell_values_match_expected,
+                              check_conditional_bold_cells)
 
 file_path = "test_data/xlsx/S1_test_excel.xlsx"
 
@@ -36,12 +37,27 @@ def test_col_meta_headings_content():
                                             'A3:C3',
                                             ['sheet_name', 'column', 'description']) is True
 
+
 # ----------- NON README SHEETS -------------------
 # check sheets (except README) contain content
 
 # check that rows are bolded in any sheets (except README)
 # when they meet the specified condition(s) in the given column(s) (when supplied by the user)
+def test_conditional_bold_cells():
+    assert check_conditional_bold_cells(file_path,
+                                        list(range(1, 3)),
+                                        ['p_val', 'CS_PIP'],
+                                        ['<', '>'],
+                                        [0.05, 0.6]) is True
 
+
+# check rows that should not be bold are not bold
+def test_conditional_not_bold_cells():
+    assert check_conditional_bold_cells(file_path,
+                                        list(range(1, 3)),
+                                        ['p_val'],
+                                        ['>'],
+                                        [0.05]) is False
 # ----------- SHEETS -------------------
 # check number of sheets
 

@@ -1,6 +1,8 @@
 import os
 import xlwings as xw
 from xlwings.main import Range
+import pandas as pd
+import operator
 
 os.environ["XLWINGS_LICENSE_KEY"] = "noncommercial"
 
@@ -39,7 +41,10 @@ def cell_not_bold(cell: Range) -> bool:
 def get_cells(file_path: str, sheet_index: int, cell_range: str) -> Range:
     """Return cell range from given sheet."""
     wb = xw.Book(file_path)
-    cells = wb.sheets[sheet_index][cell_range]
+    if cell_range != 'used_range':
+        cells = wb.sheets[sheet_index][cell_range]
+    else:
+        cells = wb.sheets[sheet_index].used_range
     return cells
 
 
@@ -76,6 +81,74 @@ def check_cell_values_match_expected(file_path: str,
 
 # check that rows are bolded in any sheets (except README)
 # when they meet the specified condition(s) in the given column(s) (when supplied by the user)
+def check_conditional_bold_cells(file_path: str,
+                                 sheet_indices: list,
+                                 column_names: list,
+                                 condition: list,
+                                 threshold: list) -> bool:
+
+    # Get a dictionary of possible operators using the operator module
+    ops = {
+        '<': operator.lt,
+        '>': operator.gt,
+        '==': operator.eq,
+        '<=': operator.le,
+        '>=': operator.ge,
+        '!=': operator.ne
+    }
+
+    # loop over each sheet in sheet_indices to check each sheet individually
+    # for each sheet get all the values
+    sheet = get_cell_values(file_path,
+                            sheet_indices[0],
+                            'used_range')
+
+    # convert sheet contents from nested list to a dataframe
+    df = pd.DataFrame(sheet[1:], columns=sheet[0])
+
+    # for each item in column name, condition and threshold values
+    # get the condition which is to be met for a row to be bold
+    matched_rows = []
+    for col, cond, thresh in zip(column_names, condition, threshold):
+
+        # get the row indices which satisfy this condition
+        row_indices = df.index[ops[cond](df[col], thresh)].tolist()
+        # add 2 to account for starting at 0 and header row, gets actual row numbers
+        excel_row_indices = [index + 2 for index in row_indices]
+        matched_rows.append(excel_row_indices)
+
+    # if there are multiple conditions to match,
+    # ie. multiple items in column_names, condition and threshold
+    # then take the intersection of these row indices
+    # so that only rows that match all conditions are returned
+    if len(matched_rows) > 1:
+        matched_rows = sorted(set.intersection(*map(set, matched_rows)))
+    else:
+        matched_rows = matched_rows[0]
+
+    # subset the cells to only those in these row indices
+    number_of_cols = len(df.columns)
+    max_col_letter = chr(ord('@') + number_of_cols)
+
+    # iterate over each row that should be bold
+    row_is_bold = []
+    for row in matched_rows:
+        cell_range = 'A' + str(row) + ':' + max_col_letter + str(row)
+
+        bold_row = check_cells_are_bold(file_path,
+                             sheet_indices[0],
+                              cell_range)
+        row_is_bold.append(bold_row)
+
+    # check that all these cells are bold
+    all_rows_are_bold = all(row_is_bold)
+
+    return all_rows_are_bold
+
+
+
+
+
 
 # ----------- SHEETS -------------------
 # check number of sheets
