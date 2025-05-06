@@ -1,5 +1,6 @@
 import os
 import xlwings as xw
+from xlwings.main import Range
 
 os.environ["XLWINGS_LICENSE_KEY"] = "noncommercial"
 
