@@ -4,12 +4,14 @@ from xlwings.main import Range
 
 os.environ["XLWINGS_LICENSE_KEY"] = "noncommercial"
 
+
 # ----------- FILE EXISTS ---------------------
 # check excel file with test data exists
 # this file is created by running generate_test_data.R
 def check_file_exists(file_path: str) -> bool:
     """Check if the file exists."""
     return os.path.isfile(file_path)
+
 
 # ----------- README SHEET --------------------
 # check content of cells in the readme sheet exists
@@ -18,7 +20,7 @@ def check_readme_cell_contents_exist(file_path: str) -> bool:
     """Check if the expected cells in the README sheet contain content"""
     wb = xw.Book(file_path)
     readme = wb.sheets[0]
-    cols_to_check = ['A1:A10' , 'B3:B10', 'C3:C10']
+    cols_to_check = ['A1:A10', 'B3:B10', 'C3:C10']
     for col in cols_to_check:
         values = readme.range(col).value
         is_empty = any(value is None for value in values)
@@ -26,17 +28,20 @@ def check_readme_cell_contents_exist(file_path: str) -> bool:
             return False
     return True
 
+
 # ----------- BOLD STYLE --------------------
 def cell_not_bold(cell: Range) -> bool:
     """Return false if the cell is not bold."""
     cell_is_not_bold = not cell.font.bold
     return cell_is_not_bold
 
+
 def get_cells(file_path: str, sheet_index: int, cell_range: str) -> Range:
     """Return cell range from given sheet."""
     wb = xw.Book(file_path)
     cells = wb.sheets[sheet_index][cell_range]
     return cells
+
 
 def check_cells_are_bold(file_path: str, sheet_index: int, cell_range: str) -> bool:
     """Check if a range of cells are bold."""
@@ -48,6 +53,7 @@ def check_cells_are_bold(file_path: str, sheet_index: int, cell_range: str) -> b
         return False
     return True
 
+
 # ----------- CELL CONTENTS ------------
 # get the cell contents for a range of cells
 # check those contents match a list of strings of expected values
@@ -55,6 +61,7 @@ def get_cell_values(file_path: str, sheet_index: int, cell_range: str) -> list:
     contents = get_cells(file_path, sheet_index, cell_range)
     values = contents.value
     return values
+
 
 def check_cell_values_match_expected(file_path: str,
                                      sheet_index: int,
