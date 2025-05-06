@@ -1,0 +1,7 @@
+column	description
+Abbreviation	Abbreviation of the phenotype
+Phenotype	Phenotype name
+Reference	Publication reference
+Publication	Link to publication
+Source	Cohort source
+Download	Link to download the dataset

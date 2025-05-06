@@ -16,13 +16,13 @@ update_table_index <- function(table_index){
 # a string for the path where csv/tsv files are located
 # a string to match file name
 # function returns the .csv or .tsv file names, removes .cols but checks they exist
-get_main_file_names <- function(path, file_regex){
-  files <- list.files(path, full.names = TRUE)
+get_main_file_names <- function(file_path, file_regex){
+  files <- list.files(file_path, full.names = TRUE)
   files <- str_subset(files, file_regex)
   
   # If there are no files stop with error
   if(length(files) == 0){
-    stop(paste0("No files found at: ", path, " with regex: ", regex))
+    stop(paste0("No files found at: ", file_path, " with regex: ", file_regex))
   }
   
   # If files are found, check if they all end with .csv, .tsv or .cols
@@ -51,9 +51,20 @@ get_main_file_names <- function(path, file_regex){
 # ---------------------------------------------
 # Function to read in the results tables and sidecar .cols files
 read_results <- function(full_path){
-  # Read in results tables
-  main <- fread(full_path)
   
+  # Sometimes fread does not read csvs correctly (when read_csv does) and returns a warning
+  # to reproduce the warning try reading in "manuscript/tables/rg_ldsc_external_references.csv"
+  # wrap in a tryCatch to catch this warning
+  main <- tryCatch({
+    # Read in results tables
+    fread(full_path)
+  }, warning = function(w) {
+    # Print the warning message
+    message("Warning: ", conditionMessage(w), 
+            paste0("\nUsing read_csv() instead of fread() for ", full_path))
+    read_csv(full_path)
+  })
+
   # Read in sidecar .cols files
   meta <- fread(paste0(full_path, ".cols"))
   
