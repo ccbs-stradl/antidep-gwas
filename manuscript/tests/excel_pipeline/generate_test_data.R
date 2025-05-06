@@ -81,7 +81,9 @@ main <- function(){
                                         "this is part C for the first sheet"),
                cell_title_width = 30,
                cell_title_height = 50,
-               bold_significant = "p_val")
+               bold_cols = c("p_val", "CS_PIP"),
+               bold_condition = c("<", ">"),
+               bold_threshold = c(0.05, 0.8))
 }
 
 # ---------------------------------------------
