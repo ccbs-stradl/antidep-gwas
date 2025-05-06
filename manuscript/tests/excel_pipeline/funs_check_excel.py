@@ -27,7 +27,7 @@ def check_readme_cell_contents_exist(file_path: str) -> bool:
     return True
 
 # ----------- BOLD STYLE --------------------
-def cell_not_bold(cell) -> bool:
+def cell_not_bold(cell: Range) -> bool:
     """Return false if the cell is not bold."""
     cell_is_not_bold = not cell.font.bold
     return cell_is_not_bold
@@ -48,7 +48,21 @@ def check_cells_are_bold(file_path: str, sheet_index: int, cell_range: str) -> b
         return False
     return True
 
-# check cells in row 3 and cols 1-3 have the words: sheet_name, column and description in each cell
+# ----------- CELL CONTENTS ------------
+# get the cell contents for a range of cells
+# check those contents match a list of strings of expected values
+def get_cell_values(file_path: str, sheet_index: int, cell_range: str) -> list:
+    contents = get_cells(file_path, sheet_index, cell_range)
+    values = contents.value
+    return values
+
+def check_cell_values_match_expected(file_path: str,
+                                     sheet_index: int,
+                                     cell_range: str,
+                                     expected_values: list) -> bool:
+    values = get_cell_values(file_path, sheet_index, cell_range)
+    values_match_expected = values == expected_values
+    return values_match_expected
 
 # ----------- NON README SHEETS -------------------
 # check sheets (except README) contain content

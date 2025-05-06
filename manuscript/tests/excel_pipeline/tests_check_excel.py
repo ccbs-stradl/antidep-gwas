@@ -1,7 +1,8 @@
 
 from funs_check_excel import (check_file_exists,
                               check_readme_cell_contents_exist,
-                              check_cells_are_bold)
+                              check_cells_are_bold,
+                              check_cell_values_match_expected)
 
 file_path = "test_data/xlsx/S1_test_excel.xlsx"
 
@@ -23,7 +24,13 @@ def test_legend_title_is_bold():
 def test_col_meta_headings_are_bold():
     assert check_cells_are_bold(file_path, 0, 'A3:C3') is True
 
+# ----------- CELL CONTENTS ------------
 # check cells in row 3 and cols 1-3 have the words: sheet_name, column and description in each cell
+def test_col_meta_headings_content():
+    assert check_cell_values_match_expected (file_path,
+                                      0,
+                                      'A3:C3',
+                                      ['sheet_name', 'column', 'description']) is True
 
 # ----------- NON README SHEETS -------------------
 # check sheets (except README) contain content
