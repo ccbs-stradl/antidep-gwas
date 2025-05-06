@@ -22,3 +22,14 @@ def test_legend_title_is_bold():
 # check cells in row 3 and cols 1-3 are bold
 
 # check cells in row 3 and cols 1-3 have the words: sheet_name, column and description in each cell
+
+# ----------- NON README SHEETS -------------------
+# check sheets (except README) contain content
+
+# check that rows are bolded in any sheets (except README)
+# when they meet the specified condition(s) in the given column(s) (when supplied by the user)
+
+# ----------- SHEETS -------------------
+# check number of sheets
+
+# check sheet names
