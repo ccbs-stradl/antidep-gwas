@@ -141,8 +141,6 @@ def check_conditional_bold_cells(file_path: str,
         row_is_bold.append(bold_row)
 
     # check that all these cells are bold
-    # if row_is_bold is empty then an empty list returns True
-    # this could be a problem if we are expecting rows to be bold but there are no rows for that condition?
     all_rows_are_bold = all(row_is_bold)
 
     return all_rows_are_bold

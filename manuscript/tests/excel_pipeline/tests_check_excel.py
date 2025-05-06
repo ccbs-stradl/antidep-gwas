@@ -61,6 +61,13 @@ def test_conditional_bold_cells():
                                         list(range(1, 3)),
                                         ['p_val', 'CS_PIP'],
                                         ['<', '>'],
+                                        [0.05, 0.8]) is True
+    # Cells meeting these conditions do not exist,
+    # they should return true because if cells do not exist it is impossible for them to be bold
+    assert check_conditional_bold_cells(file_path,
+                                        list(range(1, 3)),
+                                        ['p_val', 'CS_PIP'],
+                                        ['<', '>'],
                                         [-1, 1]) is True
 
 
