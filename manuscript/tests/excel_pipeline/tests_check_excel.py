@@ -1,7 +1,7 @@
 # Run Python tests to check excel file looks as expected
 # Create test data by running the same R function that creates real data
 # on test input csv files
-
+# -----------------------------------------------
 # Import functions to run tests
 from funs_check_excel import (check_file_exists,
                               check_readme_cell_contents_exist,
@@ -14,9 +14,12 @@ file_path = "test_data/xlsx/S1_test_excel.xlsx"
 
 # Import module to source R script that generates test data
 import subprocess
+
+
 def setup_module(module):
     """Run this once before all tests. Generate test data."""
     subprocess.run(['Rscript', 'generate_test_data.R'])
+
 
 # ----------- FILE EXISTS ---------------------
 def test_sheets_exist():
@@ -40,7 +43,6 @@ def test_col_meta_headings_are_bold():
     assert check_cells_are_bold(file_path, 0, 'A3:C3') is True
 
 
-# ----------- CELL CONTENTS ------------
 # check cells in row 3 and cols 1-3 have the words: sheet_name, column and description in each cell
 def test_col_meta_headings_content():
     assert check_cell_values_match_expected(file_path,

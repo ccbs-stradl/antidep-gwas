@@ -31,13 +31,7 @@ def check_readme_cell_contents_exist(file_path: str) -> bool:
     return True
 
 
-# ----------- BOLD STYLE --------------------
-def cell_not_bold(cell: Range) -> bool:
-    """Return false if the cell is not bold."""
-    cell_is_not_bold = not cell.font.bold
-    return cell_is_not_bold
-
-
+# ----------- GET CELLS ---------------------
 def get_cells(file_path: str, sheet_index: int, cell_range: str) -> Range:
     """Return cell range from given sheet."""
     wb = xw.Book(file_path)
@@ -46,6 +40,21 @@ def get_cells(file_path: str, sheet_index: int, cell_range: str) -> Range:
     else:
         cells = wb.sheets[sheet_index].used_range
     return cells
+
+
+# get the cell contents for a range of cells
+# check those contents match a list of strings of expected values
+def get_cell_values(file_path: str, sheet_index: int, cell_range: str) -> list:
+    contents = get_cells(file_path, sheet_index, cell_range)
+    values = contents.value
+    return values
+
+
+# ----------- BOLD STYLE --------------------
+def cell_not_bold(cell: Range) -> bool:
+    """Return false if the cell is not bold."""
+    cell_is_not_bold = not cell.font.bold
+    return cell_is_not_bold
 
 
 def check_cells_are_bold(file_path: str, sheet_index: int, cell_range: str) -> bool:
@@ -60,14 +69,6 @@ def check_cells_are_bold(file_path: str, sheet_index: int, cell_range: str) -> b
 
 
 # ----------- CELL CONTENTS ------------
-# get the cell contents for a range of cells
-# check those contents match a list of strings of expected values
-def get_cell_values(file_path: str, sheet_index: int, cell_range: str) -> list:
-    contents = get_cells(file_path, sheet_index, cell_range)
-    values = contents.value
-    return values
-
-
 def check_cell_values_match_expected(file_path: str,
                                      sheet_index: int,
                                      cell_range: str,
@@ -75,6 +76,7 @@ def check_cell_values_match_expected(file_path: str,
     values = get_cell_values(file_path, sheet_index, cell_range)
     values_match_expected = values == expected_values
     return values_match_expected
+
 
 # ----------- NON README SHEETS -------------------
 # check sheets (except README) contain content
@@ -86,7 +88,6 @@ def check_conditional_bold_cells(file_path: str,
                                  column_names: list,
                                  condition: list,
                                  threshold: list) -> bool:
-
     # Get a dictionary of possible operators using the operator module
     ops = {
         '<': operator.lt,
@@ -110,7 +111,6 @@ def check_conditional_bold_cells(file_path: str,
     # get the condition which is to be met for a row to be bold
     matched_rows = []
     for col, cond, thresh in zip(column_names, condition, threshold):
-
         # get the row indices which satisfy this condition
         row_indices = df.index[ops[cond](df[col], thresh)].tolist()
         # add 2 to account for starting at 0 and header row, gets actual row numbers
@@ -136,19 +136,14 @@ def check_conditional_bold_cells(file_path: str,
         cell_range = 'A' + str(row) + ':' + max_col_letter + str(row)
 
         bold_row = check_cells_are_bold(file_path,
-                             sheet_indices[0],
-                              cell_range)
+                                        sheet_indices[0],
+                                        cell_range)
         row_is_bold.append(bold_row)
 
     # check that all these cells are bold
     all_rows_are_bold = all(row_is_bold)
 
     return all_rows_are_bold
-
-
-
-
-
 
 # ----------- SHEETS -------------------
 # check number of sheets
