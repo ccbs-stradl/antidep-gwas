@@ -61,7 +61,7 @@ def test_conditional_bold_cells():
                                         list(range(1, 3)),
                                         ['p_val', 'CS_PIP'],
                                         ['<', '>'],
-                                        [0.05, 0.6]) is True
+                                        [-1, 1]) is True
 
 
 # check rows that should not be bold are not bold
