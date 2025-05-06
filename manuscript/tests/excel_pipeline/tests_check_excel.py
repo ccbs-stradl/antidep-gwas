@@ -16,7 +16,7 @@ file_path = "test_data/xlsx/S1_test_excel.xlsx"
 import subprocess
 
 
-def setup_module(module):
+def setup_module():
     """Run this once before all tests. Generate test data."""
     subprocess.run(['Rscript', 'generate_test_data.R'])
 
