@@ -113,7 +113,7 @@ def get_matched_rows(df, column_names, condition, threshold) -> list[int]:
         matched_rows_list.append(excel_row_indices)
 
     # if there are multiple conditions to match,
-    # ie. multiple items in column_names, condition and threshold
+    # i.e. multiple items in column_names, condition and threshold
     # then take the intersection of these row indices
     # so that only rows that match all conditions are returned
     if len(matched_rows_list) > 1:
@@ -130,32 +130,32 @@ def check_conditional_bold_cells(file_path: str,
                                  threshold: list) -> bool:
 
     # define helper functions not needed outside this function:
-    def rows_are_bold(sheet_index, rows_to_check, max_col_letter, any_or_all) -> bool :
+    def rows_are_bold(sheet_indx, rows_to_check, final_col_letter, any_or_all) -> bool :
         """Check if any or all rows in the given row indices are bold."""
         row_is_bold = []
         for row in rows_to_check:
-            cell_range = 'A' + str(row) + ':' + max_col_letter + str(row)
+            cell_range = 'A' + str(row) + ':' + final_col_letter + str(row)
 
             bold_row = check_cells_are_bold(file_path,
-                                            sheet_index,
+                                            sheet_indx,
                                             cell_range)
             row_is_bold.append(bold_row)
 
         # check that all these cells are bold
         if any_or_all == 'any':
-            rows_are_bold = any(row_is_bold)
+            bold_rows = any(row_is_bold)
         elif any_or_all == 'all':
-            rows_are_bold = all(row_is_bold)
+            bold_rows = all(row_is_bold)
         else:
             raise ValueError("any_or_all must be either 'any' or 'all'.")
 
-        return rows_are_bold
+        return bold_rows
 
-    def get_max_col_letter(df) -> str:
-        """Get the letter of the final column in the excel sheet."""
-        number_of_cols = len(df.columns)
-        max_col_letter = chr(ord('@') + number_of_cols)
-        return max_col_letter
+    def get_max_col_letter(sheet_data) -> str:
+        """Get the letter of the final column in the Excel sheet."""
+        number_of_cols = len(sheet_data.columns)
+        final_col_letter = chr(ord('@') + number_of_cols)
+        return final_col_letter
 
     # create empty list to store True/False values for each sheet
     boldness_by_sheet = []
@@ -170,7 +170,7 @@ def check_conditional_bold_cells(file_path: str,
         # get the condition which is to be met for a row to be bold
         matched_rows = get_matched_rows(df, column_names, condition, threshold)
 
-        # Get the letter of the final column in the excel sheet
+        # Get the letter of the final column in the Excel sheet
         max_col_letter = get_max_col_letter(df)
 
         # iterate over each row that should be bold
