@@ -130,10 +130,10 @@ def check_conditional_bold_cells(file_path: str,
                                  threshold: list) -> bool:
 
     # define helper functions not needed outside this function:
-    def rows_are_bold(sheet_index, matched_rows, max_col_letter) -> bool :
-        """Check if rows in the matched rows list are bold."""
+    def rows_are_bold(sheet_index, rows_to_check, max_col_letter, any_or_all) -> bool :
+        """Check if any or all rows in the given row indices are bold."""
         row_is_bold = []
-        for row in matched_rows:
+        for row in rows_to_check:
             cell_range = 'A' + str(row) + ':' + max_col_letter + str(row)
 
             bold_row = check_cells_are_bold(file_path,
@@ -142,9 +142,14 @@ def check_conditional_bold_cells(file_path: str,
             row_is_bold.append(bold_row)
 
         # check that all these cells are bold
-        all_rows_are_bold = all(row_is_bold)
+        if any_or_all == 'any':
+            rows_are_bold = any(row_is_bold)
+        elif any_or_all == 'all':
+            rows_are_bold = all(row_is_bold)
+        else:
+            raise ValueError("any_or_all must be either 'any' or 'all'.")
 
-        return all_rows_are_bold
+        return rows_are_bold
 
     def get_max_col_letter(df) -> str:
         """Get the letter of the final column in the excel sheet."""
@@ -171,7 +176,20 @@ def check_conditional_bold_cells(file_path: str,
         # iterate over each row that should be bold
         all_rows_are_bold = rows_are_bold(sheet_index,
                                           matched_rows,
-                                          max_col_letter)
+                                          max_col_letter,
+                                          'all')
+
+        # check that no other rows are bold, only the rows that match the condition are bold
+        not_matched_rows = list(set(range(1, len(df) + 1)) - set(matched_rows))
+        no_other_rows_are_bold = rows_are_bold(sheet_index,
+                                               not_matched_rows,
+                                               max_col_letter,
+                                               'any')
+
+        if no_other_rows_are_bold:
+            all_rows_are_bold = False
+            # include a message to the user
+            print(f"Warning: rows in sheet {sheet_index} contained bold rows outside the specified condition(s).")
 
         # append all_rows_are_bold to the sheet value
         boldness_by_sheet.append(all_rows_are_bold)
