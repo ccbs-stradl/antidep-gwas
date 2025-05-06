@@ -1,11 +1,22 @@
+# Run Python tests to check excel file looks as expected
+# Create test data by running the same R function that creates real data
+# on test input csv files
+
+# Import functions to run tests
 from funs_check_excel import (check_file_exists,
                               check_readme_cell_contents_exist,
                               check_cells_are_bold,
                               check_cell_values_match_expected,
                               check_conditional_bold_cells)
 
+# Define the file_path variable for the test data created
 file_path = "test_data/xlsx/S1_test_excel.xlsx"
 
+# Import module to source R script that generates test data
+import subprocess
+def setup_module(module):
+    """Run this once before all tests. Generate test data."""
+    subprocess.run(['Rscript', 'generate_test_data.R'])
 
 # ----------- FILE EXISTS ---------------------
 def test_sheets_exist():
