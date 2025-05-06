@@ -19,11 +19,11 @@ def check_readme_cell_contents_exist(file_path: str) -> bool:
     readme = wb.sheets[0]
     cols_to_check = ['A1:A10' , 'B3:B10', 'C3:C10']
     for col in cols_to_check:
-        value = readme.range(col).value
-        if value is None or str(value).strip() == '':
+        values = readme.range(col).value
+        is_empty = any(value is None for value in values)
+        if is_empty:
             return False
-        else:
-            return True
+    return True
 
 # check cell in row 1 and col 1 in first sheet is bold (this is the legend title)
 def check_legend_title_is_bold(file_path: str) -> bool:
