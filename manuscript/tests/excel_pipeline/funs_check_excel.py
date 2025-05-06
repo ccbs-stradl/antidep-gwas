@@ -25,17 +25,27 @@ def check_readme_cell_contents_exist(file_path: str) -> bool:
             return False
     return True
 
-# check cell in row 1 and col 1 in first sheet is bold (this is the legend title)
-def check_legend_title_is_bold(file_path: str) -> bool:
-    """Check if the legend title in cell A1 is bold."""
+# ----------- BOLD STYLE --------------------
+def cell_not_bold(cell) -> bool:
+    """Return false if the cell is not bold."""
+    cell_is_not_bold = not cell.font.bold
+    return cell_is_not_bold
+
+def get_cells(file_path: str, sheet_index: int, cell_range: str) -> Range:
+    """Return cell range from given sheet."""
     wb = xw.Book(file_path)
-    legend = wb.sheets[0]['A1']
-    legend_is_bold = legend.font.bold
-    return legend_is_bold
+    cells = wb.sheets[sheet_index][cell_range]
+    return cells
 
-# check cell in row 2 and col 1 in first sheet has no style
-
-# check cells in row 3 and cols 1-3 are bold
+def check_cells_are_bold(file_path: str, sheet_index: int, cell_range: str) -> bool:
+    """Check if a range of cells are bold."""
+    cells = get_cells(file_path, sheet_index, cell_range)
+    # Check if any of the given cells are not bold
+    # if any cell is not bold this will return True
+    is_not_bold = any(cell_not_bold(cell) for cell in cells)
+    if is_not_bold:
+        return False
+    return True
 
 # check cells in row 3 and cols 1-3 have the words: sheet_name, column and description in each cell
 
