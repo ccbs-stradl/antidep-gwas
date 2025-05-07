@@ -1,47 +1,18 @@
+# Copy main results from datastore to here so they can be git tracked.
 # Create .cols sidecar meta data for SMR results
 
 # load libraries
 library(dplyr)
 library(tidyr)
 library(stringr)
+library(data.table)
+library(readr)
+library(glue)
+library(here)
 
-# Create col name descriptions, same for all SMR results
-colname_descriptions <-
-c("Gene" = "placeholder",
-"qtl_name" = "placeholder",
-"probeID" = "placeholder",
-"ProbeChr" = "placeholder",
-"Probe_bp" = "placeholder",
-"topSNP" = "placeholder",
-"topSNP_chr" = "placeholder",
-"topSNP_bp" = "placeholder",
-"A1" = "placeholder",
-"A2" = "placeholder",
-"Freq" = "placeholder",
-"b_GWAS" = "placeholder",
-"se_GWAS" = "placeholder",
-"p_GWAS" = "placeholder",
-"b_eQTL" = "placeholder",
-"se_eQTL" = "placeholder",
-"p_eQTL" = "placeholder",
-"b_SMR" = "placeholder",
-"se_SMR" = "placeholder",
-"p_SMR" = "placeholder",
-"p_HEIDI" = "placeholder",
-"nsnp_HEIDI" = "placeholder",
-"gene_id" = "placeholder",
-"chr" = "placeholder",
-"start" = "placeholder",
-"end" = "placeholder",
-"strand" = "placeholder",
-"GWAS_LOCUS" = "placeholder",
-"Lead_SNP" = "placeholder",
-"Lead_SNP_BP" = "placeholder"
-)
-
-# Load function to create .cols sidecar meta data file
-source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
-
+# -----------------------------------------------
+# Copy results to this projects directory, from datastore
+# First I made a sym link to the datastore dir (see docs/ for how to do this)
 # Read in all SMR results for blood and brain
 paths <- list(
   "results/maps/smr/blood/trait_eSMR.merged.tsv",
@@ -51,6 +22,73 @@ paths <- list(
   "results/maps/smr/brainmeta/trait_mSMR.merged.tsv",
   "results/maps/smr/brainmeta/trait_sSMR.merged.tsv"
 )
+
+# rename file from "blood/trait_eSMR.merged.tsv" to 
+# "blood_trait_eSMR.merged.tsv" etc.
+# then move this file to manuscripts/tables/
+rename_file_and_move <- function(old_path, new_path_prefix){
+  # renaming step, first replace all / with _
+  old_path_underscored <- str_replace_all(old_path, "/", "_")
+  # extract everything after the 3rd underscore
+  new_file_name <- str_match(old_path_underscored, "^(?:[^_]*_){3}(.*)")[,2]
+  
+  # full new path
+  new_path <- paste0(new_path_prefix, "/", new_file_name)
+  
+  # set wd to project root
+  system(paste0("cd ", here::here()))
+  # copy results and rename with new name
+  system(paste0("cp ", old_path, " ", new_path ))
+  
+  return(new_path)
+}
+
+paths <- lapply(paths, rename_file_and_move, new_path_prefix = "manuscript/tables")
+# -----------------------------------------------
+# Anomaly - "manuscript/tables/blood_trait_pSMR.merged.tsv" should have column called Gene not index
+blood_pSMR <- fread("manuscript/tables/blood_trait_pSMR.merged.tsv")
+# rename
+blood_pSMR <- rename(blood_pSMR, "Gene" = "index")
+# rewrite
+write_tsv(blood_pSMR, "manuscript/tables/blood_trait_pSMR.merged.tsv")
+
+# -----------------------------------------------
+# Create col name descriptions, same for all SMR results
+colname_descriptions <-
+  c("Gene" = "gene name",
+    "qtl_name" = "QTL name",
+    "probeID" = "probe ID",
+    "ProbeChr" = "probe chromosome",
+    "Probe_bp" = "probe position",
+    "topSNP" = "SNP name",
+    "topSNP_chr" = "SNP chromosome",
+    "topSNP_bp" = "SNP position",
+    "A1" = "the effect (coded) allele",
+    "A2" = "the other allele",
+    "Freq" = "frequency of the effect allele (estimated from the reference samples)",
+    "b_GWAS" = "effect size from GWAS",
+    "se_GWAS" = "standard error from GWAS",
+    "p_GWAS" = "p-value from GWAS",
+    "b_eQTL" = "effect size from eQTL study",
+    "se_eQTL" = "standard error from eQTL study",
+    "p_eQTL" = "p-value from eQTL study",
+    "b_SMR" = "effect size from SMR",
+    "se_SMR" = "standard error from SMR",
+    "p_SMR" = "p-value from SMR",
+    "p_HEIDI" = "p-value from HEIDI (HEterogeneity In Depedent Instruments) test",
+    "nsnp_HEIDI" = "number of SNPs used in the HEIDI test",
+    "gene_id" = "Gene ID",
+    "chr" = "Chromosome",
+    "start" = "Start position",
+    "end" = "end position",
+    "strand" = "strand",
+    "GWAS_LOCUS" = "gwas locus",
+    "Lead_SNP" = "lead SNP",
+    "Lead_SNP_BP" = "lead SNP position"
+  )
+
+# Load function to create .cols sidecar meta data file
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
 
 lapply(paths, function(path){
   smr_results <- fread(here::here(path))
