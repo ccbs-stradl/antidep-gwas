@@ -169,14 +169,13 @@ main <- function() {
   
   # Create the fifth supplementary table for the SMR results
   create_table(
-    paths = c(rep("results/maps/smr/blood", 3),
-              rep("results/maps/smr/brainmeta", 3)),
-    regex = c("eSMR",
-              "mSMR",
-              "pSMR",
-              "eSMR",
-              "mSMR",
-              "sSMR"),
+    paths = rep("manuscript/tables/", 6),
+    regex = c("blood_trait_eSMR",
+              "blood_trait_mSMR",
+              "blood_trait_pSMR",
+              "brainmeta_trait_eSMR",
+              "brainmeta_trait_mSMR",
+              "brainmeta_trait_sSMR"),
     sheet_names = c("blood eSMR",
                     "blood mSMR",
                     "blood pSMR",
