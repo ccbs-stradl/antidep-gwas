@@ -10,6 +10,9 @@ library(readr)
 library(glue)
 library(here)
 
+# Load function to create .cols sidecar meta data file
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
+
 # -----------------------------------------------
 # Copy results to this projects directory, from datastore
 # First I made a sym link to the datastore dir (see docs/ for how to do this)
@@ -87,9 +90,6 @@ colname_descriptions <-
     "Lead_SNP" = "lead SNP",
     "Lead_SNP_BP" = "lead SNP position"
   )
-
-# Load function to create .cols sidecar meta data file
-source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
 
 lapply(paths, function(path){
   smr_results <- fread(here::here(path))
