@@ -10,7 +10,7 @@ library(stringr)
 log_dir = here::here("results/models/popcorn/gwas")
 
 # metaset to analyse
-metaset <- read_csv(here::here("metasets/antidep-2501.csv"))
+metaset <- read_csv(here::here("inputs/metasets/antidep-2501.csv"))
 
 # popcorn output files
 popcorn_files <- list.files(log_dir,
@@ -43,4 +43,31 @@ popcorns_keep <- popcorns |>
          filter(p1_cluster != p2_cluster) |>
          filter(p1_pheno != "N06AX", p2_pheno != "N06AX")
 
-write_csv(popcorns_keep, here::here("manuscript/tables/rg_popcorn_gwas.csv"))
+file_name <- here::here("manuscript/tables/rg_popcorn_gwas.csv")
+write_csv(popcorns_keep, file_name)
+
+popcorns_keep <- fread(file_name)
+
+# create .cols sidecar meta data file
+colname_descriptions <- c("p1_cohort" = "Name of first cohort",
+                          "p1_pheno" = "Anti-depressant phenotype of first cohort",
+                          "p1_cluster" = "Ancestry cluster of first cohort",
+                          "p1_version" = "Version of first cohort",
+                          "p2_cohort" = "Name of second cohort",
+                          "p2_pheno" = "Anti-depressant phenotype of second cohort",
+                          "p2_cluster" = "Ancestry cluster of second cohort",
+                          "p2_version" = "Version of second cohort",
+                          "pgi" = "Genetic impact correlation",
+                          "SE" = "Standard error of genetic impact correlation",
+                          "Z" = "Z statistic of genetic impact correlation",
+                          "P (Z)" = "p-value of Z statistic of genetic impact correlation"
+)
+
+
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
+
+create_cols_meta(
+  file_name = file_name,
+  table_variable_name = popcorns_keep,
+  colname_descriptions = colname_descriptions
+)

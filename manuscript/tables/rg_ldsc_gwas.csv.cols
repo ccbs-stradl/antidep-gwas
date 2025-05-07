@@ -1,0 +1,19 @@
+column	description
+p1_cohort	Name of first cohort
+p1_pheno	Anti-depressant phenotype of first cohort
+p1_cluster	Ancestry cluster of first cohort
+p1_version	Version of first cohort
+p2_cohort	Name of second cohort
+p2_pheno	Anti-depressant phenotype of second cohort
+p2_cluster	Ancestry cluster of second cohort
+p2_version	Version of second cohort
+rg	Genetic correlation
+se	Standard error of genetic correlation
+z	Z-score of genetic correlation
+p	p-value of genetic correlation
+h2_obs	Observed scale heritability for second cohort
+h2_obs_se	Standard error of observed scale heritability for second cohort
+h2_int	Single-trait Linkage Disequilibrium Score regression intercept for second cohort
+h2_int_se	Standard error of single-trait Linkage Disequilibrium Score regression intercept for second cohort
+gcov_int	Cross-trait Linkage Disequilibrium Score regression intercept
+gcov_int_se	Standard error of cross-trait Linkage Disequilibrium Score regression intercept
