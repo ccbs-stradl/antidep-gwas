@@ -34,10 +34,12 @@ rename_file_and_move <- function(old_path, new_path_prefix){
   # full new path
   new_path <- paste0(new_path_prefix, "/", new_file_name)
   
-  # set wd to project root
-  system(paste0("cd ", here::here()))
   # copy results and rename with new name
-  system(paste0("cp ", old_path, " ", new_path ))
+  file.copy(
+    from = here::here(old_path),
+    to = here::here(new_path),
+    overwrite = TRUE
+  )
   
   return(new_path)
 }
