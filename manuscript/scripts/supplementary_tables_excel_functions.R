@@ -51,9 +51,8 @@ get_main_file_names <- function(file_path, file_regex) {
 # ---------------------------------------------
 # Function to read in the results tables and sidecar .cols files
 read_results <- function(full_path) {
-  # Sometimes fread does not read csvs correctly (when read_csv does) and returns a warning
-  # to reproduce the warning try reading in "manuscript/tables/rg_ldsc_external_references.csv"
-  # wrap in a tryCatch to catch this warning
+  # Sometimes fread does not read csvs correctly eg. if there is an extraneous comma at the end of a line
+  # in this case read_csv() can be used instead, however it is slower
   main <- tryCatch(
     {
       # Read in results tables
