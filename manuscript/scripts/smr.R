@@ -27,10 +27,9 @@ paths <- list(
 # "blood_trait_eSMR.merged.tsv" etc.
 # then move this file to manuscripts/tables/
 rename_file_and_move <- function(old_path, new_path_prefix){
-  # renaming step, first replace all / with _
-  old_path_underscored <- str_replace_all(old_path, "/", "_")
-  # extract everything after the 3rd underscore
-  new_file_name <- str_match(old_path_underscored, "^(?:[^_]*_){3}(.*)")[,2]
+  # rename file
+  tissue_type <- basename(dirname(old_path)) # extracts the last directory name
+  new_file_name <- str_c(tissue_type, '_', basename(old_path))
   
   # full new path
   new_path <- paste0(new_path_prefix, "/", new_file_name)
