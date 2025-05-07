@@ -194,7 +194,7 @@ main <- function() {
                              "brain sSMR"),
     cell_title_width = 39,
     cell_title_height = 49,
-    bold_cols = c("p_SMR", "p_HEIDI"), 
+    bold_cols = c("p_SMR_Bonferroni", "p_HEIDI"), 
     bold_condition = c("<", ">"), 
     bold_threshold = c(0.05, 0.05)
   )
