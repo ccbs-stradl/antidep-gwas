@@ -19,6 +19,7 @@ p_eQTL	p-value from eQTL study
 b_SMR	effect size from SMR
 se_SMR	standard error from SMR
 p_SMR	p-value from SMR
+p_SMR_Bonferroni	Bonferroni corrected p-value from SMR
 p_HEIDI	p-value from HEIDI (HEterogeneity In Depedent Instruments) test
 nsnp_HEIDI	number of SNPs used in the HEIDI test
 gene_id	Gene ID
