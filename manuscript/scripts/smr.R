@@ -1,4 +1,6 @@
 # Copy main results from datastore to here so they can be git tracked.
+# p-correct p_SMR using Bonferroni
+# reorder rows by p_SMR_Bonferroni and p_HEIDI
 # Create .cols sidecar meta data for SMR results
 # Paste sentences to go into manuscript
 
