@@ -1,47 +1,109 @@
-# Format SMR results
-
-# Create smy link to results
-# system("ln -s /Volumes/GenScotDepression/data/AMBER/antidep-gwas/maps results/")
+# Copy main results from datastore to here so they can be git tracked.
+# p-correct p_SMR using Bonferroni
+# reorder rows by p_SMR_Bonferroni and p_HEIDI
+# Create .cols sidecar meta data for SMR results
+# Paste sentences to go into manuscript
 
 # load libraries
-library(openxlsx)
 library(dplyr)
 library(tidyr)
 library(stringr)
+library(data.table)
+library(readr)
+library(glue)
+library(here)
 
-# Function that reads in the results
-read_results <- function(rel_path){
-  # Get the path to the results
-  path <- here::here(rel_path)
-  files <- list.files(path, full.names = TRUE, recursive = TRUE)
+# Load function to create .cols sidecar meta data file
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
+
+# -----------------------------------------------
+# Copy results to this projects directory, from datastore
+# First I made a sym link to the datastore dir (see docs/ for how to do this)
+# Read in all SMR results for blood and brain
+paths <- list(
+  "results/maps/smr/blood/trait_eSMR.merged.tsv",
+  "results/maps/smr/blood/trait_mSMR.merged.tsv",
+  "results/maps/smr/blood/trait_pSMR.merged.tsv",
+  "results/maps/smr/brainmeta/trait_eSMR.merged.tsv",
+  "results/maps/smr/brainmeta/trait_mSMR.merged.tsv",
+  "results/maps/smr/brainmeta/trait_sSMR.merged.tsv"
+)
+
+# Create col name descriptions, same for all SMR results
+colname_descriptions <-
+  c("Gene" = "gene name",
+    "qtl_name" = "QTL name",
+    "probeID" = "probe ID",
+    "ProbeChr" = "probe chromosome",
+    "Probe_bp" = "probe position",
+    "topSNP" = "SNP name",
+    "topSNP_chr" = "SNP chromosome",
+    "topSNP_bp" = "SNP position",
+    "A1" = "the effect (coded) allele",
+    "A2" = "the other allele",
+    "Freq" = "frequency of the effect allele (estimated from the reference samples)",
+    "b_GWAS" = "effect size from GWAS",
+    "se_GWAS" = "standard error from GWAS",
+    "p_GWAS" = "p-value from GWAS",
+    "b_eQTL" = "effect size from eQTL study",
+    "se_eQTL" = "standard error from eQTL study",
+    "p_eQTL" = "p-value from eQTL study",
+    "b_SMR" = "effect size from SMR",
+    "se_SMR" = "standard error from SMR",
+    "p_SMR" = "p-value from SMR",
+    "p_SMR_Bonferroni" = "Bonferroni corrected p-value from SMR",
+    "p_HEIDI" = "p-value from HEIDI (HEterogeneity In Depedent Instruments) test",
+    "nsnp_HEIDI" = "number of SNPs used in the HEIDI test",
+    "gene_id" = "Gene ID",
+    "chr" = "Chromosome",
+    "start" = "Start position",
+    "end" = "end position",
+    "strand" = "strand",
+    "GWAS_LOCUS" = "gwas locus",
+    "Lead_SNP" = "lead SNP",
+    "Lead_SNP_BP" = "lead SNP position"
+  )
+
+# -----------------------------------------------
+# rename file from "blood/trait_eSMR.merged.tsv" to 
+# "blood_trait_eSMR.merged.tsv" etc.
+# then move this file to manuscripts/tables/
+rename_file_and_move <- function(old_path, new_path_prefix){
+  # rename file
+  tissue_type <- basename(dirname(old_path)) # extracts the last directory name
+  new_file_name <- str_c(tissue_type, '_', basename(old_path))
   
-  # Read in tables and store as a list
-  smr_tables <- lapply(files, function(x) {
-    read.table(x, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
-  })
+  # full new path
+  new_path <- paste0(new_path_prefix, "/", new_file_name)
   
-  # rename smr_tables with a short descriptive name: "blood_eSMR", "brain_eSMR" etc.
-  names(smr_tables) <- extract_names(files)
+  # copy results and rename with new name
+  file.copy(
+    from = here::here(old_path),
+    to = here::here(new_path),
+    overwrite = TRUE
+  )
   
-  return(smr_tables)
+  return(new_path)
 }
 
-# extract name from file path
-extract_names <- function(files){
-  # Name tables with the tissue type and omic type
-  # Extract "blood" or "brain" from directory path
-  tissue <- sub(".*/smr/([^/]+)/.*", "\\1", files)  # Extracts the first directory after "smr/"
+# Read in results
+read_results <- function(path){
   
-  # Simplify "brainmeta" to "brain"
-  tissue <- gsub("brainmeta", "brain", tissue)
-  
-  # Extract "eSMR/mSMR/pSMR" from the filename
-  smr_type <- sub(".*trait_([a-zA-Z]+)\\.merged\\.tsv", "\\1", basename(files))
-  
-  # Combine to get "blood_eSMR", "brain_eSMR", etc.
-  short_names <- paste(tissue, smr_type, sep = "_")
-  
-  return(short_names)
+  results <- fread(here::here(path))
+
+  return(results)
+}
+
+# Extract names from path
+extract_names <- function(path){
+  # change "blood_trait_eSMR.merged.tsv" to "blood_eSMR"
+
+  new_name <- basename(path) %>%
+    str_remove_all("\\.merged\\.tsv") %>%
+    str_replace_all("trait_", "") %>%
+    str_replace("brainmeta", "brain") # Simplify "brainmeta" to "brain"
+
+  return(new_name)
 }
 
 # Reorder rows in results
@@ -58,100 +120,43 @@ reorder_results <- function(tables_list){
     tables_list[[i]] <- tables_list[[i]] %>%
       arrange(desc(p_HEIDI)) %>%
       arrange(p_SMR) %>%
-      mutate(p_SMR_Bonferroni = p.adjust(p_SMR, method = "bonferroni"))
+      mutate(p_SMR_Bonferroni = p.adjust(p_SMR, method = "bonferroni")) %>%
+      relocate(
+        p_SMR_Bonferroni,
+        .after = p_SMR
+      )
   }
   
   return(tables_list)
 }
 
-# Create an excell spreadsheet with a new sheet for each file
-make_excell <- function(tables_list, file_name, sup_table_num){
-  wb <- createWorkbook()
-  
-  # Add a readme for the first sheet
-  add_readme(tables_list, wb, sup_table_num)
-
-  # Add each table to a new sheet
-  for (i in seq_along(tables_list)) {
-    addWorksheet(wb, sheetName = names(tables_list)[i])
-    writeData(wb, sheet = names(tables_list)[i], tables_list[[i]], startRow = 1, colNames = TRUE)
-  }
-  
-  # Make rows that pass significance threshold bold
-  lapply(1:length(tables_list), function(i) {
-    sheet_name <- names(tables_list)[i]
-    make_bold_rows(tables_list[[i]], sheet_name, wb)
-  })
-  
-  saveWorkbook(wb, file_name, overwrite = TRUE)
-}
-
-# Make rows that pass significance threshold bold
-# significance is p_SMR < 0.05 and p_HEIDI > 0.05
-make_bold_rows <- function(df, sheet_name, wb){
-  # Get the row indices that pass the significance threshold
-  bold_rows <- which(df$p_SMR_Bonferroni < 0.05 & df$p_HEIDI > 0.05)
-  
-  # Make those rows bold
-  addStyle(wb, sheet = sheet_name, rows = bold_rows + 1, cols = 1:ncol(df), 
-           style = createStyle(textDecoration = "bold"), gridExpand = TRUE)
-
-}
-
-# Add a readme for the first sheet
-add_readme <- function(tables_list, wb, sup_table_num){
-  # Create a readme sheet
-  addWorksheet(wb, sheetName = "README")
-  
-  # Write the readme text
-  writeData(wb, sheet = "README", "SMR results of N06A in EUR, with multi-omic data (transcription, splicing, DNA methylation) from blood (GTEx Consortium, 2020; McRae et al., 2018) and brain tissue (Qi et al., 2022). Rows highlighted in bold indicate significant results: p_SMR < 0.05 and p_HEIDI > 0.05")
-  
-  # Make first col width wider
-  setColWidths(wb, sheet = "README", cols = 1, widths = 30)
-  
-  # Make first row width longer
-  setRowHeights(wb, sheet = "README", rows = 1, heights = 127)
-  
-  # Add text wrapping style to the first cell
-  wrap_style <- createStyle(wrapText = TRUE)
-  addStyle(wb, sheet = "README", style = wrap_style, rows = 1, cols = 1)
-  
-  # List the Supplementary Table Names:
-  supplementary_tables <- paste("Supplementary Table ", sup_table_num, LETTERS[1:length(tables_list)])
-
-  writeData(wb, sheet = "README", supplementary_tables, startRow = 2, startCol = 1)
-  
-  # List the tissues
-  writeData(wb, sheet = "README", names(tables_list), startRow = 2, startCol = 2)
-  
-}
 
 # Paste to console sentence to include in manuscript
 paste_sentences <- function(tables_list){
   # Get significant results for each tissue and omic type
   gene_names <- lapply(1:length(tables_list), function(i) {
-      genes <- tables_list[[i]] %>%
-        filter(p_SMR_Bonferroni < 0.05 & p_HEIDI > 0.05)
-      
-      if (nrow(genes) > 0) {
-        gene_names <- genes %>%
-          pull(if_else("Gene" %in% colnames(genes), "Gene", "index"))
-      } else {
-        gene_names <- NULL
-      }
-      
+    genes <- tables_list[[i]] %>%
+      filter(p_SMR_Bonferroni < 0.05 & p_HEIDI > 0.05)
+    
+    if (nrow(genes) > 0) {
+      gene_names <- genes %>%
+        pull(if_else("Gene" %in% colnames(genes), "Gene", "index"))
+    } else {
+      gene_names <- NULL
+    }
+    
     # Number of genes
     n_genes <- length(gene_names)
     
     # Name of the tissue and omic type
     tissue_omic <- names(tables_list)[i] %>%
-                    gsub("_", " and ")
+      str_replace("_", " and ")
     
     # paste sentence
     message("", n_genes, " genes in ", tissue_omic)
     
     return(gene_names)
-    })
+  })
   
   # Paste sentence on how many genes unique across all tissue and omic types
   n_unique_genes <- length(unique(unlist(gene_names)))
@@ -159,23 +164,44 @@ paste_sentences <- function(tables_list){
   
 }
 
-main <- function(rel_path, excell_file_name, sup_table_num){
+main <- function(paths){
+  new_paths <- lapply(paths, rename_file_and_move, new_path_prefix = "manuscript/tables")
+  
   # Read in results
-  tables_list <- read_results(rel_path)
+  tables_list <- lapply(new_paths, read_results)
+  
+  # Name results by their short name, eg. brain_eSMR
+  names(tables_list) <- lapply(new_paths, extract_names)
   
   # Reorder rows in results
   tables_list_ordered <- reorder_results(tables_list)
   
-  # Create an excell spreadsheet with a new sheet for each file, 
-  # significant rows bold, and a readme for the first sheet
-  make_excell(tables_list_ordered, excell_file_name, sup_table_num)
+  # Check any tables with "index" is renamed to "Gene"
+  tables_list_ordered_renamed <- lapply(tables_list_ordered, function(df) {
+    if ("index" %in% colnames(df)) {
+      df <- rename(df, "Gene" = "index")
+    }
+    return(df)
+  })
   
+  # Create .cols sidecar meta data file
+  Map(function(path, table) {
+    # Create .cols sidecar meta data file
+    create_cols_meta(
+      file_name = path,
+      table_variable_name = table,
+      colname_descriptions = colname_descriptions
+    )
+  }, new_paths, tables_list_ordered_renamed)
+
+  # Save the tables with the new names and p corrected values
+  Map(function(df, path) {
+    fwrite(df, path)
+  }, tables_list_ordered_renamed, new_paths)
+
   # Paste to console sentence to include in manuscript
   paste_sentences(tables_list_ordered)
   
 }
 
-main("results/maps/smr",
-     here::here("manuscript/tables/smr.xlsx"),
-     "XX") # Supplementary Table number placeholder
-
+main(paths)

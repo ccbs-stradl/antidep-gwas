@@ -43,7 +43,7 @@ file_name_summary <- 'manuscript/tables/susiex_significant_summary.csv'
 write.csv(significant_snps_summary, here::here(file_name_summary), row.names = FALSE, quote = FALSE)
 
 # Write out column descriptions
-colname_descriptions <- c(
+colname_descriptions_summary <- c(
   "CHR" = "Chromosome",
   "BP_START" = "Start position of the finemapping region",
   "BP_END" = "End position of the finemapping region",
@@ -84,13 +84,13 @@ colname_descriptions <- c(
 )
 
 
-colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
+colname_descriptions_tables_summary <- tibble(column = names(colname_descriptions_summary), description = colname_descriptions_summary)
 
-if(any(colname_descriptions_table$column != colnames(significant_snps_summary))){
-  stop(glue("Column names in {file_name_summary} are not all described in colname_descriptions"))
+if(any(colname_descriptions_tables_summary$column != colnames(significant_snps_summary))){
+  stop(glue("Column names in {file_name_summary} are not all described in colname_descriptions_summary"))
 }
 
-write_tsv(colname_descriptions_table, here::here(glue('{file_name_summary}.cols')))
+write_tsv(colname_descriptions_tables_summary, here::here(glue('{file_name_summary}.cols')))
 
 items_to_keep <- sapply(results$cs, function(results_table){
   sig <- results_table %>%
@@ -115,10 +115,8 @@ write.csv(significant_snps_cs, here::here(file_name_cs), row.names = FALSE, quot
 
 # Write out column descriptions
 # clear environment
-rm(colname_descriptions_table)
-rm(colname_descriptions)
 
-colname_descriptions <- c(
+colname_descriptions_cs <- c(
   "CHR" = "Chromosome",
   "BP_START" = "Start position of the finemapping region",
   "BP_END" = "End position of the finemapping region",
@@ -153,11 +151,11 @@ colname_descriptions <- c(
   "OVRL_PIP" = "Posterior inclusion probability (PIP) of the SNP in the entire region."
 )
 
-colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
+colname_descriptions_table_cs <- tibble(column = names(colname_descriptions_cs), description = colname_descriptions_cs)
 
-if(any(colname_descriptions_table$column != colnames(significant_snps_cs))){
-  stop(glue("Column names in {file_name_cs} are not all described in colname_descriptions"))
+if(any(colname_descriptions_table_cs$column != colnames(significant_snps_cs))){
+  stop(glue("Column names in {file_name_cs} are not all described in colname_descriptions_cs"))
 }
 
-write_tsv(colname_descriptions_table, here::here(glue('{file_name_cs}.cols')))
+write_tsv(colname_descriptions_table_cs, here::here(glue('{file_name_cs}.cols')))
 

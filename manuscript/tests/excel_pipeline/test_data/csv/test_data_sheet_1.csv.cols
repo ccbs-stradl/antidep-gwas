@@ -1,0 +1,10 @@
+column	description
+CHR	Chromosome
+BP_START	Start position of the finemapping region
+BP_END	End position of the finemapping region
+CS_ID	Credible Set ID
+SNP	SNP identifier
+BP	The base pair coordinate of the SNP in Gr37
+CS_PIP	Posterior inclusion probability (PIP) of the SNP in the credible set.
+OVRL_PIP	Posterior inclusion probability (PIP) of the SNP in the entire region.
+p_val	dummy p-value column for testing purposes
