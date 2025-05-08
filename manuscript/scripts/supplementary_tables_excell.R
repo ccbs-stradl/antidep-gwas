@@ -1,4 +1,5 @@
 # Create supplementary tables in excel spreadsheets for the following:
+# Datasets and meta-analysis sample sizes
 # Clumping and finemapping
 # Gene mapping mBAT, cross method
 # GWAS catalog
@@ -97,24 +98,7 @@ main <- function() {
   # Update table index
     table_index <- update_table_index(table_index)
 
-  # Create the second supplementary table for the gene mapping results
-  create_table(
-    paths = "manuscript/tables",
-    regex = c("mBAT-combo.csv"),
-    sheet_names = c("mBAT-combo"),
-    excel_file_name = here::here(glue("manuscript/tables/S{table_index}_gene_mapping.xlsx")),
-    table_index,
-    legend_title = "Positional mapping results for EUR, AFR and SAS fixed meta-analyses of the antidepressant GWAS (N06A, N06AA and N06AB).", # nolint
-    legend_text_prefix = "",
-    legend_text_sections = c("Results shown for Bonferroni corrected mBAT-combo p-value < 0.05"),
-    cell_title_width = 39,
-    cell_title_height = 49
-  )
-
-  # Update table index
-    table_index <- update_table_index(table_index)
-
-  # Create the second supplementary table for the GWAS catalog
+  # Create the supplementary table for the GWAS catalog
   create_table(
     paths = rep("manuscript/tables", 11),
     regex = c(
@@ -167,7 +151,7 @@ main <- function() {
   # Update table index
     table_index <- update_table_index(table_index)
 
-  # Create the fourth supplementary table for the LDSC/popcorn results
+  # Create the supplementary table for the LDSC/popcorn results
   create_table(
     paths = rep("manuscript/tables", 6),
     regex = c(
@@ -202,10 +186,10 @@ main <- function() {
     cell_title_height = 32
   )
   
-  # Set table index to 5
+  # Update table index
   table_index <- update_table_index(table_index)
   
-  # Create the fifth supplementary table for the SMR results
+  # Create the supplementary table for the SMR results
   create_table(
     paths = rep("manuscript/tables/", 6),
     regex = c("blood_trait_eSMR",
