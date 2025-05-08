@@ -57,3 +57,62 @@ ext_ldsc_datasets <- ext_ldsc_tables |>
 
 write_csv(ldsc_datasets, here::here("manuscript/tables/rg_ldsc_meta.csv"))
 write_csv(ext_ldsc_datasets, here::here("manuscript/tables/rg_ldsc_meta_external.csv"))
+
+ldsc_datasets <- fread(here::here("manuscript/tables/rg_ldsc_meta.csv"))
+
+# function to create .cols sidecar meta data file
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
+
+colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
+                          "p1_version" = "Version of first meta-analysed phenotype", 
+                          "p1_method" = "Method of meta-analysis for first phenotype", 
+                          "p1_pheno" = "Anti-depressant phenotype of first meta-analysed phenotype", 
+                          "p1_cluster" = "Ancestry cluster of first meta-analysed phenotype", 
+                          "p2_meta" = "Name of second meta-analysed phenotype", 
+                          "p2_version" = "Version of second meta-analysed phenotype", 
+                          "p2_method" = "Method of meta-analysis for second phenotype", 
+                          "p2_pheno" = "Anti-depressant phenotype of second meta-analysed phenotype", 
+                          "p2_cluster" = "Ancestry cluster of second meta-analysed phenotype", 
+                          "rg" = "Genetic correlation",
+                          "se" = "Standard error of genetic correlation",
+                          "z" = "Z-score of genetic correlation",
+                          "p" = "p-value of genetic correlation", 
+                          "h2_obs" = "Observed scale heritability for second cohort",
+                          "h2_obs_se" = "Standard error of observed scale heritability for second cohort",
+                          "h2_int" = "Single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "h2_int_se" = "Standard error of single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "gcov_int" = "Cross-trait Linkage Disequilibrium Score regression intercept",
+                          "gcov_int_se" = "Standard error of cross-trait Linkage Disequilibrium Score regression intercept"
+)
+
+create_cols_meta(
+  file_name = "manuscript/tables/rg_ldsc_meta.csv",
+  table_variable_name = ldsc_datasets,
+  colname_descriptions = colname_descriptions
+)
+
+
+rm(colname_descriptions)
+colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
+                          "p1_version" = "Version of first meta-analysed phenotype", 
+                          "p1_method" = "Method of meta-analysis for first phenotype", 
+                          "p1_pheno" = "Anti-depressant phenotype of first meta-analysed phenotype", 
+                          "p1_cluster" = "Ancestry cluster of first meta-analysed phenotype", 
+                          "p2_pheno" = "Anti-depressant phenotype of second meta-analysed phenotype", 
+                          "rg" = "Genetic correlation",
+                          "se" = "Standard error of genetic correlation",
+                          "z" = "Z-score of genetic correlation",
+                          "p" = "p-value of genetic correlation", 
+                          "h2_obs" = "Observed scale heritability for second cohort",
+                          "h2_obs_se" = "Standard error of observed scale heritability for second cohort",
+                          "h2_int" = "Single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "h2_int_se" = "Standard error of single-trait Linkage Disequilibrium Score regression intercept for second cohort",
+                          "gcov_int" = "Cross-trait Linkage Disequilibrium Score regression intercept",
+                          "gcov_int_se" = "Standard error of cross-trait Linkage Disequilibrium Score regression intercept"
+)
+
+create_cols_meta(
+  file_name = "manuscript/tables/rg_ldsc_meta_external.csv",
+  table_variable_name = ext_ldsc_datasets,
+  colname_descriptions = colname_descriptions
+)
