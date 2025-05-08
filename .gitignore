@@ -2,6 +2,14 @@
 *.gz.tbi
 *.bgz
 *.zip
+*.DS_Store
+*.Rhistory
+*.Rprofile
+*.Rproj.user
+.idea
+antidep-gwas.Rproj
+manuscript/tests/excel_pipeline/__pycache__/
+manuscript/tests/lib/
 reference/
 .nextflow*
 hail-*.log

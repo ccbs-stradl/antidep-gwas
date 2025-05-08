@@ -1,0 +1,32 @@
+column	description
+Gene	gene name
+qtl_name	QTL name
+probeID	probe ID
+ProbeChr	probe chromosome
+Probe_bp	probe position
+topSNP	SNP name
+topSNP_chr	SNP chromosome
+topSNP_bp	SNP position
+A1	the effect (coded) allele
+A2	the other allele
+Freq	frequency of the effect allele (estimated from the reference samples)
+b_GWAS	effect size from GWAS
+se_GWAS	standard error from GWAS
+p_GWAS	p-value from GWAS
+b_eQTL	effect size from eQTL study
+se_eQTL	standard error from eQTL study
+p_eQTL	p-value from eQTL study
+b_SMR	effect size from SMR
+se_SMR	standard error from SMR
+p_SMR	p-value from SMR
+p_SMR_Bonferroni	Bonferroni corrected p-value from SMR
+p_HEIDI	p-value from HEIDI (HEterogeneity In Depedent Instruments) test
+nsnp_HEIDI	number of SNPs used in the HEIDI test
+gene_id	Gene ID
+chr	Chromosome
+start	Start position
+end	end position
+strand	strand
+GWAS_LOCUS	gwas locus
+Lead_SNP	lead SNP
+Lead_SNP_BP	lead SNP position

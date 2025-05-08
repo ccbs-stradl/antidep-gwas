@@ -233,6 +233,41 @@ main <- function() {
     cell_title_width = 47,
     cell_title_height = 32
   )
+  
+  # Set table index to 5
+  table_index <- update_table_index(table_index)
+  
+  # Create the fifth supplementary table for the SMR results
+  create_table(
+    paths = rep("manuscript/tables/", 6),
+    regex = c("blood_trait_eSMR",
+              "blood_trait_mSMR",
+              "blood_trait_pSMR",
+              "brainmeta_trait_eSMR",
+              "brainmeta_trait_mSMR",
+              "brainmeta_trait_sSMR"),
+    sheet_names = c("blood eSMR",
+                    "blood mSMR",
+                    "blood pSMR",
+                    "brain eSMR",
+                    "brain mSMR",
+                    "brain sSMR"),
+    excel_file_name = here::here(glue("manuscript/tables/S{table_index}_smr.xlsx")),
+    table_index,
+    legend_title = "SMR analysis in blood and brain across multi-omic data types.",
+    legend_text_prefix = "",
+    legend_text_sections = c("blood eSMR",
+                             "blood mSMR",
+                             "blood pSMR",
+                             "brain eSMR",
+                             "brain mSMR",
+                             "brain sSMR"),
+    cell_title_width = 39,
+    cell_title_height = 49,
+    bold_cols = c("p_SMR_Bonferroni", "p_HEIDI"), 
+    bold_condition = c("<", ">"), 
+    bold_threshold = c(0.05, 0.05)
+  )
 }
 
 # ---------------------------------------------
@@ -241,5 +276,5 @@ main()
 
 # ---------------------------------------------
 # Run lintr and styler
-lint(here("manuscript/scripts/supplementary_tables_excell.R"))
-style_file(here("manuscript/scripts/supplementary_tables_excell.R"))
+# lint(here("manuscript/scripts/supplementary_tables_excell.R"))
+# style_file(here("manuscript/scripts/supplementary_tables_excell.R"))

@@ -63,7 +63,7 @@ ldsc_datasets <- fread(here::here("manuscript/tables/rg_ldsc_meta.csv"))
 # function to create .cols sidecar meta data file
 source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
 
-colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
+colname_descriptions_rg_ldsc_meta <- c("p1_meta" = "Name of first meta-analysed phenotype",
                           "p1_version" = "Version of first meta-analysed phenotype", 
                           "p1_method" = "Method of meta-analysis for first phenotype", 
                           "p1_pheno" = "Anti-depressant phenotype of first meta-analysed phenotype", 
@@ -88,12 +88,12 @@ colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
 create_cols_meta(
   file_name = "manuscript/tables/rg_ldsc_meta.csv",
   table_variable_name = ldsc_datasets,
-  colname_descriptions = colname_descriptions
+  colname_descriptions = colname_descriptions_rg_ldsc_meta
 )
 
 
-rm(colname_descriptions)
-colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
+
+colname_descriptions_rg_ldsc_meta_external <- c("p1_meta" = "Name of first meta-analysed phenotype",
                           "p1_version" = "Version of first meta-analysed phenotype", 
                           "p1_method" = "Method of meta-analysis for first phenotype", 
                           "p1_pheno" = "Anti-depressant phenotype of first meta-analysed phenotype", 
@@ -114,5 +114,5 @@ colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
 create_cols_meta(
   file_name = "manuscript/tables/rg_ldsc_meta_external.csv",
   table_variable_name = ext_ldsc_datasets,
-  colname_descriptions = colname_descriptions
+  colname_descriptions = colname_descriptions_rg_ldsc_meta_external
 )
