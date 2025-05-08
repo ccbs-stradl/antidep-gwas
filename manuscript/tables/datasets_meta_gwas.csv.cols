@@ -1,0 +1,11 @@
+column,description
+method,Meta analysis method
+pheno,ATC subgroup
+meta_cluster,Meta-analysis genetic similirity (ancestry) cluster
+cohort,Cohort name
+cohort_cluster,Cohort genetic similirity (ancestry) cluster
+cases,Number of cases
+controls,Numer of controls
+neff,Effective sample size
+version,Meta-analysis version identifier
+metaset,Meta-analysis filename

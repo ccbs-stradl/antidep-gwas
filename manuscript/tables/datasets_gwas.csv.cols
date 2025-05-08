@@ -1,0 +1,10 @@
+column,description
+cohort,Cohort name
+pheno,ATC subgroup
+cluster,Genetic similarity (ancestry) cluster
+cases,Number of cases
+controls,Number of controls
+neff,Effective sample size
+version,Sumstats version identifier
+build,Sumstats original genome build
+dataset,Sumstats filename
