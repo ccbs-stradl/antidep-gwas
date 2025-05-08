@@ -4,6 +4,10 @@
 # --------------------------------------
 # Load required libraries
 library(readxl)
+library(tibble)
+library(readr)
+library(glue)
+library(data.table)
 
 # Load function that creates .cols file
 # The function create_cols_meta(file_name, table_variable_name, colname_descriptions)
@@ -12,18 +16,18 @@ source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_me
 # --------------------------------------
 # Define colname descriptions for .col meta sidecar
 colname_descriptions_drugsAllp <- c(
-  "COMP_P" = "P-value",
+  "COMP_P" = "Raw competitive analysis p-value",
   "CODE" = "Drug class",
   "NAME" = "Drug name",
   "N" = "Number of genes",
-  "AUC" = "AUC",
+  "AUC" = "Area under the enrichment curve",
   "N_FOUND" = "Number of genes found",
   "q_valueBH" = "FDR q-value (BH)",
   "q_valueBY" = "FDR q-value (BY)",
   "p_valueBF" = "Bonferroni p-value"
 )
 colname_descriptions_drugsAllpEUR <- c(
-  "COMP_P" = "P-value",
+  "COMP_P" = "Raw competitive analysis p-value",
   "NAME" = "Drug name",
   "NGENES" = "Number of genes",
   "q_valueBH" = "FDR q-value (BH)",
@@ -75,6 +79,11 @@ main <- function(xlsx_paths, colname_descriptions, file_names) {
 }
 
 ########################################
+
+# If adding more files to this list please be very careful to
+# ensure the order of the files matches the order of the
+# colname descriptions and the order of the file names
+# Please feel free to suggest an alternative method!
 
 main(
   list(

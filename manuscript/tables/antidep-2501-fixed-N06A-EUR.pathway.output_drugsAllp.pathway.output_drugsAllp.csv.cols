@@ -1,5 +1,5 @@
 column	description
-COMP_P	P-value
+COMP_P	Raw competitive analysis p-value
 NAME	Drug name
 NGENES	Number of genes
 q_valueBH	FDR q-value (BH)
