@@ -54,11 +54,11 @@ make_cols <- function(results, colname_descriptions, file_name) {
 # Save the drug targetor results as csv files ready for the excel pipeline
 save_results <- function(file_name, results) {
   # Save the results as a csv file
-  write.csv(
+  fwrite(
     results,
     file = here::here(file_name),
     row.names = FALSE,
-    quote = FALSE
+    quote = TRUE
   )
 }
 
@@ -90,3 +90,5 @@ main(
     "manuscript/tables/antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllp.pathway.output_drugsAllp.csv"
   )
 )
+
+# --------------------------------------
