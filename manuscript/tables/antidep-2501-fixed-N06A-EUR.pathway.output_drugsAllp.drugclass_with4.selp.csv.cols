@@ -1,0 +1,10 @@
+column	description
+COMP_P	P-value
+CODE	Drug class
+NAME	Drug name
+N	Number of genes
+AUC	AUC
+N_FOUND	Number of genes found
+q_valueBH	FDR q-value (BH)
+q_valueBY	FDR q-value (BY)
+p_valueBF	Bonferroni p-value
