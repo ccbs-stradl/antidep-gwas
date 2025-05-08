@@ -7,6 +7,7 @@ library(dplyr)
 library(gwascat)
 library(ieugwasr)
 library(stringr)
+library(readr)
 
 # ------------------------------
 # Get numbers for significant SNPs and numbers of genomic regions these are in.
@@ -57,6 +58,20 @@ lapply(files,
 # Run the GWAS catalogue look up code for the fixed effects results
 gwcat <- get_cached_gwascat()
 
+# if the above doesn't work, try:
+# library(BiocFileCache)
+# 
+# # Create a BiocFileCache instance
+# bfc <- BiocFileCache::BiocFileCache()
+# 
+# # Add the GWAS catalog URL manually to the cache
+# bfcadd(
+#   bfc,
+#   rname = "gwascat",
+#   fpath = "http://www.ebi.ac.uk/gwas/api/search/downloads/alternative",
+#   rtype = "web"
+# )
+
 clumps <- lapply(files,
                  get_clumps)
 
@@ -90,9 +105,22 @@ gwascat_tables <- lapply(clumps, look_up_snps, gwcat = gwcat)
 names(gwascat_tables) <- str_extract(files, "([A-Za-z0-9]+-[A-Za-z0-9]+)(?=\\.clumps\\.tsv)")
 
 save_gwascat_table <- function(gwascat_table, file_name){
+  gwascat_colname_descriptions <- 
+    c("DISEASE/TRAIT" = "name of disease or trait phenotype",
+      "SNP" = "variant identifier"
+    )
+  
+  colname_descriptions_table <- tibble(column = names(gwascat_colname_descriptions), description = gwascat_colname_descriptions)
+  
   write.csv(gwascat_table, 
             here::here("manuscript", "tables", paste0("gwascat_fixed_table_", file_name, ".csv")), 
             quote = F, row.names = F)
+  
+  if(any(colname_descriptions_table$column != colnames(gwascat_table))){
+    stop(glue("Column names in {file_name_cs} are not all described in colname_descriptions"))
+  }
+  
+  write_tsv(colname_descriptions_table,here::here("manuscript", "tables", paste0("gwascat_fixed_table_", file_name, ".csv.cols")))
 }
 
 Map(save_gwascat_table, gwascat_tables, names(gwascat_tables))
