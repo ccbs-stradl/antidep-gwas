@@ -67,11 +67,10 @@ Update IDs and approximate effective sample size
 hum0197_backpain_eas_cases <- 1732
 hum0197_backpain_eas_controls <- 176994
 hum0197_backpain_eas_tot <- hum0197_backpain_eas_cases + hum0197_backpain_eas_controls
-hum0197_backpain_eas_neff <- 4 / (1/hum0197_backpain_eas_cases + 1/hum0197_backpain_eas_controls)
+hum0197_backpain_eas_neff <- 4 / (1 / hum0197_backpain_eas_cases + 1 / hum0197_backpain_eas_controls)
 
-hum0197_backpain_eas_sumstats <-
-hum0197_backpain_eas |>
-  mutate(n_count = AC_Allele2/2) |>
+hum0197_backpain_eas_sumstats <- hum0197_backpain_eas |>
+  mutate(n_count = AC_Allele2 / 2) |>
   mutate(n_pct = n_count / hum0197_backpain_eas_tot) |>
   mutate(N = n_pct * hum0197_backpain_eas_neff) |>
   transmute(SNP = SNPID, A1 = Allele2, A2 = Allele1, INFO = imputationInfo, FRQ = AF_Allele2, OR = exp(BETA), P = p.value, N)
@@ -81,43 +80,71 @@ hum0197_backpain_eas |>
 hum0197_backpain_eur_ukb_cases <- 14893
 hum0197_backpain_eur_ukb_controls <- 342765
 hum0197_backpain_eur_ukb_tot <- hum0197_backpain_eur_ukb_cases + hum0197_backpain_eur_ukb_controls
-hum0197_backpain_eur_ukb_neff <- 4 / (1/hum0197_backpain_eur_ukb_cases + 1/hum0197_backpain_eur_ukb_controls)
+hum0197_backpain_eur_ukb_neff <- 4 / (1 / hum0197_backpain_eur_ukb_cases + 1 / hum0197_backpain_eur_ukb_controls)
 
-hum0197_backpain_eur_finngen_cases <- 7520   
+hum0197_backpain_eur_finngen_cases <- 7520
 hum0197_backpain_eur_finngen_controls <- 103091
 hum0197_backpain_eur_finngen_tot <- hum0197_backpain_eur_finngen_cases + hum0197_backpain_eur_finngen_controls
-hum0197_backpain_eur_finngen_neff <- 4 / (1/hum0197_backpain_eur_finngen_cases + 1/hum0197_backpain_eur_finngen_controls)
+hum0197_backpain_eur_finngen_neff <- 4 / (1 / hum0197_backpain_eur_finngen_cases + 1 / hum0197_backpain_eur_finngen_controls)
 
-hum0197_backpain_eur_sumstats <-
-hum0197_backpain_eur |>
+hum0197_backpain_eur_sumstats <- hum0197_backpain_eur |>
   mutate(CHR = as.character(CHR)) |>
-  left_join(back_pain_chr_pos_rsid, by = c("CHR" = "#[1]CHROM", "POS" = "[2]POS"),
-            relationship = "many-to-many") |>
-  filter((Allele1 == `[4]REF` & Allele2 ==  `[5]ALT`) |
-         (Allele2 == `[4]REF` & Allele1 ==  `[5]ALT`)) |>
+  left_join(
+    back_pain_chr_pos_rsid, by = c("CHR" = "#[1]CHROM", "POS" = "[2]POS"),
+    relationship = "many-to-many"
+  ) |>
+  filter(
+    (Allele1 == `[4]REF` & Allele2 ==  `[5]ALT`) |
+      (Allele2 == `[4]REF` & Allele1 ==  `[5]ALT`)
+  ) |>
   filter(!duplicated(`[3]ID`)) |>
-  mutate(cohorts = case_when(!is.na(AF_Allele2_UKB) & !is.na(AF_Allele2_FG) ~ "both",
-                              is.na(AF_Allele2_UKB) & !is.na(AF_Allele2_FG) ~ "fg",
-                             !is.na(AF_Allele2_UKB) & is.na(AF_Allele2_FG) ~ "ukb",
-                             .default = NA_character_)) |>
-  mutate(N = case_match(cohorts,
-                         "both" ~ hum0197_backpain_eur_ukb_neff + hum0197_backpain_eur_finngen_neff,
-                         "fg" ~ hum0197_backpain_eur_finngen_neff,
-                         "ukb" ~ hum0197_backpain_eur_ukb_neff,
-                         .default = NA_real_
-                       ),
-        FRQ = case_match(cohorts,
-           "both" ~ (AF_Allele2_UKB * hum0197_backpain_eur_ukb_tot + AF_Allele2_FG * hum0197_backpain_eur_finngen_tot) / (hum0197_backpain_eur_ukb_tot + hum0197_backpain_eur_finngen_tot),
-           "fg" ~ AF_Allele2_FG,
-           "ukb" ~ AF_Allele2_UKB,
-           .default = NA_real_
-         )) |>
-  transmute(SNP = coalesce(`[3]ID`, v), A1 = Allele2, A2 = Allele1, FRQ = FRQ, OR = exp(BETA), P = p.value, N = N)
+  mutate(
+    cohorts = case_when(
+      !is.na(AF_Allele2_UKB) & !is.na(AF_Allele2_FG) ~ "both",
+      is.na(AF_Allele2_UKB) & !is.na(AF_Allele2_FG) ~ "fg",
+      !is.na(AF_Allele2_UKB) & is.na(AF_Allele2_FG) ~ "ukb",
+      .default = NA_character_
+    )
+  ) |>
+  mutate(
+    N = case_match(
+      cohorts,
+      "both" ~ hum0197_backpain_eur_ukb_neff + hum0197_backpain_eur_finngen_neff,
+      "fg" ~ hum0197_backpain_eur_finngen_neff,
+      "ukb" ~ hum0197_backpain_eur_ukb_neff,
+      .default = NA_real_
+    ),
+    FRQ = case_match(
+      cohorts,
+      "both" ~ (AF_Allele2_UKB * hum0197_backpain_eur_ukb_tot +
+                  AF_Allele2_FG * hum0197_backpain_eur_finngen_tot) /
+        (hum0197_backpain_eur_ukb_tot +
+           hum0197_backpain_eur_finngen_tot),
+      "fg" ~ AF_Allele2_FG,
+      "ukb" ~ AF_Allele2_UKB,
+      .default = NA_real_
+    )
+  ) |>
+  transmute(
+    SNP = coalesce(`[3]ID`, v),
+    A1 = Allele2,
+    A2 = Allele1,
+    FRQ = FRQ,
+    OR = exp(BETA),
+    P = p.value,
+    N = N
+  )
 ```
 
 ``` r
-write_tsv(hum0197_backpain_eas_sumstats, here::here("reference/sumstats/back_pain_SakaueKanai2020_eas.txt"))
-write_tsv(hum0197_backpain_eur_sumstats, here::here("reference/sumstats/back_pain_SakaueKanai2020_eur.txt"))
+write_tsv(
+  hum0197_backpain_eas_sumstats,
+  here::here("reference/sumstats/back_pain_SakaueKanai2020_eas.txt")
+)
+write_tsv(
+  hum0197_backpain_eur_sumstats,
+  here::here("reference/sumstats/back_pain_SakaueKanai2020_eur.txt")
+)
 ```
 
 ### Major depression
@@ -135,24 +162,42 @@ curl -L https://figshare.com/ndownloader/files/43621242 > reference/sumstats/mdd
 ```
 
 ``` r
-adams_md_eur <- read_tsv(here::here("reference/sumstats/pgc-mdd2025_no23andMe_eur_v3-49-24-11.tsv.gz"), comment = "##")
+adams_md_eur <- read_tsv(
+  here::here("reference/sumstats/pgc-mdd2025_no23andMe_eur_v3-49-24-11.tsv.gz"),
+  comment = "##"
+)
 
 adams_md_eur_sumstats <- adams_md_eur |>
-  transmute(SNP = ID, A1 = EA, A2 = NEA, FRQ = FCON, INFO = IMPINFO, OR = exp(BETA), P = PVAL, N = NEFF)
-  
-write_tsv(adams_md_eur_sumstats, here::here("reference/sumstats/md_adams_eur.txt"))
+  transmute(
+    SNP = ID, A1 = EA, A2 = NEA,
+    FRQ = FCON, INFO = IMPINFO,
+    OR = exp(BETA), P = PVAL, N = NEFF
+  )
+write_tsv(
+  adams_md_eur_sumstats,
+  here::here("reference/sumstats/md_adams_eur.txt")
+)
 ```
 
 ``` r
-for(cluster in c("AFR", "EAS", "HIS", "SAS")) {
-  meng_md <- read_csv(here::here(str_glue("reference/sumstats/mdd2023diverse_{cluster}_Neff.csv")))
+for (cluster in c("AFR", "EAS", "HIS", "SAS")) {
+  meng_md <- read_csv(
+    here::here(
+      str_glue("reference/sumstats/mdd2023diverse_{cluster}_Neff.csv")
+    )
+  )
 
   meng_md_sumstats <- meng_md |>
-    transmute(SNP = coalesce(SNP, str_glue("{Chromosome}:{Position}:{EA}:{NEA}")),
-              A1 = str_to_upper(EA), A2 = str_to_upper(NEA),
-              FRQ = EAF, OR = exp(logOR), P, N = Neff)
-              
-  write_tsv(meng_md_sumstats, here::here(str_glue("reference/sumstats/md_meng_{cluster}.txt")))
+    transmute(
+      SNP = coalesce(SNP, str_glue("{Chromosome}:{Position}:{EA}:{NEA}")),
+      A1 = str_to_upper(EA), A2 = str_to_upper(NEA),
+      FRQ = EAF, OR = exp(logOR), P, N = Neff
+    )
+
+  write_tsv(
+    meng_md_sumstats,
+    here::here(str_glue("reference/sumstats/md_meng_{cluster}.txt"))
+  )
 }
 ```
 
@@ -162,35 +207,49 @@ for(cluster in c("AFR", "EAS", "HIS", "SAS")) {
 # hm3 SNPs
 hm3 <- here::here("reference/w_hm3.snplist")
 
-for(cluster in c("AFR", "AMR", "EAS", "EUR", "SAS")) {
-  munge(files = here::here(str_glue("results/txt/meta/antidep-2501-fixed-N06A-{cluster}.txt")),
-       trait.names = str_glue("AD_{cluster}"), hm3 = hm3,
-       info.filter = 0.9, maf.filter = 0.01, N = NA,
-       column.names = list(MAF = "FRQ"))
+for (cluster in c("AFR", "AMR", "EAS", "EUR", "SAS")) {
+  munge(
+    files = here::here(
+      str_glue("results/txt/meta/antidep-2501-fixed-N06A-{cluster}.txt")
+    ),
+    trait.names = str_glue("AD_{cluster}"), hm3 = hm3,
+    info.filter = 0.9, maf.filter = 0.01, N = NA,
+    column.names = list(MAF = "FRQ")
+  )
 }
 ```
 
 ``` r
-for(cluster in c("eas", "eur")) {
-  munge(files = here::here(str_glue("reference/sumstats/back_pain_SakaueKanai2020_{cluster}.txt")),
-       trait.names = str_glue("Pain_{str_to_upper(cluster)}"), hm3 = hm3,
-       info.filter = 0.9, maf.filter = 0.01, N = NA,
-       column.names = list(MAF = "FRQ"))
+for (cluster in c("eas", "eur")) {
+  munge(
+    files = here::here(
+      str_glue("reference/sumstats/back_pain_SakaueKanai2020_{cluster}.txt")
+    ),
+    trait.names = str_glue("Pain_{str_to_upper(cluster)}"), hm3 = hm3,
+    info.filter = 0.9, maf.filter = 0.01, N = NA,
+    column.names = list(MAF = "FRQ")
+  )
 }
 ```
 
 ``` r
-for(cluster in c("AFR", "HIS", "EAS", "SAS")) {
-  munge(files = here::here(str_glue("reference/sumstats/md_meng_{cluster}.txt")),
-       trait.names = str_glue("MD_{cluster}"), hm3 = hm3,
-       info.filter = 0.9, maf.filter = 0.01, N = NA,
-       column.names = list(MAF = "FRQ"))
+for (cluster in c("AFR", "HIS", "EAS", "SAS")) {
+  munge(
+    files = here::here(
+      str_glue("reference/sumstats/md_meng_{cluster}.txt")
+    ),
+    trait.names = str_glue("MD_{cluster}"), hm3 = hm3,
+    info.filter = 0.9, maf.filter = 0.01, N = NA,
+    column.names = list(MAF = "FRQ")
+  )
 }
 
-munge(files = here::here("reference/sumstats/md_adams_eur.txt"),
+munge(
+  files = here::here("reference/sumstats/md_adams_eur.txt"),
   trait.names = "MD_EUR",
   hm3 = hm3, info.filter = 0.9, maf.filter = 0.01, N = NA,
-  column.names = list(MAF = "FRQ"))
+  column.names = list(MAF = "FRQ")
+)
 ```
 
 ## LDSC
@@ -213,57 +272,90 @@ done
 ``` r
 # if building, estimate all covariances and save out as R code.
 # otherwise load them in
-if(build_all) {
+# specify 1 chromsome because ldscore reference is stored in 1 file
+# store LDSC object as R code (write out with dput(), read in with dget())
+if (build_all) {
   dir.create(here::here("scripts/ad-exposure-mdd_files"))
-  afr_ldsc <- ldsc(traits = c("AD_AFR.sumstats.gz", "MD_AFR.sumstats.gz"),
-  trait.names = c("AD", "MD"),
-  sample.prev = c(0.5, 0.5, 0.5),
-  population.prev = c(0.25, 0.15),
-  ld = here::here("reference/UKBB.ALL.ldscore/UKBB.AFR"),
-  wld = here::here("reference/UKBB.ALL.ldscore/UKBB.AFR"),
-  chr = 1
+  afr_ldsc <- ldsc(
+    traits = c("AD_AFR.sumstats.gz", "MD_AFR.sumstats.gz"),
+    trait.names = c("AD", "MD"),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.25, 0.15),
+    ld = here::here("reference/UKBB.ALL.ldscore/UKBB.AFR"),
+    wld = here::here("reference/UKBB.ALL.ldscore/UKBB.AFR"),
+    chr = 1
   )
-  dput(afr_ldsc, here::here("scripts/ad-exposure-mdd_files/afr_ldsc.R"), control=c('all', 'digits17'))
-  
-  amr_ldsc <- ldsc(traits = c("AD_AMR.sumstats.gz", "MD_HIS.sumstats.gz"),
+  dput(
+    afr_ldsc,
+    here::here("scripts/ad-exposure-mdd_files/afr_ldsc.R"),
+    control = c("all", "digits17")
+  )
+
+  amr_ldsc <- ldsc(
+    traits = c("AD_AMR.sumstats.gz", "MD_HIS.sumstats.gz"),
     trait.names = c("AD", "MD"),
     sample.prev = c(0.5, 0.5, 0.5),
     population.prev = c(0.25, 0.15),
     ld = here::here("reference/UKBB.ALL.ldscore/UKBB.AMR"),
     wld = here::here("reference/UKBB.ALL.ldscore/UKBB.AMR"),
     chr = 1
-    )
-  dput(amr_ldsc, here::here("scripts/ad-exposure-mdd_files/amr_ldsc.R"), control=c('all', 'digits17'))
+  )
+  dput(amr_ldsc,
+    here::here("scripts/ad-exposure-mdd_files/amr_ldsc.R"),
+    control = c("all", "digits17")
+  )
 
-  eas_ldsc <- ldsc(traits = c("AD_EAS.sumstats.gz", "MD_EAS.sumstats.gz", "Pain_EAS.sumstats.gz"),
-                  trait.names = c("AD", "MD", "Pain"),
-                  sample.prev = c(0.5, 0.5, 0.5),
-                  population.prev = c(0.02, 0.15, 0.05),
-                  ld = here::here("reference/UKBB.ALL.ldscore/UKBB.EAS"),
-                  wld = here::here("reference/UKBB.ALL.ldscore/UKBB.EAS"),
-                  chr = 1
-                  )
-  dput(eas_ldsc, here::here("scripts/ad-exposure-mdd_files/eas_ldsc.R"), control=c('all', 'digits17'))
-                  
-  eur_ldsc <- ldsc(traits = c("AD_EUR.sumstats.gz", "MD_EUR.sumstats.gz", "Pain_EUR.sumstats.gz"),
-                    trait.names = c("AD", "MD", "Pain"),
-                    sample.prev = c(0.5, 0.5, 0.5),
-                    population.prev = c(0.25, 0.15, 0.05),
-                    ld = here::here("reference/UKBB.ALL.ldscore/UKBB.EUR"),
-                    wld = here::here("reference/UKBB.ALL.ldscore/UKBB.EUR"),
-                    chr = 1
-                    )
-  dput(eur_ldsc, here::here("scripts/ad-exposure-mdd_files/eur_ldsc.R"), control=c('all', 'digits17'))
+  eas_ldsc <- ldsc(
+    traits = c(
+      "AD_EAS.sumstats.gz",
+      "MD_EAS.sumstats.gz",
+      "Pain_EAS.sumstats.gz"
+    ),
+    trait.names = c("AD", "MD", "Pain"),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.02, 0.15, 0.05),
+    ld = here::here("reference/UKBB.ALL.ldscore/UKBB.EAS"),
+    wld = here::here("reference/UKBB.ALL.ldscore/UKBB.EAS"),
+    chr = 1
+  )
+  dput(eas_ldsc,
+    here::here("scripts/ad-exposure-mdd_files/eas_ldsc.R"),
+    control = c("all", "digits17")
+  )
 
-  sas_ldsc <- ldsc(traits = c("AD_SAS.sumstats.gz", "MD_SAS.sumstats.gz"),
-                    trait.names = c("AD", "MD"),
-                    sample.prev = c(0.5, 0.5, 0.5),
-                    population.prev = c(0.25, 0.15),
-                    ld = here::here("reference/UKBB.ALL.ldscore/UKBB.CSA"),
-                    wld = here::here("reference/UKBB.ALL.ldscore/UKBB.SAS"),
-                    chr = 1
-                    )
-  dput(sas_ldsc, here::here("scripts/ad-exposure-mdd_files/sas_ldsc.R"), control=c('all', 'digits17'))
+  eur_ldsc <- ldsc(
+    traits = c(
+      "AD_EUR.sumstats.gz",
+      "MD_EUR.sumstats.gz",
+      "Pain_EUR.sumstats.gz"
+    ),
+    trait.names = c("AD", "MD", "Pain"),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.25, 0.15, 0.05),
+    ld = here::here("reference/UKBB.ALL.ldscore/UKBB.EUR"),
+    wld = here::here("reference/UKBB.ALL.ldscore/UKBB.EUR"),
+    chr = 1
+  )
+  dput(
+    eur_ldsc,
+    here::here("scripts/ad-exposure-mdd_files/eur_ldsc.R"),
+    control = c("all", "digits17")
+  )
+
+  sas_ldsc <- ldsc(
+    traits = c("AD_SAS.sumstats.gz", "MD_SAS.sumstats.gz"),
+    trait.names = c("AD", "MD"),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.25, 0.15),
+    ld = here::here("reference/UKBB.ALL.ldscore/UKBB.CSA"),
+    wld = here::here("reference/UKBB.ALL.ldscore/UKBB.SAS"),
+    chr = 1
+  )
+  dput(
+    sas_ldsc,
+    here::here("scripts/ad-exposure-mdd_files/sas_ldsc.R"),
+    control = c("all", "digits17")
+  )
 } else {
   afr_ldsc <- dget(here::here("scripts/ad-exposure-mdd_files/afr_ldsc.R"))
   amr_ldsc <- dget(here::here("scripts/ad-exposure-mdd_files/amr_ldsc.R"))
@@ -422,7 +514,7 @@ chol_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_model)
     ## [1] "Calculating Standardized Results"
     ## [1] "Calculating SRMR"
     ## elapsed 
-    ##   0.191 
+    ##   0.196 
     ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
 
 ``` r
@@ -482,7 +574,7 @@ chol_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_model)
     ## [1] "Calculating Standardized Results"
     ## [1] "Calculating SRMR"
     ## elapsed 
-    ##   0.197 
+    ##   0.187 
     ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
 
 ``` r
