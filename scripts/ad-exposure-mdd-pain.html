@@ -353,20 +353,98 @@ exposure, major depression, and pain</h1>
 
 </div>
 
+<div id="TOC">
+<ul>
+<li><a href="#sumstats" id="toc-sumstats">Sumstats</a>
+<ul>
+<li><a href="#backpain" id="toc-backpain">Backpain</a></li>
+<li><a href="#major-depression" id="toc-major-depression">Major
+depression</a></li>
+</ul></li>
+<li><a href="#munge" id="toc-munge">Munge</a></li>
+<li><a href="#ldsc" id="toc-ldsc">LDSC</a>
+<ul>
+<li><a href="#ldsc-reference" id="toc-ldsc-reference">LDSC
+reference</a></li>
+<li><a href="#estimate-genetic-covariances" id="toc-estimate-genetic-covariances">Estimate genetic
+covariances</a></li>
+</ul></li>
+<li><a href="#model" id="toc-model">Model</a></li>
+</ul>
+</div>
 
 <pre class="r"><code>library(readr)
-library(dplyr)
-library(stringr)
-library(GenomicSEM)
-
-build_all &lt;- FALSE</code></pre>
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(stringr)
+library(GenomicSEM)</code></pre>
+<pre><code>## Warning: replacing previous import &#39;gdata::nobs&#39; by &#39;lavaan::nobs&#39; when loading
+## &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;gdata::first&#39; by &#39;data.table::first&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;gdata::last&#39; by &#39;data.table::last&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;gdata::resample&#39; by &#39;R.utils::resample&#39;
+## when loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;gdata::env&#39; by &#39;R.utils::env&#39; when loading
+## &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;data.table::first&#39; by &#39;dplyr::first&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::arrange&#39; by &#39;dplyr::arrange&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::count&#39; by &#39;dplyr::count&#39; when loading
+## &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::desc&#39; by &#39;dplyr::desc&#39; when loading
+## &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::summarise&#39; by &#39;dplyr::summarise&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::id&#39; by &#39;dplyr::id&#39; when loading
+## &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::rename&#39; by &#39;dplyr::rename&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::summarize&#39; by &#39;dplyr::summarize&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;data.table::last&#39; by &#39;dplyr::last&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;data.table::between&#39; by &#39;dplyr::between&#39;
+## when loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;gdata::combine&#39; by &#39;dplyr::combine&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;gdata::starts_with&#39; by &#39;dplyr::starts_with&#39;
+## when loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::failwith&#39; by &#39;dplyr::failwith&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;plyr::mutate&#39; by &#39;dplyr::mutate&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;Rcpp::.DollarNames&#39; by
+## &#39;utils::.DollarNames&#39; when loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;Matrix::tail&#39; by &#39;utils::tail&#39; when loading
+## &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;gdata::object.size&#39; by &#39;utils::object.size&#39;
+## when loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;Rcpp::prompt&#39; by &#39;utils::prompt&#39; when
+## loading &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;Matrix::head&#39; by &#39;utils::head&#39; when loading
+## &#39;GenomicSEM&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;R.utils::timestamp&#39; by &#39;utils::timestamp&#39;
+## when loading &#39;GenomicSEM&#39;</code></pre>
+<pre class="r"><code>build_all &lt;- params$build_all</code></pre>
 <div id="sumstats" class="section level2">
 <h2>Sumstats</h2>
 <ul>
-<li>pain: “Back pain”, Sakaue et al <a href="doi:%5B10.1038/s41588-021-00931-x" class="uri">doi:[10.1038/s41588-021-00931-x</a>](<a href="https://doi.org/10.1038/s41588-021-00931-x" class="uri">https://doi.org/10.1038/s41588-021-00931-x</a>), <a href="https://humandbs.dbcls.jp/en/hum0197-v3-220">hum0197-v3-220</a>.</li>
-<li>depression: “Majore depression”, Meng et al <a href="doi:%5B10.1038/s41588-023-01596-4" class="uri">doi:[10.1038/s41588-023-01596-4</a>](<a href="https://www.nature.com/articles/s41588-023-01596-4" class="uri">https://www.nature.com/articles/s41588-023-01596-4</a>), <a href="https://figshare.com/articles/dataset/mdd2023diverse/24799299">mdd2023diverse</a>;
-Als et al <a href="doi:%5B10.1038/s41591-023-02352-1" class="uri">doi:[10.1038/s41591-023-02352-1</a>](<a href="https://www.nature.com/articles/s41591-023-02352-1" class="uri">https://www.nature.com/articles/s41591-023-02352-1</a>), <a href="https://ipsych.dk/en/research/downloads/">Depression GWAS
-(2023)</a>.</li>
+<li>pain: “Back pain”, Sakaue et al <a href="https://doi.org/10.1038/s41588-021-00931-x">10.1038/s41588-021-00931-x</a>,
+<a href="https://humandbs.dbcls.jp/en/hum0197-v3-220">hum0197-v3-220</a>.</li>
+<li>depression: “Major depression”, Meng et al <a href="https://www.nature.com/articles/s41588-023-01596-4">10.1038/s41588-023-01596-4</a>,
+<a href="https://figshare.com/articles/dataset/mdd2023diverse/24799299">mdd2023diverse</a>;
+Adams et al <a href="https://doi.org/10.1016/j.cell.2024.12.002">10.1016/j.cell.2024.12.002</a>,
+<a href="https://doi.org/10.6084/m9.figshare.27061255.v4">mdd2025</a>.</li>
 </ul>
 <div id="backpain" class="section level3">
 <h3>Backpain</h3>
@@ -402,55 +480,82 @@ back_pain_chr_pos_rsid &lt;- read_tsv(here::here(&quot;reference/sumstats/back_p
 <pre class="r"><code>hum0197_backpain_eas_cases &lt;- 1732
 hum0197_backpain_eas_controls &lt;- 176994
 hum0197_backpain_eas_tot &lt;- hum0197_backpain_eas_cases + hum0197_backpain_eas_controls
-hum0197_backpain_eas_neff &lt;- 4 / (1/hum0197_backpain_eas_cases + 1/hum0197_backpain_eas_controls)
+hum0197_backpain_eas_neff &lt;- 4 / (1 / hum0197_backpain_eas_cases + 1 / hum0197_backpain_eas_controls)
 
-hum0197_backpain_eas_sumstats &lt;-
-hum0197_backpain_eas |&gt;
-  mutate(n_count = AC_Allele2/2) |&gt;
+hum0197_backpain_eas_sumstats &lt;- hum0197_backpain_eas |&gt;
+  mutate(n_count = AC_Allele2 / 2) |&gt;
   mutate(n_pct = n_count / hum0197_backpain_eas_tot) |&gt;
   mutate(N = n_pct * hum0197_backpain_eas_neff) |&gt;
   transmute(SNP = SNPID, A1 = Allele2, A2 = Allele1, INFO = imputationInfo, FRQ = AF_Allele2, OR = exp(BETA), P = p.value, N)</code></pre>
 <pre class="r"><code>hum0197_backpain_eur_ukb_cases &lt;- 14893
 hum0197_backpain_eur_ukb_controls &lt;- 342765
 hum0197_backpain_eur_ukb_tot &lt;- hum0197_backpain_eur_ukb_cases + hum0197_backpain_eur_ukb_controls
-hum0197_backpain_eur_ukb_neff &lt;- 4 / (1/hum0197_backpain_eur_ukb_cases + 1/hum0197_backpain_eur_ukb_controls)
+hum0197_backpain_eur_ukb_neff &lt;- 4 / (1 / hum0197_backpain_eur_ukb_cases + 1 / hum0197_backpain_eur_ukb_controls)
 
-hum0197_backpain_eur_finngen_cases &lt;- 7520   
+hum0197_backpain_eur_finngen_cases &lt;- 7520
 hum0197_backpain_eur_finngen_controls &lt;- 103091
 hum0197_backpain_eur_finngen_tot &lt;- hum0197_backpain_eur_finngen_cases + hum0197_backpain_eur_finngen_controls
-hum0197_backpain_eur_finngen_neff &lt;- 4 / (1/hum0197_backpain_eur_finngen_cases + 1/hum0197_backpain_eur_finngen_controls)
+hum0197_backpain_eur_finngen_neff &lt;- 4 / (1 / hum0197_backpain_eur_finngen_cases + 1 / hum0197_backpain_eur_finngen_controls)
 
-hum0197_backpain_eur_sumstats &lt;-
-hum0197_backpain_eur |&gt;
+hum0197_backpain_eur_sumstats &lt;- hum0197_backpain_eur |&gt;
   mutate(CHR = as.character(CHR)) |&gt;
-  left_join(back_pain_chr_pos_rsid, by = c(&quot;CHR&quot; = &quot;#[1]CHROM&quot;, &quot;POS&quot; = &quot;[2]POS&quot;),
-            relationship = &quot;many-to-many&quot;) |&gt;
-  filter((Allele1 == `[4]REF` &amp; Allele2 ==  `[5]ALT`) |
-         (Allele2 == `[4]REF` &amp; Allele1 ==  `[5]ALT`)) |&gt;
+  left_join(
+    back_pain_chr_pos_rsid, by = c(&quot;CHR&quot; = &quot;#[1]CHROM&quot;, &quot;POS&quot; = &quot;[2]POS&quot;),
+    relationship = &quot;many-to-many&quot;
+  ) |&gt;
+  filter(
+    (Allele1 == `[4]REF` &amp; Allele2 ==  `[5]ALT`) |
+      (Allele2 == `[4]REF` &amp; Allele1 ==  `[5]ALT`)
+  ) |&gt;
   filter(!duplicated(`[3]ID`)) |&gt;
-  mutate(cohorts = case_when(!is.na(AF_Allele2_UKB) &amp; !is.na(AF_Allele2_FG) ~ &quot;both&quot;,
-                              is.na(AF_Allele2_UKB) &amp; !is.na(AF_Allele2_FG) ~ &quot;fg&quot;,
-                             !is.na(AF_Allele2_UKB) &amp; is.na(AF_Allele2_FG) ~ &quot;ukb&quot;,
-                             .default = NA_character_)) |&gt;
-  mutate(N = case_match(cohorts,
-                         &quot;both&quot; ~ hum0197_backpain_eur_ukb_neff + hum0197_backpain_eur_finngen_neff,
-                         &quot;fg&quot; ~ hum0197_backpain_eur_finngen_neff,
-                         &quot;ukb&quot; ~ hum0197_backpain_eur_ukb_neff,
-                         .default = NA_real_
-                       ),
-        FRQ = case_match(cohorts,
-           &quot;both&quot; ~ (AF_Allele2_UKB * hum0197_backpain_eur_ukb_tot + AF_Allele2_FG * hum0197_backpain_eur_finngen_tot) / (hum0197_backpain_eur_ukb_tot + hum0197_backpain_eur_finngen_tot),
-           &quot;fg&quot; ~ AF_Allele2_FG,
-           &quot;ukb&quot; ~ AF_Allele2_UKB,
-           .default = NA_real_
-         )) |&gt;
-  transmute(SNP = coalesce(`[3]ID`, v), A1 = Allele2, A2 = Allele1, FRQ = FRQ, OR = exp(BETA), P = p.value, N = N)</code></pre>
-<pre class="r"><code>write_tsv(hum0197_backpain_eas_sumstats, here::here(&quot;reference/sumstats/back_pain_SakaueKanai2020_eas.txt&quot;))
-write_tsv(hum0197_backpain_eur_sumstats, here::here(&quot;reference/sumstats/back_pain_SakaueKanai2020_eur.txt&quot;))</code></pre>
+  mutate(
+    cohorts = case_when(
+      !is.na(AF_Allele2_UKB) &amp; !is.na(AF_Allele2_FG) ~ &quot;both&quot;,
+      is.na(AF_Allele2_UKB) &amp; !is.na(AF_Allele2_FG) ~ &quot;fg&quot;,
+      !is.na(AF_Allele2_UKB) &amp; is.na(AF_Allele2_FG) ~ &quot;ukb&quot;,
+      .default = NA_character_
+    )
+  ) |&gt;
+  mutate(
+    N = case_match(
+      cohorts,
+      &quot;both&quot; ~ hum0197_backpain_eur_ukb_neff + hum0197_backpain_eur_finngen_neff,
+      &quot;fg&quot; ~ hum0197_backpain_eur_finngen_neff,
+      &quot;ukb&quot; ~ hum0197_backpain_eur_ukb_neff,
+      .default = NA_real_
+    ),
+    FRQ = case_match(
+      cohorts,
+      &quot;both&quot; ~ (AF_Allele2_UKB * hum0197_backpain_eur_ukb_tot +
+                  AF_Allele2_FG * hum0197_backpain_eur_finngen_tot) /
+        (hum0197_backpain_eur_ukb_tot +
+           hum0197_backpain_eur_finngen_tot),
+      &quot;fg&quot; ~ AF_Allele2_FG,
+      &quot;ukb&quot; ~ AF_Allele2_UKB,
+      .default = NA_real_
+    )
+  ) |&gt;
+  transmute(
+    SNP = coalesce(`[3]ID`, v),
+    A1 = Allele2,
+    A2 = Allele1,
+    FRQ = FRQ,
+    OR = exp(BETA),
+    P = p.value,
+    N = N
+  )</code></pre>
+<pre class="r"><code>write_tsv(
+  hum0197_backpain_eas_sumstats,
+  here::here(&quot;reference/sumstats/back_pain_SakaueKanai2020_eas.txt&quot;)
+)
+write_tsv(
+  hum0197_backpain_eur_sumstats,
+  here::here(&quot;reference/sumstats/back_pain_SakaueKanai2020_eur.txt&quot;)
+)</code></pre>
 </div>
 <div id="major-depression" class="section level3">
 <h3>Major depression</h3>
-<pre class="sh"><code>curl https://ipsych.dk/fileadmin/ipsych.dk/Downloads/daner_MDDwoBP_20201001_2015iR15iex_HRC_MDDwoBP_iPSYCH2015i_UKBtransformed_Wray_FinnGen_MVPaf_2_HRC_MAF01.gz &gt; reference/sumstats/daner_MDDwoBP_20201001_2015iR15iex_HRC_MDDwoBP_iPSYCH2015i_UKBtransformed_Wray_FinnGen_MVPaf_2_HRC_MAF01.gz
+<pre class="sh"><code>curl -L https://figshare.com/ndownloader/files/51487019 &gt; reference/sumstats/pgc-mdd2025_no23andMe_eur_v3-49-24-11.tsv.gz
 
 curl -L https://figshare.com/ndownloader/files/43621287 &gt; reference/sumstats/mdd2023diverse_AFR_Neff.csv
 
@@ -460,21 +565,39 @@ curl -L https://figshare.com/ndownloader/files/43621275 &gt; reference/sumstats/
 
 curl -L https://figshare.com/ndownloader/files/43621242 &gt; reference/sumstats/mdd2023diverse_SAS_Neff.csv
 </code></pre>
-<pre class="r"><code>als_md_eur &lt;- read_table(here::here(&quot;reference/sumstats/daner_MDDwoBP_20201001_2015iR15iex_HRC_MDDwoBP_iPSYCH2015i_UKBtransformed_Wray_FinnGen_MVPaf_2_HRC_MAF01.gz&quot;))
+<pre class="r"><code>adams_md_eur &lt;- read_tsv(
+  here::here(&quot;reference/sumstats/pgc-mdd2025_no23andMe_eur_v3-49-24-11.tsv.gz&quot;),
+  comment = &quot;##&quot;
+)
 
-als_md_eur_sumstats &lt;- als_md_eur |&gt;
-  transmute(SNP, A1, A2, FRQ = FRQ_U_741438, INFO, OR, P, N = Neff_half * 2)
-  
-write_tsv(als_md_eur_sumstats, here::here(&quot;reference/sumstats/md_als_eur.txt&quot;))</code></pre>
-<pre class="r"><code>for(cluster in c(&quot;AFR&quot;, &quot;EAS&quot;, &quot;HIS&quot;, &quot;SAS&quot;)) {
-  meng_md &lt;- read_csv(here::here(str_glue(&quot;reference/sumstats/mdd2023diverse_{cluster}_Neff.csv&quot;)))
+adams_md_eur_sumstats &lt;- adams_md_eur |&gt;
+  transmute(
+    SNP = ID, A1 = EA, A2 = NEA,
+    FRQ = FCON, INFO = IMPINFO,
+    OR = exp(BETA), P = PVAL, N = NEFF
+  )
+write_tsv(
+  adams_md_eur_sumstats,
+  here::here(&quot;reference/sumstats/md_adams_eur.txt&quot;)
+)</code></pre>
+<pre class="r"><code>for (cluster in c(&quot;AFR&quot;, &quot;EAS&quot;, &quot;HIS&quot;, &quot;SAS&quot;)) {
+  meng_md &lt;- read_csv(
+    here::here(
+      str_glue(&quot;reference/sumstats/mdd2023diverse_{cluster}_Neff.csv&quot;)
+    )
+  )
 
   meng_md_sumstats &lt;- meng_md |&gt;
-    transmute(SNP = coalesce(SNP, str_glue(&quot;{Chromosome}:{Position}:{EA}:{NEA}&quot;)),
-              A1 = str_to_upper(EA), A2 = str_to_upper(NEA),
-              FRQ = EAF, OR = exp(logOR), P, N = Neff)
-              
-  write_tsv(meng_md_sumstats, here::here(str_glue(&quot;reference/sumstats/md_meng_{cluster}.txt&quot;)))
+    transmute(
+      SNP = coalesce(SNP, str_glue(&quot;{Chromosome}:{Position}:{EA}:{NEA}&quot;)),
+      A1 = str_to_upper(EA), A2 = str_to_upper(NEA),
+      FRQ = EAF, OR = exp(logOR), P, N = Neff
+    )
+
+  write_tsv(
+    meng_md_sumstats,
+    here::here(str_glue(&quot;reference/sumstats/md_meng_{cluster}.txt&quot;))
+  )
 }</code></pre>
 </div>
 </div>
@@ -483,25 +606,43 @@ write_tsv(als_md_eur_sumstats, here::here(&quot;reference/sumstats/md_als_eur.tx
 <pre class="r"><code># hm3 SNPs
 hm3 &lt;- here::here(&quot;reference/w_hm3.snplist&quot;)
 
-for(cluster in c(&quot;AFR&quot;, &quot;AMR&quot;, &quot;EAS&quot;, &quot;EUR&quot;, &quot;SAS&quot;)) {
-  munge(files = here::here(str_glue(&quot;txt/fixed-N06A-{cluster}.human_g1k_v37.txt&quot;)),
-       trait.names = str_glue(&quot;AD_{cluster}&quot;), hm3 = hm3,
-       info.filter = 0.9, maf.filter = 0.01, N = NA)
+for (cluster in c(&quot;AFR&quot;, &quot;AMR&quot;, &quot;EAS&quot;, &quot;EUR&quot;, &quot;SAS&quot;)) {
+  munge(
+    files = here::here(
+      str_glue(&quot;results/txt/meta/antidep-2501-fixed-N06A-{cluster}.txt&quot;)
+    ),
+    trait.names = str_glue(&quot;AD_{cluster}&quot;), hm3 = hm3,
+    info.filter = 0.9, maf.filter = 0.01, N = NA,
+    column.names = list(MAF = &quot;FRQ&quot;)
+  )
 }</code></pre>
-<pre class="r"><code>for(cluster in c(&quot;eas&quot;, &quot;eur&quot;)) {
-  munge(files = here::here(str_glue(&quot;reference/sumstats/back_pain_SakaueKanai2020_{cluster}.txt&quot;)),
-       trait.names = str_glue(&quot;Pain_{str_to_upper(cluster)}&quot;), hm3 = hm3,
-       info.filter = 0.9, maf.filter = 0.01, N = NA)
+<pre class="r"><code>for (cluster in c(&quot;eas&quot;, &quot;eur&quot;)) {
+  munge(
+    files = here::here(
+      str_glue(&quot;reference/sumstats/back_pain_SakaueKanai2020_{cluster}.txt&quot;)
+    ),
+    trait.names = str_glue(&quot;Pain_{str_to_upper(cluster)}&quot;), hm3 = hm3,
+    info.filter = 0.9, maf.filter = 0.01, N = NA,
+    column.names = list(MAF = &quot;FRQ&quot;)
+  )
 }</code></pre>
-<pre class="r"><code>for(cluster in c(&quot;AFR&quot;, &quot;HIS&quot;, &quot;EAS&quot;, &quot;SAS&quot;)) {
-  munge(files = here::here(str_glue(&quot;reference/sumstats/md_meng_{cluster}.txt&quot;)),
-       trait.names = str_glue(&quot;MD_{cluster}&quot;), hm3 = hm3,
-       info.filter = 0.9, maf.filter = 0.01, N = NA)
+<pre class="r"><code>for (cluster in c(&quot;AFR&quot;, &quot;HIS&quot;, &quot;EAS&quot;, &quot;SAS&quot;)) {
+  munge(
+    files = here::here(
+      str_glue(&quot;reference/sumstats/md_meng_{cluster}.txt&quot;)
+    ),
+    trait.names = str_glue(&quot;MD_{cluster}&quot;), hm3 = hm3,
+    info.filter = 0.9, maf.filter = 0.01, N = NA,
+    column.names = list(MAF = &quot;FRQ&quot;)
+  )
 }
 
-munge(files = c&quot;reference/sumstats/md_als_eur.txt&quot;,
+munge(
+  files = here::here(&quot;reference/sumstats/md_adams_eur.txt&quot;),
   trait.names = &quot;MD_EUR&quot;,
-  hm3 = hm3, info.filter = 0.9, maf.filter = 0.01, N = NA)</code></pre>
+  hm3 = hm3, info.filter = 0.9, maf.filter = 0.01, N = NA,
+  column.names = list(MAF = &quot;FRQ&quot;)
+)</code></pre>
 </div>
 <div id="ldsc" class="section level2">
 <h2>LDSC</h2>
@@ -515,336 +656,103 @@ for cluster in AFR AMR CSA EAS EUR; do
   cp reference/UKBB.ALL.ldscore/UKBB.${cluster}.l2.M reference/UKBB.ALL.ldscore/UKBB.${cluster}/1.l2.M
   cp reference/UKBB.ALL.ldscore/UKBB.${cluster}.l2.M_5_50 reference/UKBB.ALL.ldscore/UKBB.${cluster}/1.l2.M_5_50
 done</code></pre>
-<pre class="r"><code>afr_ldsc &lt;- ldsc(traits = c(&quot;AD_AFR.sumstats.gz&quot;, &quot;MD_AFR.sumstats.gz&quot;),
- trait.names = c(&quot;AD&quot;, &quot;MD&quot;),
- sample.prev = c(0.5, 0.5, 0.5),
- population.prev = c(0.25, 0.15),
- ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.AFR&quot;),
- wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.AFR&quot;),
- chr = 1
- )</code></pre>
-<pre><code>## Multivariate ld-score regression of 2 traits (AD_AFR.sumstats.gz MD_AFR.sumstats.gz) began at: 2024-09-23 15:38:26.831865
-## Reading in LD scores
-## Read in summary statistics [1/2] from: AD_AFR.sumstats.gz
-## Out of 1195657 SNPs, 1084375 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 1084375 remain
-## Read in summary statistics [2/2] from: MD_AFR.sumstats.gz
-## Out of 1192183 SNPs, 1078611 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 1078611 remain
-## Estimating heritability [1/3] for: AD_AFR.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait AD_AFR.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: AD_AFR.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.0382
-## Lambda GC: 1.034
-## Intercept: 1.0396 (0.0064)
-## Ratio: 1.0369 (0.1674)
-## Total Observed Scale h2: -0.0031 (0.0171)
-## h2 Z: -0.182
-## Calculating genetic covariance [2/3] for traits: AD_AFR.sumstats.gz and MD_AFR.sumstats.gz
-## 1076105 SNPs remain after merging AD_AFR.sumstats.gz and MD_AFR.sumstats.gz summary statistics
-## Results for genetic covariance between: AD_AFR.sumstats.gz and MD_AFR.sumstats.gz
-## Mean Z*Z: 0.0216
-## Cross trait Intercept: 0.0055 (0.0045)
-## Total Observed Scale Genetic Covariance (g_cov): 0.0281 (0.0097)
-## g_cov Z: 2.89
-## g_cov P-value: 0.0037918
-## Estimating heritability [3/3] for: MD_AFR.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait MD_AFR.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: MD_AFR.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.0228
-## Lambda GC: 1.0221
-## Intercept: 1.0009 (0.0066)
-## Ratio: 0.0382 (0.2882)
-## Total Observed Scale h2: 0.0293 (0.0111)
-## h2 Z: 2.65
-## Liability Scale Results
-## Liability scale results for: AD
-## Total Liability Scale h2: -0.0043 (0.0238)
-## Total Liability Scale Genetic Covariance between AD and MD: 0.0363 (0.0125)
-## Liability scale results for: MD
-## Total Liability Scale h2: 0.035 (0.0132)</code></pre>
-<pre><code>## Warning in ldsc(traits = c(&quot;AD_AFR.sumstats.gz&quot;, &quot;MD_AFR.sumstats.gz&quot;), : Your
-## genetic covariance matrix includes traits estimated to have a negative
-## heritability.</code></pre>
-<pre><code>## Genetic correlation results could not be computed due to negative heritability estimates.
-## LDSC finished running at 2024-09-23 15:38:40.57687
-## Running LDSC for all files took 0 minutes and 13 seconds</code></pre>
-<pre class="r"><code>amr_ldsc &lt;- ldsc(traits = c(&quot;AD_AMR.sumstats.gz&quot;, &quot;MD_HIS.sumstats.gz&quot;),
-  trait.names = c(&quot;AD&quot;, &quot;MD&quot;),
-  sample.prev = c(0.5, 0.5, 0.5),
-  population.prev = c(0.25, 0.15),
-  ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.AMR&quot;),
-  wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.AMR&quot;),
-  chr = 1
-  )</code></pre>
-<pre><code>## Multivariate ld-score regression of 2 traits (AD_AMR.sumstats.gz MD_HIS.sumstats.gz) began at: 2024-09-23 15:38:40.578682
-## Reading in LD scores
-## Read in summary statistics [1/2] from: AD_AMR.sumstats.gz
-## Out of 1149699 SNPs, 1057421 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 1057421 remain
-## Read in summary statistics [2/2] from: MD_HIS.sumstats.gz
-## Out of 1202272 SNPs, 1091259 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 1091259 remain
-## Estimating heritability [1/3] for: AD_AMR.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait AD_AMR.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: AD_AMR.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.0472
-## Lambda GC: 1.0562
-## Intercept: 1.0375 (0.0064)
-## Ratio: 0.7942 (0.1353)
-## Total Observed Scale h2: 0.0217 (0.0174)
-## h2 Z: 1.24
-## Calculating genetic covariance [2/3] for traits: AD_AMR.sumstats.gz and MD_HIS.sumstats.gz
-## 1049413 SNPs remain after merging AD_AMR.sumstats.gz and MD_HIS.sumstats.gz summary statistics
-## Results for genetic covariance between: AD_AMR.sumstats.gz and MD_HIS.sumstats.gz
-## Mean Z*Z: 0.002
-## Cross trait Intercept: 0.0041 (0.0048)
-## Total Observed Scale Genetic Covariance (g_cov): -0.0059 (0.0156)
-## g_cov Z: -0.378
-## g_cov P-value: 0.70529
-## Estimating heritability [3/3] for: MD_HIS.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait MD_HIS.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: MD_HIS.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.0032
-## Lambda GC: 1.007
-## Intercept: 0.9928 (0.0058)
-## Ratio: -2.2663 (1.8205)
-## Total Observed Scale h2: 0.0373 (0.0269)
-## h2 Z: 1.38
-## Liability Scale Results
-## Liability scale results for: AD
-## Total Liability Scale h2: 0.0302 (0.0243)
-## Total Liability Scale Genetic Covariance between AD and MD: -0.0076 (0.0202)
-## Liability scale results for: MD
-## Total Liability Scale h2: 0.0446 (0.0322)
-## Genetic Correlation Results
-## Genetic Correlation between AD and MD: -0.2078 (0.5495)
-## LDSC finished running at 2024-09-23 15:38:54.77596
-## Running LDSC for all files took 0 minutes and 14 seconds</code></pre>
-<pre class="r"><code>eas_ldsc &lt;- ldsc(traits = c(&quot;AD_EAS.sumstats.gz&quot;, &quot;MD_EAS.sumstats.gz&quot;, &quot;Pain_EAS.sumstats.gz&quot;),
-                 trait.names = c(&quot;AD&quot;, &quot;MD&quot;, &quot;Pain&quot;),
-                 sample.prev = c(0.5, 0.5, 0.5),
-                 population.prev = c(0.02, 0.15, 0.05),
-                 ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.EAS&quot;),
-                 wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.EAS&quot;),
-                 chr = 1
-                 )</code></pre>
-<pre><code>## Multivariate ld-score regression of 3 traits (AD_EAS.sumstats.gz MD_EAS.sumstats.gz Pain_EAS.sumstats.gz) began at: 2024-09-23 15:38:54.777926
-## Reading in LD scores
-## Read in summary statistics [1/3] from: AD_EAS.sumstats.gz
-## Out of 1050451 SNPs, 945186 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 945186 remain
-## Read in summary statistics [2/3] from: MD_EAS.sumstats.gz
-## Out of 1082312 SNPs, 967081 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 967081 remain
-## Read in summary statistics [3/3] from: Pain_EAS.sumstats.gz
-## Out of 976388 SNPs, 874709 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 874709 remain
-## Estimating heritability [1/6] for: AD_EAS.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait AD_EAS.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: AD_EAS.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.0456
-## Lambda GC: 1.0615
-## Intercept: 1.0293 (0.0072)
-## Ratio: 0.6422 (0.158)
-## Total Observed Scale h2: 0.0509 (0.0297)
-## h2 Z: 1.71
-## Calculating genetic covariance [2/6] for traits: AD_EAS.sumstats.gz and MD_EAS.sumstats.gz
-## 937826 SNPs remain after merging AD_EAS.sumstats.gz and MD_EAS.sumstats.gz summary statistics
-## Results for genetic covariance between: AD_EAS.sumstats.gz and MD_EAS.sumstats.gz
-## Mean Z*Z: 0.4738
-## Cross trait Intercept: 0.4621 (0.006)
-## Total Observed Scale Genetic Covariance (g_cov): 0.0187 (0.0132)
-## g_cov Z: 1.42
-## g_cov P-value: 0.15454
-## Calculating genetic covariance [3/6] for traits: AD_EAS.sumstats.gz and Pain_EAS.sumstats.gz
-## 873451 SNPs remain after merging AD_EAS.sumstats.gz and Pain_EAS.sumstats.gz summary statistics
-## Results for genetic covariance between: AD_EAS.sumstats.gz and Pain_EAS.sumstats.gz
-## Mean Z*Z: 0.0142
-## Cross trait Intercept: 0.0057 (0.0054)
-## Total Observed Scale Genetic Covariance (g_cov): 0.1243 (0.0989)
-## g_cov Z: 1.26
-## g_cov P-value: 0.20897
-## Estimating heritability [4/6] for: MD_EAS.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait MD_EAS.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: MD_EAS.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.0295
-## Lambda GC: 1.0311
-## Intercept: 0.9945 (0.0068)
-## Ratio: -0.1868 (0.2302)
-## Total Observed Scale h2: 0.0339 (0.0095)
-## h2 Z: 3.56
-## Calculating genetic covariance [5/6] for traits: MD_EAS.sumstats.gz and Pain_EAS.sumstats.gz
-## 872449 SNPs remain after merging MD_EAS.sumstats.gz and Pain_EAS.sumstats.gz summary statistics
-## Results for genetic covariance between: MD_EAS.sumstats.gz and Pain_EAS.sumstats.gz
-## Mean Z*Z: 0.0121
-## Cross trait Intercept: 0.0056 (0.0058)
-## Total Observed Scale Genetic Covariance (g_cov): 0.0513 (0.0562)
-## g_cov Z: 0.912
-## g_cov P-value: 0.36152
-## Estimating heritability [6/6] for: Pain_EAS.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait Pain_EAS.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: Pain_EAS.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.012
-## Lambda GC: 1.0181
-## Intercept: 1.0052 (0.0069)
-## Ratio: 0.4352 (0.5711)
-## Total Observed Scale h2: 0.5071 (0.6355)
-## h2 Z: 0.798
-## Liability Scale Results
-## Liability scale results for: AD
-## Total Liability Scale h2: 0.0333 (0.0195)
-## Total Liability Scale Genetic Covariance between AD and MD: 0.0166 (0.0116)
-## Total Liability Scale Genetic Covariance between AD and Pain: 0.0927 (0.0738)
-## Liability scale results for: MD
-## Total Liability Scale h2: 0.0406 (0.0114)
-## Total Liability Scale Genetic Covariance between MD and Pain: 0.0517 (0.0567)
-## Liability scale results for: Pain
-## Total Liability Scale h2: 0.4302 (0.5392)
-## Genetic Correlation Results
-## Genetic Correlation between AD and MD: 0.451 (0.3168)
-## Genetic Correlation between AD and Pain: 0.7741 (0.6161)
-## Genetic Correlation between MD and Pain: 0.3914 (0.429)
-## LDSC finished running at 2024-09-23 15:39:17.181868
-## Running LDSC for all files took 0 minutes and 22 seconds</code></pre>
-<pre class="r"><code>eur_ldsc &lt;- ldsc(traits = c(&quot;AD_EUR.sumstats.gz&quot;, &quot;MD_EUR.sumstats.gz&quot;, &quot;Pain_EUR.sumstats.gz&quot;),
-                  trait.names = c(&quot;AD&quot;, &quot;MD&quot;, &quot;Pain&quot;),
-                  sample.prev = c(0.5, 0.5, 0.5),
-                  population.prev = c(0.25, 0.15, 0.05),
-                  ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.EUR&quot;),
-                  wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.EUR&quot;),
-                  chr = 1
-                  )</code></pre>
-<pre><code>## Multivariate ld-score regression of 3 traits (AD_EUR.sumstats.gz MD_EUR.sumstats.gz Pain_EUR.sumstats.gz) began at: 2024-09-23 15:39:17.183709
-## Reading in LD scores
-## Read in summary statistics [1/3] from: AD_EUR.sumstats.gz
-## Out of 1190540 SNPs, 1082307 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 667.371; 1082307 remain
-## Read in summary statistics [2/3] from: MD_EUR.sumstats.gz
-## Out of 1176133 SNPs, 1081099 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 783.6507; 1081099 remain
-## Read in summary statistics [3/3] from: Pain_EUR.sumstats.gz
-## Out of 1080043 SNPs, 971052 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 85.1263827554068; 971052 remain
-## Estimating heritability [1/6] for: AD_EUR.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait AD_EUR.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: AD_EUR.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.5978
-## Lambda GC: 1.4851
-## Intercept: 1.1188 (0.0125)
-## Ratio: 0.1988 (0.0209)
-## Total Observed Scale h2: 0.0366 (0.0018)
-## h2 Z: 20.1
-## Calculating genetic covariance [2/6] for traits: AD_EUR.sumstats.gz and MD_EUR.sumstats.gz
-## 1078426 SNPs remain after merging AD_EUR.sumstats.gz and MD_EUR.sumstats.gz summary statistics
-## Results for genetic covariance between: AD_EUR.sumstats.gz and MD_EUR.sumstats.gz
-## Mean Z*Z: 0.7871
-## Cross trait Intercept: 0.1955 (0.0117)
-## Total Observed Scale Genetic Covariance (g_cov): 0.0413 (0.0018)
-## g_cov Z: 23
-## g_cov P-value: 2.1466e-117
-## Calculating genetic covariance [3/6] for traits: AD_EUR.sumstats.gz and Pain_EUR.sumstats.gz
-## 968215 SNPs remain after merging AD_EUR.sumstats.gz and Pain_EUR.sumstats.gz summary statistics
-## Results for genetic covariance between: AD_EUR.sumstats.gz and Pain_EUR.sumstats.gz
-## Mean Z*Z: 0.2741
-## Cross trait Intercept: 0.073 (0.0071)
-## Total Observed Scale Genetic Covariance (g_cov): 0.0421 (0.0027)
-## g_cov Z: 15.8
-## g_cov P-value: 5.6015e-56
-## Estimating heritability [4/6] for: MD_EUR.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait MD_EUR.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: MD_EUR.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.9497
-## Lambda GC: 1.6729
-## Intercept: 1.0594 (0.0148)
-## Ratio: 0.0626 (0.0156)
-## Total Observed Scale h2: 0.0579 (0.0023)
-## h2 Z: 24.8
-## Calculating genetic covariance [5/6] for traits: MD_EUR.sumstats.gz and Pain_EUR.sumstats.gz
-## 967284 SNPs remain after merging MD_EUR.sumstats.gz and Pain_EUR.sumstats.gz summary statistics
-## Results for genetic covariance between: MD_EUR.sumstats.gz and Pain_EUR.sumstats.gz
-## Mean Z*Z: 0.2812
-## Cross trait Intercept: 0.0633 (0.0073)
-## Total Observed Scale Genetic Covariance (g_cov): 0.0415 (0.003)
-## g_cov Z: 13.9
-## g_cov P-value: 4.1636e-44
-## Estimating heritability [6/6] for: Pain_EUR.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait Pain_EUR.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: Pain_EUR.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.1488
-## Lambda GC: 1.1376
-## Intercept: 1.007 (0.008)
-## Ratio: 0.0473 (0.0537)
-## Total Observed Scale h2: 0.0811 (0.0071)
-## h2 Z: 11.4
-## Liability Scale Results
-## Liability scale results for: AD
-## Total Liability Scale h2: 0.0509 (0.0025)
-## Total Liability Scale Genetic Covariance between AD and MD: 0.0533 (0.0023)
-## Total Liability Scale Genetic Covariance between AD and Pain: 0.0458 (0.0029)
-## Liability scale results for: MD
-## Total Liability Scale h2: 0.0693 (0.0028)
-## Total Liability Scale Genetic Covariance between MD and Pain: 0.0418 (0.003)
-## Liability scale results for: Pain
-## Total Liability Scale h2: 0.0688 (0.006)
-## Genetic Correlation Results
-## Genetic Correlation between AD and MD: 0.8976 (0.039)
-## Genetic Correlation between AD and Pain: 0.773 (0.049)
-## Genetic Correlation between MD and Pain: 0.6058 (0.0435)
-## LDSC finished running at 2024-09-23 15:39:39.981239
-## Running LDSC for all files took 0 minutes and 22 seconds</code></pre>
-<pre class="r"><code>sas_ldsc &lt;- ldsc(traits = c(&quot;AD_SAS.sumstats.gz&quot;, &quot;MD_SAS.sumstats.gz&quot;),
-                  trait.names = c(&quot;AD&quot;, &quot;MD&quot;),
-                  sample.prev = c(0.5, 0.5, 0.5),
-                  population.prev = c(0.25, 0.15),
-                  ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.CSA&quot;),
-                  wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.SAS&quot;),
-                  chr = 1
-                  )</code></pre>
-<pre><code>## Multivariate ld-score regression of 2 traits (AD_SAS.sumstats.gz MD_SAS.sumstats.gz) began at: 2024-09-23 15:39:39.983343
-## Reading in LD scores
-## Read in summary statistics [1/2] from: AD_SAS.sumstats.gz
-## Out of 1055233 SNPs, 972919 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 972919 remain
-## Read in summary statistics [2/2] from: MD_SAS.sumstats.gz
-## Out of 1048611 SNPs, 971699 remain after merging with LD-score files
-## Removing 0 SNPs with Chi^2 &gt; 80; 971699 remain
-## Estimating heritability [1/3] for: AD_SAS.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait AD_SAS.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: AD_SAS.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.0265
-## Lambda GC: 1.024
-## Intercept: 1.0171 (0.0065)
-## Ratio: 0.6445 (0.2438)
-## Total Observed Scale h2: 0.0866 (0.0794)
-## h2 Z: 1.09
-## Calculating genetic covariance [2/3] for traits: AD_SAS.sumstats.gz and MD_SAS.sumstats.gz
-## 884991 SNPs remain after merging AD_SAS.sumstats.gz and MD_SAS.sumstats.gz summary statistics
-## Results for genetic covariance between: AD_SAS.sumstats.gz and MD_SAS.sumstats.gz
-## Mean Z*Z: 0.0335
-## Cross trait Intercept: 0.0278 (0.0052)
-## Total Observed Scale Genetic Covariance (g_cov): 0.031 (0.0374)
-## g_cov Z: 0.83
-## g_cov P-value: 0.40673
-## Estimating heritability [3/3] for: MD_SAS.sumstats.gz
-## Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait MD_SAS.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
-## Heritability Results for trait: MD_SAS.sumstats.gz
-## Mean Chi^2 across remaining SNPs: 1.0043
-## Lambda GC: 1.007
-## Intercept: 1.0038 (0.0074)
-## Ratio: 0.8822 (1.7312)
-## Total Observed Scale h2: 0.0021 (0.03)
-## h2 Z: 0.0714
-## Liability Scale Results
-## Liability scale results for: AD
-## Total Liability Scale h2: 0.1206 (0.1105)
-## Total Liability Scale Genetic Covariance between AD and MD: 0.04 (0.0482)
-## Liability scale results for: MD
-## Total Liability Scale h2: 0.0026 (0.0359)
-## Genetic Correlation Results
-## Genetic Correlation between AD and MD: 2.2745 (2.7415)
-## LDSC finished running at 2024-09-23 15:39:51.613829
-## Running LDSC for all files took 0 minutes and 11 seconds</code></pre>
+</div>
+<div id="estimate-genetic-covariances" class="section level3">
+<h3>Estimate genetic covariances</h3>
+<pre class="r"><code># if building, estimate all covariances and save out as R code.
+# otherwise load them in
+# specify 1 chromsome because ldscore reference is stored in 1 file
+# store LDSC object as R code (write out with dput(), read in with dget())
+if (build_all) {
+  dir.create(here::here(&quot;scripts/ad-exposure-mdd_files&quot;))
+  afr_ldsc &lt;- ldsc(
+    traits = c(&quot;AD_AFR.sumstats.gz&quot;, &quot;MD_AFR.sumstats.gz&quot;),
+    trait.names = c(&quot;AD&quot;, &quot;MD&quot;),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.25, 0.15),
+    ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.AFR&quot;),
+    wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.AFR&quot;),
+    chr = 1
+  )
+  dput(
+    afr_ldsc,
+    here::here(&quot;scripts/ad-exposure-mdd_files/afr_ldsc.R&quot;),
+    control = c(&quot;all&quot;, &quot;digits17&quot;)
+  )
+
+  amr_ldsc &lt;- ldsc(
+    traits = c(&quot;AD_AMR.sumstats.gz&quot;, &quot;MD_HIS.sumstats.gz&quot;),
+    trait.names = c(&quot;AD&quot;, &quot;MD&quot;),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.25, 0.15),
+    ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.AMR&quot;),
+    wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.AMR&quot;),
+    chr = 1
+  )
+  dput(amr_ldsc,
+    here::here(&quot;scripts/ad-exposure-mdd_files/amr_ldsc.R&quot;),
+    control = c(&quot;all&quot;, &quot;digits17&quot;)
+  )
+
+  eas_ldsc &lt;- ldsc(
+    traits = c(
+      &quot;AD_EAS.sumstats.gz&quot;,
+      &quot;MD_EAS.sumstats.gz&quot;,
+      &quot;Pain_EAS.sumstats.gz&quot;
+    ),
+    trait.names = c(&quot;AD&quot;, &quot;MD&quot;, &quot;Pain&quot;),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.02, 0.15, 0.05),
+    ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.EAS&quot;),
+    wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.EAS&quot;),
+    chr = 1
+  )
+  dput(eas_ldsc,
+    here::here(&quot;scripts/ad-exposure-mdd_files/eas_ldsc.R&quot;),
+    control = c(&quot;all&quot;, &quot;digits17&quot;)
+  )
+
+  eur_ldsc &lt;- ldsc(
+    traits = c(
+      &quot;AD_EUR.sumstats.gz&quot;,
+      &quot;MD_EUR.sumstats.gz&quot;,
+      &quot;Pain_EUR.sumstats.gz&quot;
+    ),
+    trait.names = c(&quot;AD&quot;, &quot;MD&quot;, &quot;Pain&quot;),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.25, 0.15, 0.05),
+    ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.EUR&quot;),
+    wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.EUR&quot;),
+    chr = 1
+  )
+  dput(
+    eur_ldsc,
+    here::here(&quot;scripts/ad-exposure-mdd_files/eur_ldsc.R&quot;),
+    control = c(&quot;all&quot;, &quot;digits17&quot;)
+  )
+
+  sas_ldsc &lt;- ldsc(
+    traits = c(&quot;AD_SAS.sumstats.gz&quot;, &quot;MD_SAS.sumstats.gz&quot;),
+    trait.names = c(&quot;AD&quot;, &quot;MD&quot;),
+    sample.prev = c(0.5, 0.5, 0.5),
+    population.prev = c(0.25, 0.15),
+    ld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.CSA&quot;),
+    wld = here::here(&quot;reference/UKBB.ALL.ldscore/UKBB.SAS&quot;),
+    chr = 1
+  )
+  dput(
+    sas_ldsc,
+    here::here(&quot;scripts/ad-exposure-mdd_files/sas_ldsc.R&quot;),
+    control = c(&quot;all&quot;, &quot;digits17&quot;)
+  )
+} else {
+  afr_ldsc &lt;- dget(here::here(&quot;scripts/ad-exposure-mdd_files/afr_ldsc.R&quot;))
+  amr_ldsc &lt;- dget(here::here(&quot;scripts/ad-exposure-mdd_files/amr_ldsc.R&quot;))
+  eas_ldsc &lt;- dget(here::here(&quot;scripts/ad-exposure-mdd_files/eas_ldsc.R&quot;))
+  eur_ldsc &lt;- dget(here::here(&quot;scripts/ad-exposure-mdd_files/eur_ldsc.R&quot;))
+  sas_ldsc &lt;- dget(here::here(&quot;scripts/ad-exposure-mdd_files/sas_ldsc.R&quot;))
+
+}</code></pre>
 </div>
 </div>
 <div id="model" class="section level2">
@@ -869,7 +777,7 @@ chol2_amr_fit &lt;- usermodel(amr_ldsc, estimation = &quot;DWLS&quot;, model = c
 ## [1] &quot;Calculating Standardized Results&quot;
 ## [1] &quot;Calculating SRMR&quot;
 ## elapsed 
-##    0.47 
+##   0.449 
 ## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
 <pre class="r"><code>chol2_amr_fit</code></pre>
 <pre><code>## $modelfit
@@ -878,34 +786,41 @@ chol2_amr_fit &lt;- usermodel(amr_ldsc, estimation = &quot;DWLS&quot;, model = c
 ## 
 ## $results
 ##   lhs op rhs Unstand_Est         Unstand_SE STD_Genotype   STD_Genotype_SE
-## 3  F1 =~  MD  0.21115464 0.0762948070569013    1.0000000 0.361321949233756
-## 2  F1 =~  AD -0.03610526 0.0958468596223356   -0.2078232 0.551697879787652
-## 6  F2 =~  AD  0.16993754 0.0733630219109025    0.9781664 0.422280128517639
-## 4  F1 ~~  F1  1.00000000                       1.0000000                  
-## 7  F2 ~~  F2  1.00000000                       1.0000000                  
-## 5  F1 ~~  F2  0.00000000                       0.0000000                  
-## 9  MD ~~  MD  0.00000000                       0.0000000                  
-## 8  MD ~~  AD  0.00000000                       0.0000000                  
-## 1  AD ~~  AD  0.00000000                       0.0000000                  
+## 3  F1 =~  MD  0.20753978 0.0776749827284036   1.00000001 0.374265513893631
+## 2  F1 =~  AD  0.00234703 0.0948429179666066   0.01559353 0.630131105953904
+## 6  F2 =~  AD -0.15049469 0.0762924958590567   0.99987841 0.506883130204275
+## 4  F1 ~~  F1  1.00000000                      1.00000000                  
+## 7  F2 ~~  F2  1.00000000                      1.00000000                  
+## 5  F1 ~~  F2  0.00000000                      0.00000000                  
+## 9  MD ~~  MD  0.00000000                      0.00000000                  
+## 8  MD ~~  AD  0.00000000                      0.00000000                  
+## 1  AD ~~  AD  0.00000000                      0.00000000                  
 ##      STD_All     p_value
-## 3  1.0000000 0.005646814
-## 2 -0.2078232 0.706398530
-## 6  0.9781664 0.020536859
-## 4  1.0000000          NA
-## 7  1.0000000          NA
-## 5  0.0000000          NA
-## 9  0.0000000          NA
-## 8  0.0000000          NA
-## 1  0.0000000          NA</code></pre>
+## 3 1.00000001 0.007542314
+## 2 0.01559353 0.980257165
+## 6 0.99987841 0.048540985
+## 4 1.00000000          NA
+## 7 1.00000000          NA
+## 5 0.00000000          NA
+## 9 0.00000000          NA
+## 8 0.00000000          NA
+## 1 0.00000000          NA</code></pre>
 <pre class="r"><code>chol2_sas_fit &lt;- usermodel(sas_ldsc, estimation = &quot;DWLS&quot;, model = chol2_model)</code></pre>
 <pre><code>## [1] &quot;Running primary model&quot;
 ## [1] &quot;Calculating CFI&quot;
 ## [1] &quot;Calculating Standardized Results&quot;
 ## [1] &quot;Calculating SRMR&quot;
 ## elapsed 
-##   0.317 
+##   0.167 
 ## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;
-## [1] &quot;The S matrix was smoothed prior to model estimation due to a non-positive definite matrix. The largest absolute difference in a cell between the smoothed and non-smoothed matrix was  0.00887811283352159 As a result of the smoothing, the largest Z-statistic change for the genetic covariances was  0.0565253018342226 . We recommend setting the smooth_check argument to true if you are going to run a multivariate GWAS.&quot;</code></pre>
+## [1] &quot;The S matrix was smoothed prior to model estimation due to a non-positive definite matrix. The largest absolute difference in a cell between the smoothed and non-smoothed matrix was  0.0289914488799009 As a result of the smoothing, the largest Z-statistic change for the genetic covariances was  0.457881788622328 . We recommend setting the smooth_check argument to true if you are going to run a multivariate GWAS.&quot;</code></pre>
+<pre><code>## Warning in usermodel(sas_ldsc, estimation = &quot;DWLS&quot;, model = chol2_model): A
+## difference greater than .025 was observed pre- and post-smoothing in the
+## genetic covariance matrix. This reflects a large difference and results should
+## be interpreted with caution!! This can often result from including low powered
+## traits, and you might consider removing those traits from the model. If you are
+## going to run a multivariate GWAS we strongly recommend setting the smooth_check
+## argument to true to check smoothing for each SNP.</code></pre>
 <pre><code>## Warning in usermodel(sas_ldsc, estimation = &quot;DWLS&quot;, model = chol2_model): A
 ## difference greater than .025 was observed pre- and post-smoothing for
 ## Z-statistics in the genetic covariance matrix. This reflects a large difference
@@ -919,26 +834,26 @@ chol2_amr_fit &lt;- usermodel(amr_ldsc, estimation = &quot;DWLS&quot;, model = c
 ## df    NA  0      NA  NA  NA   NA
 ## 
 ## $results
-##   lhs op rhs Unstand_Est        Unstand_SE STD_Genotype  STD_Genotype_SE
-## 3  F1 =~  MD 0.106973355  0.16798047865181 1.0000000537 1.57036920064343
-## 2  F1 =~  AD 0.348458211 0.684302112014514 0.9999998253 1.96383858126799
-## 6  F2 =~  AD 0.003029638  79.2894260587884 0.0006313834 3133.41811216228
-## 4  F1 ~~  F1 1.000000000                   1.0000000000                 
-## 7  F2 ~~  F2 1.000000000                   1.0000000000                 
-## 5  F1 ~~  F2 0.000000000                   0.0000000000                 
-## 9  MD ~~  MD 0.000000000                   0.0000000000                 
-## 8  MD ~~  AD 0.000000000                   0.0000000000                 
-## 1  AD ~~  AD 0.000000000                   0.0000000000                 
-##        STD_All   p_value
-## 3 1.0000000537 0.5242420
-## 2 0.9999998007 0.6106002
-## 6 0.0006313833 0.9999695
-## 4 1.0000000000        NA
-## 7 1.0000000000        NA
-## 5 0.0000000000        NA
-## 9 0.0000000000        NA
-## 8 0.0000000000        NA
-## 1 0.0000000000        NA</code></pre>
+##   lhs op rhs  Unstand_Est        Unstand_SE STD_Genotype   STD_Genotype_SE
+## 3  F1 =~  MD 0.1776404949 0.101156188872328  1.000000010 0.569443300822671
+## 2  F1 =~  AD 0.2328960178 0.298506714776198  0.999999926  1.28171659874201
+## 6  F2 =~  AD 0.0001276785   683.23010062648  0.000499934  3216.97612520184
+## 4  F1 ~~  F1 1.0000000000                    1.000000000                  
+## 7  F2 ~~  F2 1.0000000000                    1.000000000                  
+## 5  F1 ~~  F2 0.0000000000                    0.000000000                  
+## 9  MD ~~  MD 0.0000000000                    0.000000000                  
+## 8  MD ~~  AD 0.0000000000                    0.000000000                  
+## 1  AD ~~  AD 0.0000000000                    0.000000000                  
+##       STD_All    p_value
+## 3 1.000000010 0.07907115
+## 2 0.999999875 0.43527104
+## 6 0.000499934 0.99999985
+## 4 1.000000000         NA
+## 7 1.000000000         NA
+## 5 0.000000000         NA
+## 9 0.000000000         NA
+## 8 0.000000000         NA
+## 1 0.000000000         NA</code></pre>
 <p>Cholesky decomposition of pain, MD, and AD in EUR cohorts.</p>
 <pre class="r"><code>chol_model &lt;- &quot;
 F1 =~ NA*Pain + MD + AD
@@ -965,7 +880,7 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## [1] &quot;Calculating Standardized Results&quot;
 ## [1] &quot;Calculating SRMR&quot;
 ## elapsed 
-##   0.367 
+##   0.596 
 ## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
 <pre class="r"><code>chol_eas_fit</code></pre>
 <pre><code>## $modelfit
@@ -974,12 +889,12 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## 
 ## $results
 ##     lhs op  rhs Unstand_Est         Unstand_SE STD_Genotype   STD_Genotype_SE
-## 4    F1 =~ Pain  0.65592048  0.411015308067887    1.0000000 0.626623679589413
-## 3    F1 =~   MD  0.07882201 0.0960079952661835    0.3914091 0.476750193082853
-## 2    F1 =~   AD  0.14134038  0.136165288517217    0.7741076 0.745764142819017
-## 9    F2 =~   MD  0.18531333 0.0537173280236518    0.9202168 0.266745976673439
-## 8    F2 =~   AD  0.02937117   0.12592712593387    0.1608631 0.689690713452832
-## 12   F3 =~   AD  0.11179216   0.16419108338479    0.6122748 0.899258713878405
+## 4    F1 =~ Pain  0.62045942  0.441939747916373    1.0000000 0.712278225485746
+## 3    F1 =~   MD  0.08419025  0.107001513994632    0.4170087 0.529996759798668
+## 2    F1 =~   AD  0.16356716  0.156382079034663    0.9803774 0.937311914996099
+## 9    F2 =~   MD  0.18349912 0.0598534079363947    0.9089025 0.296464141181936
+## 8    F2 =~   AD  0.02033470  0.158731878693593    0.1218807 0.951395960466297
+## 12   F3 =~   AD  0.02584974  0.959843664636841    0.1549365  5.75303974056239
 ## 5    F1 ~~   F1  1.00000000                       1.0000000                  
 ## 10   F2 ~~   F2  1.00000000                       1.0000000                  
 ## 13   F3 ~~   F3  1.00000000                       1.0000000                  
@@ -992,32 +907,32 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## 15   MD ~~   MD  0.00000000                       0.0000000                  
 ## 14   MD ~~   AD  0.00000000                       0.0000000                  
 ## 1    AD ~~   AD  0.00000000                       0.0000000                  
-##      STD_All      p_value
-## 4  1.0000000 0.1105213608
-## 3  0.3914091 0.4116495658
-## 2  0.7741076 0.2992672941
-## 9  0.9202168 0.0005610294
-## 8  0.1608631 0.8155754875
-## 12 0.6122748 0.4959561707
-## 5  1.0000000           NA
-## 10 1.0000000           NA
-## 13 1.0000000           NA
-## 6  0.0000000           NA
-## 7  0.0000000           NA
-## 11 0.0000000           NA
-## 18 0.0000000           NA
-## 17 0.0000000           NA
-## 16 0.0000000           NA
-## 15 0.0000000           NA
-## 14 0.0000000           NA
-## 1  0.0000000           NA</code></pre>
+##      STD_All     p_value
+## 4  1.0000000 0.160335013
+## 3  0.4170087 0.431390979
+## 2  0.9803774 0.295586115
+## 9  0.9089025 0.002170819
+## 8  0.1218807 0.898064130
+## 12 0.1549365 0.978514607
+## 5  1.0000000          NA
+## 10 1.0000000          NA
+## 13 1.0000000          NA
+## 6  0.0000000          NA
+## 7  0.0000000          NA
+## 11 0.0000000          NA
+## 18 0.0000000          NA
+## 17 0.0000000          NA
+## 16 0.0000000          NA
+## 15 0.0000000          NA
+## 14 0.0000000          NA
+## 1  0.0000000          NA</code></pre>
 <pre class="r"><code>chol_eur_fit &lt;- usermodel(eur_ldsc, estimation = &quot;DWLS&quot;, model = chol_model)</code></pre>
 <pre><code>## [1] &quot;Running primary model&quot;
 ## [1] &quot;Calculating CFI&quot;
 ## [1] &quot;Calculating Standardized Results&quot;
 ## [1] &quot;Calculating SRMR&quot;
 ## elapsed 
-##   0.255 
+##   0.335 
 ## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
 <pre class="r"><code>chol_eur_fit</code></pre>
 <pre><code>## $modelfit
@@ -1026,12 +941,12 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## 
 ## $results
 ##     lhs op  rhs Unstand_Est          Unstand_SE STD_Genotype    STD_Genotype_SE
-## 4    F1 =~ Pain  0.26228676  0.0115315765358942    1.0000000 0.0439655310482822
-## 3    F1 =~   MD  0.15944772  0.0101633892440622    0.6057923 0.0386139280581816
-## 2    F1 =~   AD  0.17443200  0.0100493299487131    0.7729883 0.0445331952628527
-## 9    F2 =~   MD  0.20941212  0.0069745390450147    0.7956228 0.0264984783419312
-## 8    F2 =~   AD  0.12177797 0.00996148386213339    0.5396541 0.0441439090858536
-## 12   F3 =~   AD  0.07527102  0.0116361991824371    0.3335604 0.0515653409846021
+## 4    F1 =~ Pain  0.26226517  0.0115612511360334    1.0000000 0.0440822971476503
+## 3    F1 =~   MD  0.15750059  0.0096911725225661    0.6450561  0.039690962159948
+## 2    F1 =~   AD  0.20384757  0.0116914873718483    0.7681157 0.0440545586853024
+## 9    F2 =~   MD  0.18657563 0.00741848769346632    0.7641352 0.0303830020791555
+## 8    F2 =~   AD  0.14233968  0.0122295563603865    0.5363485 0.0460820504817166
+## 12   F3 =~   AD  0.09282028  0.0152102285419718    0.3497550 0.0573134871108457
 ## 5    F1 ~~   F1  1.00000000                        1.0000000                   
 ## 10   F2 ~~   F2  1.00000000                        1.0000000                   
 ## 13   F3 ~~   F3  1.00000000                        1.0000000                   
@@ -1045,12 +960,12 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## 14   MD ~~   AD  0.00000000                        0.0000000                   
 ## 1    AD ~~   AD  0.00000000                        0.0000000                   
 ##      STD_All       p_value
-## 4  1.0000000 1.604891e-114
-## 3  0.6057923  1.814607e-55
-## 2  0.7729883  1.728710e-67
-## 9  0.7956228 4.598673e-198
-## 8  0.5396541  2.289134e-34
-## 12 0.3335604  9.885337e-11
+## 4  1.0000000 6.323180e-114
+## 3  0.6450561  2.163200e-59
+## 2  0.7681157  4.432361e-68
+## 9  0.7641352 1.410028e-139
+## 8  0.5363485  2.610904e-31
+## 12 0.3497550  1.044279e-09
 ## 5  1.0000000            NA
 ## 10 1.0000000            NA
 ## 13 1.0000000            NA
