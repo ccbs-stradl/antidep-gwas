@@ -8,9 +8,10 @@
 library(tidyr)
 library(dplyr)
 library(data.table)
+library(readr)
+source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
 
-
-mdd_genes <- fread("manuscript/MDD_GWAS_supp_table_8B.csv") %>%
+mdd_genes <- fread(here::here("manuscript/MDD_GWAS_supp_table_8B.csv")) %>%
   # add prefix "MDD_GWAS_" to columns: c(Nearest_gene Fine_mapping Expression Protein fastBAT HMAGMA PsyOPS)
   rename_with(~paste0("MDD_GWAS_", .), c(Nearest_gene, Fine_mapping, Expression, Protein, fastBAT, HMAGMA, PsyOPS)) %>%
   # rename Chrom_b37 pos_start_b37 pos_end_b37 to Chr     Start       End
@@ -22,7 +23,7 @@ mdd_genes <- fread("manuscript/MDD_GWAS_supp_table_8B.csv") %>%
 
 # ------------------------------
 # Read in mBAT-combo results
-mBAT_combo_results <- fread("manuscript/tables/mBAT-combo.csv")
+mBAT_combo_results <- fread(here::here("manuscript/tables/mBAT-combo.csv"))
 
 mBAT_combo_results %>%
   group_by(phenotype, ancestry) %>%
@@ -75,7 +76,7 @@ antidep_results <- antidep_results %>%
   arrange(desc(rowSums(.[6:16])))
 
 
-write.csv(antidep_results, "manuscript/tables/across_methods_and_mdd_gwas.csv", row.names = F, quote = F)
+write.csv(antidep_results, here::here("manuscript/tables/across_methods_and_mdd_gwas.csv"), row.names = F, quote = F)
 
 # ------------------------------
 # Save table of genes that are in antidep GWAS and may or may not be in MDD GWAS
@@ -84,5 +85,26 @@ write.csv(antidep_results %>%
             rename(Start = Start.x, End = End.x) %>%
             select(-c(Start.y, End.y)) %>%
             mutate(across(everything(), ~ replace_na(., FALSE))), # change NA to FALSE, as that meant it was not identified in MDD GWAS as a high confidence gene
-          "manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv", row.names = F, quote = F)
+          here::here("manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv"), row.names = F, quote = F)
+
+
+# Write a .cols file
+create_cols_meta(
+  "manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv",
+  create_cols_meta,
+  list(
+    "ENSID" = "Gene ID",
+    "Gene" = "Gene name",
+    "Chr" = "Chromosome",
+    "Start" = "Start position",
+    "End" = "End position",
+    "MDD_GWAS_Nearest_gene" = "High confidence gene in MDD GWAS (Adams et al. 2025) (nearest gene method)",
+    "MDD_GWAS_Fine_mapping" = "High confidence gene in MDD GWAS (Adams et al. 2025) (fine mapping method)",
+    "MDD_GWAS_Expression" = "High confidence gene in MDD GWAS (Adams et al. 2025) (expression method)",
+    "MDD_GWAS_Protein" = "High confidence gene in MDD GWAS (Adams et al. 2025) (protein method)",
+    "MDD_GWAS_fastBAT" = "High confidence gene in MDD GWAS (Adams et al. 2025) (fastBAT method)",
+    "MDD_GWAS_HMAGMA" = "High confidence gene in MDD GWAS (Adams et al. 2025) (HMAGMA method)",
+    "MDD_GWAS_PsyOPS" = "High confidence gene in MDD GWAS (Adams et al. 2025) (PsyOPS method)"
+  )
+)
 

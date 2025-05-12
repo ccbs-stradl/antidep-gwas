@@ -1,0 +1,13 @@
+column	description
+ENSID	
+Gene	
+Chr	
+Start	
+End	
+MDD_GWAS_Nearest_gene	
+MDD_GWAS_Fine_mapping	
+MDD_GWAS_Expression	
+MDD_GWAS_Protein	
+MDD_GWAS_fastBAT	
+MDD_GWAS_HMAGMA	
+MDD_GWAS_PsyOPS	
