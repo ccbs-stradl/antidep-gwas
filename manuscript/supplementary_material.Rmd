@@ -1,6 +1,8 @@
 ---
 title: "Supplementary Material"
-output: word_document
+output: 
+  word_document:
+    reference_docx: style_rmd.docx
 ---
 
 ```{r setup, include=FALSE}
