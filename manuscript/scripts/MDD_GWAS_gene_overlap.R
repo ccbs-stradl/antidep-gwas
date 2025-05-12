@@ -88,11 +88,30 @@ write.csv(antidep_results %>%
           here::here("manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv"), row.names = F, quote = F)
 
 
+colname_descriptions <- c(
+  "ENSID" = "Gene ID",
+  "Gene" = "Gene name",
+  "Chr" = "Chromosome",
+  "Start" = "Start position",
+  "End" = "End position",
+  "mBAT_combo_EUR_N06A" = "Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06A) (EUR ancestry)",
+  "mBAT_combo_EUR_N06AA" = "Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06AA) (EUR ancestry)",
+  "mBAT_combo_EUR_N06AB" = "Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06AB) (EUR ancestry)",
+  "SuSiEx" = "Gene identified in antidepressant GWAS meta-analysis (SuSiEx)",
+  "MDD_GWAS_Nearest_gene" = "High confidence gene in MDD GWAS (Adams et al. 2025) (nearest gene method)",
+  "MDD_GWAS_Fine_mapping" = "High confidence gene in MDD GWAS (Adams et al. 2025) (fine mapping method)",
+  "MDD_GWAS_Expression" = "High confidence gene in MDD GWAS (Adams et al. 2025) (expression method)",
+  "MDD_GWAS_Protein" = "High confidence gene in MDD GWAS (Adams et al. 2025) (protein method)",
+  "MDD_GWAS_fastBAT" = "High confidence gene in MDD GWAS (Adams et al. 2025) (fastBAT method)",
+  "MDD_GWAS_HMAGMA" = "High confidence gene in MDD GWAS (Adams et al. 2025) (HMAGMA method)",
+  "MDD_GWAS_PsyOPS" = "High confidence gene in MDD GWAS (Adams et al. 2025) (PsyOPS method)"
+)
+
 # Write a .cols file
 create_cols_meta(
   "manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv",
   create_cols_meta,
-  list(
+  c(
     "ENSID" = "Gene ID",
     "Gene" = "Gene name",
     "Chr" = "Chromosome",
