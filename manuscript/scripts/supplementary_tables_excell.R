@@ -265,6 +265,25 @@ main <- function() {
     bold_condition = c("<"),
     bold_threshold = c(0.05)
   )
+  
+  # Update table index
+  table_index <- update_table_index(table_index)
+  
+  create_table(
+    paths = "manuscript/tables",
+    regex = "manuscript/tables/across_methods_and_mdd_gwas_antidep_subset",
+    sheet_names = "MDD GWAS",
+    excel_file_name = here::here(glue("manuscript/tables/S{table_index}_mdd_comparison.xlsx")),
+    table_index,
+    legend_title = "Comparison of results to major depression GWAS.",
+    legend_text_prefix = "",
+    legend_text_sections = c(
+      "Genes identified in antidepressant GWAS meta-analysis and MDD GWAS (Adams et al. 2025). Rows are TRUE if the gene was identified with the method described in the column header."
+    ),
+    cell_title_width = 39,
+    cell_title_height = 49
+  )
+  
 }
 
 # ---------------------------------------------
