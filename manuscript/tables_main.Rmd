@@ -3,6 +3,7 @@ title: Tables for main manuscript
 output:
     word_document:
       df_print: kable
+      reference_docx: style_rmd.docx
     md_document:
       variant: gfm
       df_print: kable
