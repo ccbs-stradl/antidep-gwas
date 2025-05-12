@@ -28,7 +28,7 @@ get_main_file_names <- function(file_path, file_regex) {
   # If files are found, check if they all end with .csv, .tsv or .cols
   # If they are not csv or tsv, stop with error
   if (!any(grepl("\\.csv$", files)) & !any(grepl("\\.tsv$", files)) & !any(grepl("\\.col$", files))) {
-    stop(paste0("No csv or tsv files found at: ", path, " with regex: ", regex))
+    stop(paste0("No csv or tsv files found at: ", file_path, " with regex: ", file_regex))
   }
 
   # Check each .csv or .tsv in files has a corresponding .cols file

@@ -51,52 +51,62 @@ main <- function() {
       "per cohort and ancestry input GWAS",
       "datasets included in each meta-analysis",
       "subtotal and total sample sizes for each meta-analyis"
-          ),
+    ),
     cell_title_width = 30,
     cell_title_height = 50
   )
 
   # Update table index
-    table_index <- update_table_index(table_index)
+  table_index <- update_table_index(table_index)
 
   # Create the supplementary table for the clumps and fine mapping results
-  create_table(paths = rep("manuscript/tables", 4),
-               regex = c("clumps_fixed_antidep-2501.clumps",
-                         "clumps_mrmega_antidep-2501.clumps",
-                         "susiex_significant_summary",
-                         "susiex_significant_cs"),
-               sheet_names = c("clumps fixed",
-                               "clumps MR-MEGA",
-                               "SuSiEx summary",
-                               "SuSiEx credible sets"),
-               excel_file_name = here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
-               table_index,
-               legend_title = "Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS.",
-               legend_text_prefix = "Results are divided into ",
-               legend_text_sections = c("fixed clumping results across all ancestries and antidepressant phenotypes",
-                                        "MR-MEGA clumping results",
-                                         "significant SuSiEx summary statistics",
-                                         "significant SuSiEx credible sets"),
-               cell_title_width = 30,
-               cell_title_height = 50)
+  create_table(
+    paths = rep("manuscript/tables", 4),
+    regex = c(
+      "clumps_fixed_antidep-2501.clumps",
+      "clumps_mrmega_antidep-2501.clumps",
+      "susiex_significant_summary",
+      "susiex_significant_cs"
+    ),
+    sheet_names = c(
+      "clumps fixed",
+      "clumps MR-MEGA",
+      "SuSiEx summary",
+      "SuSiEx credible sets"
+    ),
+    excel_file_name = here::here(glue("manuscript/tables/S{table_index}_clumps_finemap.xlsx")),
+    table_index,
+    legend_title = "Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS.",
+    legend_text_prefix = "Results are divided into ",
+    legend_text_sections = c(
+      "fixed clumping results across all ancestries and antidepressant phenotypes",
+      "MR-MEGA clumping results",
+      "significant SuSiEx summary statistics",
+      "significant SuSiEx credible sets"
+    ),
+    cell_title_width = 30,
+    cell_title_height = 50
+  )
 
   # Update table index
-    table_index <- update_table_index(table_index)
+  table_index <- update_table_index(table_index)
 
   # Create the supplementary table for the gene mapping results
-  create_table(paths = "manuscript/tables",
-               regex = c("mBAT-combo.csv"),
-               sheet_names = c("mBAT-combo"),
-               excel_file_name = here::here(glue("manuscript/tables/S{table_index}_gene_mapping.xlsx")),
-               table_index,
-               legend_title = "Positional mapping results for EUR, AFR and SAS fixed meta-analyses of the antidepressant GWAS (N06A, N06AA and N06AB).",
-               legend_text_prefix = "",
-               legend_text_sections = c("Results shown for Bonferroni corrected mBAT-combo p-value < 0.05"),
-               cell_title_width = 39,
-               cell_title_height = 49)
-  
+  create_table(
+    paths = "manuscript/tables",
+    regex = c("mBAT-combo.csv"),
+    sheet_names = c("mBAT-combo"),
+    excel_file_name = here::here(glue("manuscript/tables/S{table_index}_gene_mapping.xlsx")),
+    table_index,
+    legend_title = "Positional mapping results for EUR, AFR and SAS fixed meta-analyses of the antidepressant GWAS (N06A, N06AA and N06AB).",
+    legend_text_prefix = "",
+    legend_text_sections = c("Results shown for Bonferroni corrected mBAT-combo p-value < 0.05"),
+    cell_title_width = 39,
+    cell_title_height = 49
+  )
+
   # Update table index
-    table_index <- update_table_index(table_index)
+  table_index <- update_table_index(table_index)
 
   # Create the supplementary table for the GWAS catalog
   create_table(
@@ -149,7 +159,7 @@ main <- function() {
   )
 
   # Update table index
-    table_index <- update_table_index(table_index)
+  table_index <- update_table_index(table_index)
 
   # Create the supplementary table for the LDSC/popcorn results
   create_table(
@@ -185,40 +195,75 @@ main <- function() {
     cell_title_width = 47,
     cell_title_height = 32
   )
-  
+
   # Update table index
   table_index <- update_table_index(table_index)
-  
+
   # Create the supplementary table for the SMR results
   create_table(
     paths = rep("manuscript/tables/", 6),
-    regex = c("blood_trait_eSMR",
-              "blood_trait_mSMR",
-              "blood_trait_pSMR",
-              "brainmeta_trait_eSMR",
-              "brainmeta_trait_mSMR",
-              "brainmeta_trait_sSMR"),
-    sheet_names = c("blood eSMR",
-                    "blood mSMR",
-                    "blood pSMR",
-                    "brain eSMR",
-                    "brain mSMR",
-                    "brain sSMR"),
+    regex = c(
+      "blood_trait_eSMR",
+      "blood_trait_mSMR",
+      "blood_trait_pSMR",
+      "brainmeta_trait_eSMR",
+      "brainmeta_trait_mSMR",
+      "brainmeta_trait_sSMR"
+    ),
+    sheet_names = c(
+      "blood eSMR",
+      "blood mSMR",
+      "blood pSMR",
+      "brain eSMR",
+      "brain mSMR",
+      "brain sSMR"
+    ),
     excel_file_name = here::here(glue("manuscript/tables/S{table_index}_smr.xlsx")),
     table_index,
     legend_title = "SMR analysis in blood and brain across multi-omic data types.",
     legend_text_prefix = "",
-    legend_text_sections = c("blood eSMR",
-                             "blood mSMR",
-                             "blood pSMR",
-                             "brain eSMR",
-                             "brain mSMR",
-                             "brain sSMR"),
+    legend_text_sections = c(
+      "blood eSMR",
+      "blood mSMR",
+      "blood pSMR",
+      "brain eSMR",
+      "brain mSMR",
+      "brain sSMR"
+    ),
     cell_title_width = 39,
     cell_title_height = 49,
-    bold_cols = c("p_SMR_Bonferroni", "p_HEIDI"), 
-    bold_condition = c("<", ">"), 
+    bold_cols = c("p_SMR_Bonferroni", "p_HEIDI"),
+    bold_condition = c("<", ">"),
     bold_threshold = c(0.05, 0.05)
+  )
+
+  # Update table index
+  table_index <- update_table_index(table_index)
+
+  # Create the supplementary table for the full drug targetor results
+  create_table(
+    paths = rep("manuscript/tables", 2),
+    regex = c(
+      "antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllp.drugclass_with4.selp.csv",
+      "antidep-2501-fixed-N06A-EUR.pathway.output_drugsAllp.pathway.output_drugsAllp.csv"
+    ),
+    sheet_names = c(
+      "Gene targets",
+      "Gene sets"
+    ),
+    excel_file_name = here::here(glue("manuscript/tables/S{table_index}_drug_targetor.xlsx")),
+    table_index,
+    legend_title = "Drug targetor results for fixed meta-analysis of N06A in EUR ancestry",
+    legend_text_prefix = "FDR Q-value (BH) < 0.05 are highlighted in bold. Results are split by ",
+    legend_text_sections = c(
+      "Enrichments of gene targets",
+      "Enrichments of gene sets"
+    ),
+    cell_title_width = 39,
+    cell_title_height = 49,
+    bold_cols = c("q_valueBH"),
+    bold_condition = c("<"),
+    bold_threshold = c(0.05)
   )
 }
 

@@ -1,0 +1,7 @@
+column	description
+COMP_P	Raw competitive analysis p-value
+NAME	Drug name
+NGENES	Number of genes
+q_valueBH	FDR q-value (BH)
+q_valueBY	FDR q-value (BY)
+p_valueBF	Bonferroni p-value
