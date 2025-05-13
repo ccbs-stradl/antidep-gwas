@@ -10,7 +10,7 @@ library(stringr)
 library(readr)
 library(openxlsx)
 source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
-# source(here::here("manuscript/scripts/supplementary_tables_excel_functions.R"))
+source(here::here("manuscript/scripts/supplementary_tables_excel_functions.R"))
 
 # ---------------------
 # Read in the results from the susiex analysis
