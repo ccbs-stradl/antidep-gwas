@@ -6,6 +6,7 @@
 # https://www.cell.com/cell/fulltext/S0092-8674(24)01415-6
 
 library(tidyr)
+library(glue)
 library(dplyr)
 library(data.table)
 library(readr)
@@ -98,13 +99,13 @@ colname_descriptions <- c(
   "mBAT_combo_EUR_N06AA" = "Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06AA) (EUR ancestry)",
   "mBAT_combo_EUR_N06AB" = "Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06AB) (EUR ancestry)",
   "SuSiEx" = "Gene identified in antidepressant GWAS meta-analysis (SuSiEx)",
-  "MDD_GWAS_Nearest_gene" = "High confidence gene in MDD GWAS (Adams et al. 2025) (nearest gene method)",
-  "MDD_GWAS_Fine_mapping" = "High confidence gene in MDD GWAS (Adams et al. 2025) (fine mapping method)",
-  "MDD_GWAS_Expression" = "High confidence gene in MDD GWAS (Adams et al. 2025) (expression method)",
-  "MDD_GWAS_Protein" = "High confidence gene in MDD GWAS (Adams et al. 2025) (protein method)",
-  "MDD_GWAS_fastBAT" = "High confidence gene in MDD GWAS (Adams et al. 2025) (fastBAT method)",
-  "MDD_GWAS_HMAGMA" = "High confidence gene in MDD GWAS (Adams et al. 2025) (HMAGMA method)",
-  "MDD_GWAS_PsyOPS" = "High confidence gene in MDD GWAS (Adams et al. 2025) (PsyOPS method)"
+  "MDD_GWAS_Nearest_gene" = "Gene identified with nearest gene method in MDD GWAS (Adams et al. 2025)",
+  "MDD_GWAS_Fine_mapping" = "Gene identified with fine mapping method in MDD GWAS (Adams et al. 2025)",
+  "MDD_GWAS_Expression" = "Gene identified with expression method in MDD GWAS (Adams et al. 2025)",
+  "MDD_GWAS_Protein" = "Gene identified with protein method in MDD GWAS (Adams et al. 2025)",
+  "MDD_GWAS_fastBAT" = "Gene identified with fastBAT method in MDD GWAS (Adams et al. 2025)",
+  "MDD_GWAS_HMAGMA" = "Gene identified with HMAGMA method in MDD GWAS (Adams et al. 2025)",
+  "MDD_GWAS_PsyOPS" = "Gene identified with PsyOPS method in MDD GWAS (Adams et al. 2025)"
 )
 
 # Write a .cols file
@@ -121,13 +122,13 @@ create_cols_meta(
     "mBAT_combo_EUR_N06AA" = "Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06AA) (EUR ancestry)",
     "mBAT_combo_EUR_N06AB" = "Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06AB) (EUR ancestry)",
     "SuSiEx" = "Gene identified in antidepressant GWAS meta-analysis (SuSiEx)",
-    "MDD_GWAS_Nearest_gene" = "High confidence gene in MDD GWAS (Adams et al. 2025) (nearest gene method)",
-    "MDD_GWAS_Fine_mapping" = "High confidence gene in MDD GWAS (Adams et al. 2025) (fine mapping method)",
-    "MDD_GWAS_Expression" = "High confidence gene in MDD GWAS (Adams et al. 2025) (expression method)",
-    "MDD_GWAS_Protein" = "High confidence gene in MDD GWAS (Adams et al. 2025) (protein method)",
-    "MDD_GWAS_fastBAT" = "High confidence gene in MDD GWAS (Adams et al. 2025) (fastBAT method)",
-    "MDD_GWAS_HMAGMA" = "High confidence gene in MDD GWAS (Adams et al. 2025) (HMAGMA method)",
-    "MDD_GWAS_PsyOPS" = "High confidence gene in MDD GWAS (Adams et al. 2025) (PsyOPS method)"
+    "MDD_GWAS_Nearest_gene" = "Gene identified with nearest gene method in MDD GWAS (Adams et al. 2025)",
+    "MDD_GWAS_Fine_mapping" = "Gene identified with fine mapping method in MDD GWAS (Adams et al. 2025)",
+    "MDD_GWAS_Expression" = "Gene identified with expression method in MDD GWAS (Adams et al. 2025)",
+    "MDD_GWAS_Protein" = "Gene identified with protein method in MDD GWAS (Adams et al. 2025)",
+    "MDD_GWAS_fastBAT" = "Gene identified with fastBAT method in MDD GWAS (Adams et al. 2025)",
+    "MDD_GWAS_HMAGMA" = "Gene identified with HMAGMA method in MDD GWAS (Adams et al. 2025)",
+    "MDD_GWAS_PsyOPS" = "Gene identified with PsyOPS method in MDD GWAS (Adams et al. 2025)"
   )
 )
 
