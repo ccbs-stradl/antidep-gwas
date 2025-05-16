@@ -2,12 +2,22 @@ column	description
 ENSID	Gene ID
 Gene	Gene name
 Chr	Chromosome
-Start	Start position
-End	End position
+mBATcombo_SuSiEx_Start	Start position of gene used in mBATcombo and SuSiEx
+mBATcombo_SuSiEx_End	End position of gene used in mBATcombo and SuSiEx
+SMR_Start	Start position of gene used in SMR
+SMR_End	End position of gene used in SMR
+Start_MDD	Start position of gene identified in MDD GWAS (Adams et al. 2025)
+End_MDD	End position identified in MDD GWAS (Adams et al. 2025)
 mBAT_combo_EUR_N06A	Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06A) (EUR ancestry)
 mBAT_combo_EUR_N06AA	Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06AA) (EUR ancestry)
 mBAT_combo_EUR_N06AB	Gene identified with mBAT-combo in antidepressant GWAS meta-analysis (N06AB) (EUR ancestry)
 SuSiEx	Gene identified in antidepressant GWAS meta-analysis (SuSiEx)
+blood_trait_eSMR	Gene identified with SMR in blood expression data in antidepressant GWAS meta-analysis (N06A) (EUR ancestry)
+blood_trait_mSMR	Gene identified with SMR in blood methylation data in antidepressant GWAS meta-analysis (N06A) (EUR ancestry)
+blood_trait_pSMR	Gene identified with SMR in blood proteomics data in antidepressant GWAS meta-analysis (N06A) (EUR ancestry)
+brainmeta_trait_eSMR	Gene identified with SMR in brain expression data in antidepressant GWAS meta-analysis (N06A) (EUR ancestry)
+brainmeta_trait_mSMR	Gene identified with SMR in brain methylation data in antidepressant GWAS meta-analysis (N06A) (EUR ancestry)
+brainmeta_trait_sSMR	Gene identified with SMR in brain splicing data in antidepressant GWAS meta-analysis (N06A) (EUR ancestry)
 MDD_GWAS_Nearest_gene	Gene identified with nearest gene method in MDD GWAS (Adams et al. 2025)
 MDD_GWAS_Fine_mapping	Gene identified with fine mapping method in MDD GWAS (Adams et al. 2025)
 MDD_GWAS_Expression	Gene identified with expression method in MDD GWAS (Adams et al. 2025)
