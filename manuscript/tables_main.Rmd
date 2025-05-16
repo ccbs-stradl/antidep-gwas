@@ -97,7 +97,3 @@ gwas_summary <- read_csv(here::here("manuscript/tables/antidep_gwas_mdd_gwas_sum
 names(gwas_summary)[1] <- ""
 ```
 
-**Table `r gwas_summary_table_idx`:** Comparison of results to major depression GWAS. Overlap of anti-depressant exposure associated genes with genes identified in MDD GWAS (Adams et al. 2025). The denominator is total number of genes identified by each method in the antidepressant exposure GWAS. The numerator is the number of those genes also identified by that method in the MDD GWAS. The columns represent the anti-depressant meta-analysis or cross-ancestry if using a multi-ancestry method.
-```{r gwas_summary_table}
-gwas_summary
-```
