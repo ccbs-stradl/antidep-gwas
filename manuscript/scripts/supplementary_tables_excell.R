@@ -220,7 +220,7 @@ main <- function() {
     ),
     excel_file_name = here::here(glue("manuscript/tables/S{table_index}_smr.xlsx")),
     table_index,
-    legend_title = "SMR analysis in blood and brain across multi-omic data types.",
+    legend_title = "SMR analysis in blood and brain across multi-omic data types in antidepressant GWAS meta-analysis (N06A) (EUR ancestry).",
     legend_text_prefix = "",
     legend_text_sections = c(
       "blood eSMR",
