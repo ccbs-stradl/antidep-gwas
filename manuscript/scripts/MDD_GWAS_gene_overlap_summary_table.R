@@ -7,12 +7,20 @@ library(dplyr)
 #### NOTE MDD genes are from "supp_table_8B" which are high confidence genes. ####
 antidep_results <- read.csv("manuscript/tables/across_methods_and_mdd_gwas.csv")
 
+# Create a col called MDD_GWAS_any
+antidep_results <- antidep_results %>%
+  mutate(MDD_GWAS_any = rowSums(across(starts_with("MDD_GWAS_")), na.rm = TRUE) > 0)
+
 
 # Define a summary table with the columns: cross-ancestry, EUR_N06A, EUR_N06AA, EUR_N06AB
-# and the rows: positional_mapping, fine_mapping
-summary_table <- data.frame(matrix(ncol = 4, nrow = 2))
-colnames(summary_table) <- c("cross-ancestry_N06A", "EUR_N06A", "EUR_N06AA", "EUR_N06AB")
-rownames(summary_table) <- c("positional_mapping", "fine_mapping")
+# and the rows: positional_mapping, fine_mapping, SMR
+col_names <- c("cross-ancestry_N06A", "EUR_N06A", "EUR_N06AA", "EUR_N06AB")
+row_names <- c("positional_mapping", "fine_mapping", "blood_trait_eSMR", 
+               "blood_trait_mSMR", "blood_trait_pSMR", "brainmeta_trait_eSMR", 
+               "brainmeta_trait_mSMR", "brainmeta_trait_sSMR")
+summary_table <- data.frame(matrix(ncol = length(col_names), nrow = length(row_names)))
+colnames(summary_table) <- col_names
+rownames(summary_table) <- row_names
 
 
 # Map row_names to columns in antidep_results
@@ -37,6 +45,36 @@ mapped_values <- list(
                       "mdd_gwas" = "MDD_GWAS_Fine_mapping",
                       "summary_table_col" = "cross-ancestry_N06A",
                       "summary_table_row" = "fine_mapping"
+                      ),
+                  list("antidep_gwas" = "blood_trait_eSMR",
+                       "mdd_gwas" = "MDD_GWAS_any",
+                       "summary_table_col" = "EUR_N06A",
+                       "summary_table_row" = "blood_trait_eSMR"
+                      ),
+                  list("antidep_gwas" = "blood_trait_mSMR",
+                       "mdd_gwas" = "MDD_GWAS_any",
+                       "summary_table_col" = "EUR_N06A",
+                       "summary_table_row" = "blood_trait_mSMR"
+                      ),
+                  list("antidep_gwas" = "blood_trait_pSMR",
+                       "mdd_gwas" = "MDD_GWAS_any",
+                       "summary_table_col" = "EUR_N06A",
+                       "summary_table_row" = "blood_trait_pSMR"
+                      ),
+                  list("antidep_gwas" = "brainmeta_trait_eSMR",
+                       "mdd_gwas" = "MDD_GWAS_any",
+                       "summary_table_col" = "EUR_N06A",
+                       "summary_table_row" = "brainmeta_trait_eSMR"
+                      ),
+                  list("antidep_gwas" = "brainmeta_trait_mSMR",
+                       "mdd_gwas" = "MDD_GWAS_any",
+                       "summary_table_col" = "EUR_N06A",
+                       "summary_table_row" = "brainmeta_trait_mSMR"
+                      ),
+                  list("antidep_gwas" = "brainmeta_trait_sSMR",
+                       "mdd_gwas" = "MDD_GWAS_any",
+                       "summary_table_col" = "EUR_N06A",
+                       "summary_table_row" = "brainmeta_trait_sSMR"
                       )
                   )
 
@@ -112,6 +150,30 @@ main <- function(){
 }
 
 main()
+
+
+# ------------
+# Get rows that are in both MDD and antidep GWAS
+# to get gene name from to insert into results section
+# we could save these tables as extra sheets in Supp Table 8, as filtered views?
+
+get_gene_rows <- function(antidep_col, mdd_col){
+
+  antidep_results %>%
+    filter(!!sym(antidep_col)) %>%
+    filter(!!sym(mdd_col)) 
+
+}
+
+lapply(1:length(mapped_values), function(i) {
+  antidep_col <- mapped_values[[i]]$antidep_gwas
+  mdd_col <- mapped_values[[i]]$mdd_gwas
+
+  
+  get_gene_rows(antidep_col, mdd_col)
+})
+  
+
 
 
 

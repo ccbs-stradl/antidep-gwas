@@ -1,3 +1,9 @@
 ,cross-ancestry_N06A,EUR_N06A,EUR_N06AA,EUR_N06AB
 positional_mapping,NA,25/255 (9.8%) p-value=2.58e-15,0/9 (0%) p-value=1,4/14 (28.57%) p-value=2.32e-05
 fine_mapping,1/2 (50%) p-value=0.0249,NA,NA,NA
+blood_trait_eSMR,NA,2/5 (40%) p-value=0.00254,NA,NA
+blood_trait_mSMR,NA,4/11 (36.36%) p-value=2.04e-05,NA,NA
+blood_trait_pSMR,NA,1/4 (25%) p-value=0.0633,NA,NA
+brainmeta_trait_eSMR,NA,4/9 (44.44%) p-value=8e-06,NA,NA
+brainmeta_trait_mSMR,NA,1/5 (20%) p-value=0.0785,NA,NA
+brainmeta_trait_sSMR,NA,1/1 (100%) p-value=0.0162,NA,NA

@@ -97,7 +97,3 @@ gwas_summary <- read_csv(here::here("manuscript/tables/antidep_gwas_mdd_gwas_sum
 names(gwas_summary)[1] <- ""
 ```
 
-**Table `r gwas_summary_table_idx`:** Comparison of results to major depression GWAS.
-```{r gwas_summary_table}
-gwas_summary
-```
