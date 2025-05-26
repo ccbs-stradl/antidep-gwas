@@ -1,0 +1,9 @@
+column	description
+CHR	Chromosome
+BP_START	Start position of the finemapping region
+BP_END	End position of the finemapping region
+BP	The base pair coordinate of the SNP in Gr37
+PIP(CS1)	The posterior inclusion probability (PIP) of the SNP in credible set 1.
+LogBF(CS1,AFR)	The Logarithm of Bayes factor for credible set 1, in AFR.
+LogBF(CS1,SAS)	The Logarithm of Bayes factor for credible set 1, in SAS.
+LogBF(CS1,EUR)	The Logarithm of Bayes factor for credible set 1, in EUR.
