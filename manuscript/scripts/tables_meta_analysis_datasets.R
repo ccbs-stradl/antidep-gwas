@@ -118,6 +118,7 @@ datasets_meta_mrmega_subtotals <- datasets_meta_mrmega |>
 
 datasets_meta_mrmega_totals <- datasets_meta_mrmega_subtotals |>
   group_by(method, pheno, version, metaset) |>
+  summarize(across(c(cases, controls, neff), sum)) |>
   mutate(cluster = "DIV")
 
 datasets_meta_totals <- bind_rows(
