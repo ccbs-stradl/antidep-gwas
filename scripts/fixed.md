@@ -17,26 +17,37 @@ library(ggplot2)
 
 ### Sumstats
 
+Load all sumstats and label with `CLUSTER-PHENO`. Only retain chromsome,
+position, and p-value for plotting. Remove SNPs in alt regions.
+
 ``` r
 # Use here to create paths relative to the top-level directory
 # Specify which meta-analysis version to plot
 metaset <- "antidep-2501"
 # list fixed effects sumstats (.gz) files
-sumstats_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.gz"), full.names = TRUE)
+sumstats_paths <- list.files(
+  here::here("results", "meta", metaset),
+  str_c(metaset, "-fixed-.+\\.gz"),
+  full.names = TRUE
+)
 # simply names for plotting
 prefixes <- str_remove(basename(sumstats_paths), ".gz")
 metas <- str_remove(prefixes, str_c(metaset, "-fixed-"))
-           
+
 names(sumstats_paths) <- metas
 
 sumstats <- lapply(sumstats_paths, function(path) {
-    read_tsv(path) |>
-        select(CHROM, POS, P)
+  read_tsv(path) |>
+    select(CHROM, POS, P) |>
+    # only keep chromosomes chr1-chr22 and chrX
+    # (removes chromsomes with extra info on the end indicating
+    #  and alt or unplaced region)
+    filter(str_detect(CHROM, pattern = "^chr[0-9X]+$"))
 })
 ```
 
     ## Rows: 25029825 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -44,7 +55,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 17066490 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -52,7 +63,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 13429399 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -60,7 +71,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 15885140 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -68,7 +79,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 11556922 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -76,7 +87,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14178029 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -84,7 +95,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 24971597 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -92,7 +103,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14044866 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -100,7 +111,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14058662 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -108,7 +119,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 24994551 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -116,7 +127,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14077542 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -124,7 +135,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 11525458 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -132,7 +143,7 @@ sumstats <- lapply(sumstats_paths, function(path) {
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
     ## Rows: 14158341 Columns: 19
-    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: "\t"
     ## chr  (4): CHROM, ID, REF, ALT
     ## dbl (15): POS, studies, BETA, SE, CHISQ, P, Q, QP, INFO, AFCAS, AFCON, NCAS,...
@@ -146,7 +157,11 @@ Collate all clump files together and mark which meta-analysis they are
 from.
 
 ``` r
-clumps_paths <- list.files(here::here("results", "meta", metaset), str_c(metaset, "-fixed-.+\\.clumps\\.tsv"), full.names = TRUE)
+clumps_paths <- list.files(
+  here::here("results", "meta", metaset),
+  str_c(metaset, "-fixed-.+\\.clumps\\.tsv"),
+  full.names = TRUE
+)
 clump_prefixes <- str_remove(basename(clumps_paths), ".clumps.tsv")
 names(clumps_paths) <- str_remove(clump_prefixes, str_c(metaset, "-fixed-"))
 
@@ -189,21 +204,47 @@ colname_descriptions <-
 colname_descriptions_table <- tibble(column = names(colname_descriptions), description = colname_descriptions)
 
 # check that all names match
-if(any(names(clumps_table) != names(colname_descriptions))) {
-    stop(str_glue("column names in {table_basename}.csv are not all in colname_descriptions"))
+if (any(names(clumps_table) != names(colname_descriptions))) {
+  stop(str_glue("column names in {table_basename}.csv are not all in colname_descriptions"))
 }
 
 write_tsv(colname_descriptions_table, here::here("manuscript", "tables", str_glue("{table_basename}.cols")))
 ```
 
-## Manhattan plot
+## Manhattan plots
+
+Find smallest p-value to draw all Manhattan plots on the same scale.
 
 ``` r
-sumstats2 <- lapply(sumstats, function(ss) filter(ss, P <= 1e-2))
-manhattan(sumstats2, legend_labels = names(sumstats), ntop = 6, sign_thresh = 5e-08, build = 38)
+min_p <- min(sapply(sumstats, function(sumstat) min(sumstat$P, na.rm = TRUE)))
 ```
 
-![](fixed_files/figure-gfm/manhattan-1.png)<!-- -->
+Assign consistent color to each cluster
+
+``` r
+clusters <- unique(sapply(str_split(names(sumstats), pattern = "-"), last))
+cluster_colors <- get_topr_colors()[seq_along(clusters)]
+names(cluster_colors) <- clusters
+```
+
+### N06A
+
+``` r
+sumstats_n06a <- sumstats[which(str_detect(names(sumstats), "N06A-"))]
+clusters_n06a <- sapply(str_split(names(sumstats_n06a), pattern = "-"), last)
+manhattan(
+  sumstats_n06a,
+  legend_labels = clusters_n06a,
+  color = cluster_colors[clusters_n06a],
+  ntop = length(sumstats_n06a),
+  sign_thresh = 5e-08,
+  ymax = ceiling(-log10(min_p)),
+  build = 38,
+  chr_ticknames = c(1:22, "X")
+)
+```
+
+![](fixed_files/figure-gfm/manhattan_n06a-1.png)<!-- -->
 
 ## Loci
 
@@ -211,7 +252,7 @@ Construct genomic ranges.
 
 ``` r
 clumped_ranges_grs <- lapply(clumps, function(cr) {
-    cr |>
+  cr |>
     as_granges(seqnames = CHROM, start = start, end = end) |>
     set_genome_info(genome = "hg38")
 })
@@ -235,7 +276,7 @@ all_gr <- reduce_ranges(bind_ranges(clumped_ranges_grs))
 
 hits_upset <- lapply(clumped_ranges_grs, function(gr) findOverlaps(all_gr, gr)@from)
 
-upset(fromList(hits_upset), nsets = length(hits_upset), order.by='freq', text.scale=2)
+upset(fromList(hits_upset), nsets = length(hits_upset), order.by = "freq", text.scale = 2)
 ```
 
 ![](fixed_files/figure-gfm/overlaps-1.png)<!-- -->
@@ -243,9 +284,11 @@ upset(fromList(hits_upset), nsets = length(hits_upset), order.by='freq', text.sc
 ## Regions
 
 ``` r
-regionplot(sumstats["N06A-EUR"], legend_labels = names(sumstats["N06A-EUR"]),
-    chr = 11, xmin = 112956144, xmax = 113578846,
-    build = 38, show_overview = FALSE)
+regionplot(
+  sumstats["N06A-EUR"], legend_labels = names(sumstats["N06A-EUR"]),
+  chr = 11, xmin = 112956144, xmax = 113578846,
+  build = 38, show_overview = FALSE
+)
 ```
 
     ## [1] "Zoomed to region:  11:112956144-113578846"

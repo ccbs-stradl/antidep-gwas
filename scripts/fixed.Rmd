@@ -3,7 +3,7 @@ title: Antidepressant exposure GWAS fixed-effects meta-analysis
 output: github_document
 ---
 
-```{r lib}
+```{r lib, messages = FALSE}
 library(dplyr)
 library(here)
 library(readr)
@@ -20,7 +20,9 @@ library(ggplot2)
 
 ### Sumstats
 
-```{r sumstats, cache = TRUE, cache.lazy = FALSE}
+Load all sumstats and label with `CLUSTER-PHENO`. Only retain chromsome, position, and p-value for plotting. Remove SNPs in alt regions.
+
+```{r sumstats, cache = TRUE, cache.lazy = FALSE, messages = FALSE}
 # Use here to create paths relative to the top-level directory
 # Specify which meta-analysis version to plot
 metaset <- "antidep-2501"
@@ -38,7 +40,11 @@ names(sumstats_paths) <- metas
 
 sumstats <- lapply(sumstats_paths, function(path) {
   read_tsv(path) |>
-    select(CHROM, POS, P)
+    select(CHROM, POS, P) |>
+    # only keep chromosomes chr1-chr22 and chrX
+    # (removes chromsomes with extra info on the end indicating
+    #  and alt or unplaced region)
+    filter(str_detect(CHROM, pattern = "^chr[0-9X]+$"))
 })
 ```
 
@@ -99,12 +105,55 @@ if (any(names(clumps_table) != names(colname_descriptions))) {
 write_tsv(colname_descriptions_table, here::here("manuscript", "tables", str_glue("{table_basename}.cols")))
 ```
 
-## Manhattan plot
+## Manhattan plots
 
-```{r manhattan, fig.width=8, fig.height=4.5, dpi=218}
-sumstats2 <- lapply(sumstats, function(ss) filter(ss, P <= 1e-2))
-manhattan(sumstats2, legend_labels = names(sumstats), ntop = 6, sign_thresh = 5e-08, build = 38)
+Find smallest p-value to draw all Manhattan plots on the same scale.
+```{r min_p}
+min_p <- min(sapply(sumstats, function(sumstat) min(sumstat$P, na.rm = TRUE)))
 ```
+Assign consistent color to each cluster
+```{r clusters}
+clusters <- unique(sapply(str_split(names(sumstats), pattern = "-"), last))
+cluster_colors <- get_topr_colors()[seq_along(clusters)]
+names(cluster_colors) <- clusters
+```
+
+Function to plot a single phenotype.
+```{r manh_pheno}
+manh_pheno <- function(pheno, sumstats, min_p, cluster_colors) {
+  sumstats_pheno <- sumstats[which(str_detect(names(sumstats), str_glue("{pheno}-")))]
+  clusters_pheno <- sapply(str_split(names(sumstats_pheno), pattern = "-"), last)
+  manhattan(
+    sumstats_pheno,
+    legend_labels = clusters_pheno,
+    color = cluster_colors[clusters_pheno],
+    ntop = length(sumstats_pheno),
+    sign_thresh = 5e-08,
+    ymax = ceiling(-log10(min_p)),
+    build = 38,
+    chr_ticknames = c(1:22, "X")
+  )
+}
+```
+
+### N06A
+
+```{r manhattan_n06a, fig.width=12, fig.height=6.75, dpi=218, cache = TRUE, cache.lazy = FALSE}
+manh_pheno("N06A", sumstats, min_p, cluster_colors)
+```
+
+### N06AA
+
+```{r manhattan_n06aa, fig.width=12, fig.height=6.75, dpi=218, cache = TRUE, cache.lazy = FALSE}
+manh_pheno("N06AA", sumstats, min_p, cluster_colors)
+```
+
+### N06AB
+
+```{r manhattan_n06ab, fig.width=12, fig.height=6.75, dpi=218, cache = TRUE, cache.lazy = FALSE}
+manh_pheno("N06AB", sumstats, min_p, cluster_colors)
+```
+
 
 ## Loci
 
