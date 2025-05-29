@@ -7,6 +7,7 @@ require(tidyr)
 require(stringr)
 require(ggplot2)
 require(ggrepel)
+require(topr)
 require(ieugwasr)
 
 # Plot ancestry PCs: eg. plot_ancestry_PCs("antidep-2501-mrmega-N06A.log")
@@ -33,23 +34,31 @@ get_sumstats <- function(gz_file_name) {
   return(mrmega)
 }
 
-# Split into a list. eg. get_assoc(mrmega, "N06A")
-get_assoc <- function(mrmega, pheno_name) {
+# Split into a list.
+get_assoc <- function(mrmega) {
+
   mrmega_assoc <- list(
     select(mrmega, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_association`),
     select(mrmega, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_ancestry_het`),
     select(mrmega, ID = MarkerName, CHROM = Chromosome, POS = Position, P = `P-value_residual_het`)
   )
 
-  names(mrmega_assoc) <- c(paste0(pheno_name, " Assoc"),
-                           paste0(pheno_name, " Ancestry"),
-                           paste0(pheno_name, " Residual"))
+  names(mrmega_assoc) <- c("Association",
+                           "Ancestry heterogeneity",
+                           "Residual heterogeneity")
   return(mrmega_assoc)
 }
 
 # Make manhattan plot, eg. plot_manhat(mrmega_assoc)
 plot_manhat <- function(mrmega_assoc) {
-  plot <- manhattan(mrmega_assoc, legend_labels = names(mrmega_assoc), ntop = 1, sign_thresh = 5e-08, build = 38)
+  plot <- manhattan(
+    mrmega_assoc,
+    legend_labels = names(mrmega_assoc),
+    ntop = 1,
+    sign_thresh = 5e-08,
+    build = 38,
+    chr_ticknames = c(1:22, "X"),
+    axis_text_size = 8)
   return(plot)
 }
 
