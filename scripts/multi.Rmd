@@ -47,9 +47,9 @@ mrmega_n06ab <- get_sumstats("antidep-2501-mrmega-N06AB-DIV.gz")
 
 ```{r assoc}
 
-mrmega_n06a_assoc <- get_assoc(mrmega_n06a, "N06A")
-mrmega_n06aa_assoc <- get_assoc(mrmega_n06aa, "N06AA")
-mrmega_n06ab_assoc <- get_assoc(mrmega_n06ab, "N06AB")
+mrmega_n06a_assoc <- get_assoc(mrmega_n06a)
+mrmega_n06aa_assoc <- get_assoc(mrmega_n06aa)
+mrmega_n06ab_assoc <- get_assoc(mrmega_n06ab)
 
 ```
 
@@ -92,12 +92,12 @@ Write out table and column descriptions
 ```{r table}
 clumps_table_basename <- str_c("clumps_mrmega_", "antidep-2501", ".clumps.csv")
 
-clumps_colname_descriptions <- 
+clumps_colname_descriptions <-
 c("dataset" = "meta-analysis dataset (phenotype-cluster)",
 "Locus" = "locus number from clumping analysis",
 "MarkerName" = "variant identifier",
 "Chromosome" = "chromosome (numeric)",
-"Position" = "base position in hg38", 
+"Position" = "base position in hg38",
 "EA" = "effect allele",
 "NEA" = "non-effect allele",
 "EAF" = "frequency of effect allele",
