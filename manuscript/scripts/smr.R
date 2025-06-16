@@ -145,8 +145,13 @@ paste_sentences <- function(tables_list){
       gene_names <- NULL
     }
     
+    # Check if any gene_names are duplicated
+    if (any(duplicated(gene_names))) {
+      stop("Gene names are duplicated in the results. Please check the data.")
+    }
+    
     # Number of genes
-    n_genes <- length(gene_names)
+    n_genes <- length(unique(gene_names))
     
     # Name of the tissue and omic type
     tissue_omic <- names(tables_list)[i] %>%
@@ -164,6 +169,47 @@ paste_sentences <- function(tables_list){
   
 }
 
+# Get names of genes identified in more than one omic type
+multi_layer_genes <- function(tables_list){
+  
+  # Pull significant gene names from each table
+  genes_unique <- lapply(tables_list, function(x){
+   x %>%
+      filter(p_SMR_Bonferroni < 0.05 & p_HEIDI > 0.05) %>%
+      pull(Gene) %>%
+      unique()
+  })
+  
+  # Combine all gene names into a single vector
+  all_genes <- unlist(genes_unique)
+  
+  # Count occurrences of each gene name
+  gene_counts <- sort(table(all_genes))
+
+  # Return vector of names where count > 1
+  gene_names_in_multiple_layers <- gene_counts[gene_counts > 1]
+  
+  # Return the names of genes identified in multiple omic layers
+  paste0(names(gene_names_in_multiple_layers), collapse = ", ") %>%
+    message("Genes identified in multiple omic layers: ", .)
+  
+  # ------
+  # A summary table where rows are gene names in >1 layer and cols are tissue/omic type
+  # cell contains TRUE or FALSE
+  
+  count_table <- lapply(genes_unique, function(x){
+    ifelse(names(gene_names_in_multiple_layers) %in% x, TRUE, FALSE)
+  }) %>% 
+    do.call(cbind,.) %>%
+    as.data.frame() %>%
+    mutate(Gene = names(gene_names_in_multiple_layers)) %>%
+    relocate(Gene) 
+  # ------
+  
+  count_table
+
+}
+
 main <- function(paths){
   new_paths <- lapply(paths, rename_file_and_move, new_path_prefix = "manuscript/tables")
   
@@ -175,6 +221,13 @@ main <- function(paths){
   
   # Reorder rows in results
   tables_list_ordered <- reorder_results(tables_list)
+  
+  # Return rows with duplicated genes
+  duplicated_genes <- lapply(tables_list_ordered, function(df) {
+    df %>%
+      filter(duplicated(Gene) | duplicated(Gene, fromLast = TRUE))
+  })
+  
   
   # Check any tables with "index" is renamed to "Gene"
   tables_list_ordered_renamed <- lapply(tables_list_ordered, function(df) {
@@ -201,6 +254,12 @@ main <- function(paths){
 
   # Paste to console sentence to include in manuscript
   paste_sentences(tables_list_ordered)
+  
+  # Get names of genes identified in more than one omic type
+  multi_layer_genes_table <- multi_layer_genes(tables_list_ordered_renamed)
+  write.csv(multi_layer_genes_table, 
+            here::here("manuscript/tables/multi_layer_genes.csv"), 
+            row.names = FALSE)
   
 }
 
