@@ -5,7 +5,7 @@ library(dplyr)
 
 # Read in overlapping genes between antidep GWAS and MDD GWAS
 #### NOTE MDD genes are from "supp_table_8B" which are high confidence genes. ####
-antidep_results <- read.csv("manuscript/tables/across_methods_and_mdd_gwas.csv")
+antidep_results <- read.csv("manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv")
 
 # Create a col called MDD_GWAS_any
 antidep_results <- antidep_results %>%
@@ -114,7 +114,7 @@ get_cell_value <- function(antidep_col, mdd_col){
   proportion_gene_overlap <- paste0( antidep_and_mdd_genes_n , "/" , antidep_genes_n)
   percentange_gene_overlap <- paste0( round(antidep_and_mdd_genes_n / antidep_genes_n * 100, 2), "%")
 
-  cell_value <- paste0(proportion_gene_overlap, " (", percentange_gene_overlap, ") p-value=", p_value_rounded)
+  cell_value <- paste0(proportion_gene_overlap, " (", percentange_gene_overlap, "; p-value=", p_value_rounded, ")")
 
   return(cell_value)
 }
