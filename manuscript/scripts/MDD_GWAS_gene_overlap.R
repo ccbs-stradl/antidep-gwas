@@ -3,6 +3,7 @@
 # with further columns for if the gene was identified in MDD GWAS (noting the method)
 # ------------------------------
 # Read in Supplementary Table 8 from Adams et al. 2025 (Gene mapping results summarized across methods, related to STAR Methods)
+# All genes, not just high confidence
 # https://www.cell.com/cell/fulltext/S0092-8674(24)01415-6
 
 library(tidyverse)
@@ -13,7 +14,7 @@ library(data.table)
 library(readr)
 source(here::here("manuscript/scripts/supplementary_tables_excell_create_cols_meta_FUN.R"))
 
-mdd_genes <- fread(here::here("manuscript/MDD_GWAS_supp_table_8B.csv")) %>%
+mdd_genes <- fread(here::here("manuscript/MDD_GWAS_supp_table_8A.csv")) %>%
   # add prefix "MDD_GWAS_" to columns: c(Nearest_gene Fine_mapping Expression Protein fastBAT HMAGMA PsyOPS)
   rename_with(~ paste0("MDD_GWAS_", .), c(Nearest_gene, Fine_mapping, Expression, Protein, fastBAT, HMAGMA, PsyOPS)) %>%
   # rename Chrom_b37 pos_start_b37 pos_end_b37 to Chr     Start       End
@@ -126,6 +127,7 @@ antidep_results <- antidep_results %>%
 antidep_results$Gene %>%
   duplicated() %>%
   any()
+# most of these are NAs, one MDD gene has different start and end positions
 
 # which genes are duplicated, look at entire row
 antidep_results[duplicated(antidep_results$Gene) | duplicated(antidep_results$Gene, fromLast = TRUE), ] %>%
@@ -143,7 +145,7 @@ write.csv(antidep_results, here::here("manuscript/tables/across_methods_and_mdd_
 write.csv(
   antidep_results %>%
     filter_at(vars(starts_with("mBAT_combo"), "SuSiEx", ends_with("SMR")), any_vars(. == TRUE)) %>%
-    mutate(across(where(is.logical), ~ replace_na(., FALSE))), # change NA to FALSE, as that meant it was not identified in MDD GWAS as a high confidence gene
+    mutate(across(where(is.logical), ~ replace_na(., FALSE))), # change NA to FALSE, as that meant it was not identified in MDD GWAS
   here::here("manuscript/tables/across_methods_and_mdd_gwas_antidep_subset.csv"),
   row.names = F, quote = F
 )
