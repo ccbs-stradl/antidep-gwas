@@ -222,13 +222,6 @@ main <- function(paths){
   # Reorder rows in results
   tables_list_ordered <- reorder_results(tables_list)
   
-  # Return rows with duplicated genes
-  duplicated_genes <- lapply(tables_list_ordered, function(df) {
-    df %>%
-      filter(duplicated(Gene) | duplicated(Gene, fromLast = TRUE))
-  })
-  
-  
   # Check any tables with "index" is renamed to "Gene"
   tables_list_ordered_renamed <- lapply(tables_list_ordered, function(df) {
     if ("index" %in% colnames(df)) {
