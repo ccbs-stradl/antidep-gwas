@@ -173,15 +173,18 @@ paste_sentences <- function(tables_list){
 multi_layer_genes <- function(tables_list){
   
   # Pull significant gene names from each table
-  genes_unique <- lapply(tables_list, function(x){
-   x %>%
-      filter(p_SMR_Bonferroni < 0.05 & p_HEIDI > 0.05) %>%
-      pull(Gene) %>%
-      unique()
-  })
+  # merge tables together. column "omic_type" stores name of
+  # each table
+  genes_unique <- bind_rows(tables_list, .id = "omic_type") |>
+    # filter to significant genes
+    filter(p_SMR_Bonferroni < 0.05 & p_HEIDI > 0.05) |>
+    # get list of unique gene names within each omic type
+    group_by(omic_type) |>
+    distinct(Gene) |>
+    ungroup()
   
   # Combine all gene names into a single vector
-  all_genes <- unlist(genes_unique)
+  all_genes <- genes_unique$Gene
   
   # Count occurrences of each gene name
   gene_counts <- sort(table(all_genes))
