@@ -56,6 +56,9 @@ cat("![](", fig, ")\n\n", sep = "")
 cat(paste0("**", glue("Supplementary Figure {fig_num}"), ". Number of idependent genome wide significant SNPs in each fixed meta-analysis.** Plot shows overlap in significant SNPs between antidepressant phenotype and ancestries. Genome wide significance is defined as p-value < 5e-8."))
 offset <- fig_num
 ```
+
+### Multi-ancestry meta-analysis principal components
+
 ```{r multi_pcs_N06A, results="asis", echo=FALSE}
 fig_num <- offset + 1
 fig <- here::here("scripts", "multi_files", "figure-html", "pcs_n06a-1.png")
@@ -79,6 +82,9 @@ cat("![](", fig, ")\n\n", sep = "")
 cat(paste0("**", glue("Supplementary Figure {fig_num}"), ". PCA plot of ancestries in MR-MEGA meta-analysis N06AB.** Plot shows the first two principal components of the ancestry of the samples in the MR-MEGA meta-analysis for the antidepressant phenotype N06AB."))
 offset <- fig_num
 ```
+
+### N06A fixed-effects meta-analyses
+
 ```{r fixed_manhattan_N06A, results="asis", echo=FALSE}
 path <- here::here("results", "meta", "antidep-2501")
 files <- list.files(path, ".+fixed-N06A.+manhattan\\.png", full.names = T)
@@ -87,7 +93,7 @@ files <- files[!grepl("het|N06AA|N06AB", files)] # Exclude het and other antidep
 for(i in 1:length(files) ){
   paste_figure(files[i], 
              regex = "([A-Za-z0-9]+)(?=\\.manhattan\\.png)",
-             legend_title = "Manhatan plot for fixed meta-analysis for N06A ancestry {file_str}.",
+             legend_title = "Manhattan plot for fixed meta-analysis for N06A ancestry {file_str}.",
              legend_text = "The Manhattan plot shows the association of SNPs with the antidepressant phenotype N06A. The x-axis represents the chromosomal position of the SNP, and the y-axis represents the -log10(p-value) of the association. The red line represents the genome-wide significance threshold (p-value = 5e-8). The blue line represents the suggestive significance threshold (p-value = 1e-5).",
              fig_number = i,
              offset = offset)
@@ -115,6 +121,8 @@ for(i in 1:length(files) ){
 offset <- offset + length(files)
 ```
 
+### N06AA fixed-effects meta-analyses
+
 ```{r fixed_manhattan_N06AA, results="asis", echo=FALSE}
 path <- here::here("results", "meta", "antidep-2501")
 files <- list.files(path, ".+fixed-N06AA.+manhattan\\.png", full.names = T)
@@ -123,7 +131,7 @@ files <- files[!grepl("het", files)] # Exclude het
 for(i in 1:length(files) ){
   paste_figure(files[i], 
              regex = "([A-Za-z0-9]+)(?=\\.manhattan\\.png)",
-             legend_title = "Manhatan plot for fixed meta-analysis for N06AA ancestry {file_str}.",
+             legend_title = "Manhattan plot for fixed meta-analysis for N06AA ancestry {file_str}.",
              legend_text = "The Manhattan plot shows the association of SNPs with the antidepressant phenotype N06AA. The x-axis represents the chromosomal position of the SNP, and the y-axis represents the -log10(p-value) of the association. The red line represents the genome-wide significance threshold (p-value = 5e-8). The blue line represents the suggestive significance threshold (p-value = 1e-5).",
              fig_number = i,
              offset = offset)
@@ -151,6 +159,8 @@ for(i in 1:length(files) ){
 offset <- offset + length(files)
 ```
 
+### N06AB fixed-effects meta-analyses
+
 ```{r fixed_manhattan_N06AB, results="asis", echo=FALSE}
 path <- here::here("results", "meta", "antidep-2501")
 files <- list.files(path, ".+fixed-N06AB.+manhattan\\.png", full.names = T)
@@ -159,7 +169,7 @@ files <- files[!grepl("het", files)] # Exclude het
 for(i in 1:length(files) ){
   paste_figure(files[i], 
              regex = "([A-Za-z0-9]+)(?=\\.manhattan\\.png)",
-             legend_title = "Manhatan plot for fixed meta-analysis for N06AB ancestry {file_str}.",
+             legend_title = "Manhattan plot for fixed meta-analysis for N06AB ancestry {file_str}.",
              legend_text = "The Manhattan plot shows the association of SNPs with the antidepressant phenotype N06AB. The x-axis represents the chromosomal position of the SNP, and the y-axis represents the -log10(p-value) of the association. The red line represents the genome-wide significance threshold (p-value = 5e-8). The blue line represents the suggestive significance threshold (p-value = 1e-5).",
              fig_number = i,
              offset = offset)
@@ -187,6 +197,27 @@ for(i in 1:length(files) ){
 offset <- offset + length(files)
 ```
 
+
+### N06A multi-ancestry meta-analyses
+
+```{r mrmega_manhattan_N06A, results="asis", echo=FALSE}
+path <- here::here("results", "meta", "antidep-2501")
+files <- list.files(path, ".+mrmega-N06A.+manhattan\\.png", full.names = T)
+files <- files[!grepl("het|N06AA|N06AB", files)] # Exclude het and other antidep phenotypes
+
+for(i in 1:length(files) ){
+  paste_figure(files[i], 
+             regex = "",
+             legend_title = "Manhattan plot for MR-MEGA meta-analysis for N06A.",
+             legend_text = "The Manhattan plot shows the association of SNPs with the antidepressant phenotype N06A. The x-axis represents the chromosomal position of the SNP, and the y-axis represents the -log10(p-value) of the association. The red line represents the genome-wide significance threshold (p-value = 5e-8). The blue line represents the suggestive significance threshold (p-value = 1e-5).",
+             fig_number = i,
+             offset = offset)
+}
+
+# Keep a count on how many supplementary figures we have for the offset variable
+offset <- offset + length(files)
+```
+
 ```{r mrmega_qq_N06A, results="asis", echo=FALSE}
 fig_num <- offset + 1
 path <- here::here("results", "meta", "antidep-2501")
@@ -203,16 +234,19 @@ offset <- fig_num
 
 ```
 
+### N06AA multi-ancestry meta-analyses
+
 ```{r mrmega_manhattan_N06AA, results="asis", echo=FALSE}
 fig_num <- offset + 1
 file <- here::here("scripts/multi_files/figure-html/multi_manhattan_n06aa-1.png")
 
   paste_figure(file, 
              regex = "multi_manhattan_n06aa-1.png",
-             legend_title = "Manhatan plot for MR-MEGA meta-analysis for N06AA.",
+             legend_title = "Manhattan plot for MR-MEGA meta-analysis for N06AA.",
              legend_text = "Manhattan plot showing the statistical significance of each SNP’s association with N06AA antidepressant phenotypes for overall association, ancestry specific association and residual associations (vertical axis is -log10(p-value)). The position of each SNP per chromosome is on the horizonal axis. The dashed horizontal lines at 7.3 and -7.3 represent the genome-wide statistical significance threshold.",
              fig_number = fig_num,
              offset = 0)
+
 
 offset <- fig_num
 ```
@@ -232,16 +266,19 @@ paste_figure(file,
 offset <- fig_num
 ```
 
+### N06AB multi-ancestry meta-analyses
+
 ```{r mrmega_manhattan_N06AB, results="asis", echo=FALSE}
 fig_num <- offset + 1
 file <- here::here("scripts/multi_files/figure-html/multi_manhattan_n06ab-1.png")
 
   paste_figure(file, 
              regex = "multi_manhattan_n06ab-1.png",
-             legend_title = "Manhatan plot for MR-MEGA meta-analysis for N06AB.",
+             legend_title = "Manhattan plot for MR-MEGA meta-analysis for N06AB.",
              legend_text = "Manhattan plot showing the statistical significance of each SNP’s association with N06AB antidepressant phenotypes for overall association, ancestry specific association and residual associations (vertical axis is -log10(p-value)). The position of each SNP per chromosome is on the horizonal axis. The dashed horizontal lines at 7.3 and -7.3 represent the genome-wide statistical significance threshold.",
              fig_number = fig_num,
              offset = 0)
+
 
 offset <- fig_num
 ```
