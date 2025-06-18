@@ -6,6 +6,7 @@
 *.Rhistory
 *.Rprofile
 *.Rproj.user
+*_cache/
 .idea
 antidep-gwas.Rproj
 manuscript/tests/excel_pipeline/__pycache__/
