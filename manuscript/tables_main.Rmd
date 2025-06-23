@@ -18,6 +18,7 @@ options(knitr.kable.NA = '—')
 library(dplyr)
 library(readr)
 library(readxl)
+library(openxlsx)
 library(tidyr)
 library(stringr)
 library(knitr)
@@ -25,6 +26,43 @@ library(knitr)
 # table index
 table_index <- 0
 ```
+
+```{r create_main_xlsx_fun, include=FALSE}
+create_main_xlsx <- function(sheet_name, legend, results_table, table_idx) {
+# Create and write to workbook
+wb <- createWorkbook()
+addWorksheet(wb, sheet_name)
+
+# Write the legend to A1
+writeData(wb, sheet = 1, x = legend, startCol = 1, startRow = 1)
+
+# Write the formatted table starting at row 3
+writeData(wb, sheet = 1, x = results_table, startCol = 1, startRow = 3)
+
+# Merge and center legend text over multiple cells
+n_cols <- ncol(results_table) + 1
+mergeCells(wb, sheet = 1, cols = 1:n_cols, rows = 1)
+
+# Change legend cell width and height
+setRowHeights(wb, sheet = sheet_name, rows = 1, heights = 80)
+
+# Wrap text in legend cell
+wrap_style <- createStyle(wrapText = TRUE)
+# use stack = TRUE to ensure multiple styles can be added, else it will overwrite
+addStyle(wb, sheet = sheet_name, style = wrap_style, rows = 1, cols = 1, stack = TRUE)
+
+# Make legend bold
+bold_style <- createStyle(textDecoration = "bold")
+addStyle(wb, sheet = sheet_name, style = bold_style, rows = 1, cols = 1, stack = TRUE)
+addStyle(wb, sheet = sheet_name, style = bold_style, rows = 3, cols = 1:6, stack = TRUE)
+
+# Save workbook
+file_name <- paste0("Table_", table_idx,".xlsx")
+file_path <- here::here("manuscript/tables/", file_name)
+saveWorkbook(wb, file_path , overwrite = TRUE)
+}
+```
+
 
 ```{r sample_size}
 # summary sample size counts for fixed and mr-mega analyis
@@ -65,6 +103,17 @@ bind_rows(summary_table_fixed, summary_table_mrmega) |>
 # print thousands seperator
 kable(sample_size_table,
       format.args = list(big.mark = ","))
+
+sample_size_table_formatted <- sample_size_table |>
+  mutate(across(c(Cases, Controls, `Neff/2`), ~ format(.x, big.mark = ",", scientific = FALSE)))
+
+# save as xlsx
+legend <- paste0("Table ", sample_size_table_idx, ": Sample sizes for GWAS meta-analyses. Fixed-effects analyses are listed separately for each population cluster (AFR, AMR, EAS, EUR, MID, and SAS) and totals are given for the multi-ancestry analysis (MR-MEGA). Neff/2 = half effective sample size. ATC = Anatomical Therapeutic Chemical classification subgroups (N06A: antidepressants; N06AA: non-selective monoamine reuptake inhibitors; N06AB: selective serotonin reuptake inhibitors).")
+
+sheet_name <- "Sample sizes"
+
+create_main_xlsx(sheet_name, legend, sample_size_table_formatted, sample_size_table_idx)
+
 ```
 
 ```{r drug_targets}
@@ -83,6 +132,11 @@ Therapeutic Chemical classification subgroup. AUC = Area Under the Curve. Q = Si
 
 ```{r drug_targets_table}
 drug_targets
+
+# save as xlsx
+create_main_xlsx("Drug targets", 
+              paste0("Table ", drug_target_table_idx, ": Drug target enrichment. ATC = Anatomical Therapeutic Chemical classification subgroup. AUC = Area Under the Curve. Q = Significance corrected for multiple testing (Benjamini & Hochberg)."),
+              drug_targets, drug_target_table_idx)
 ```
 
 ```{r gwas_summary}
