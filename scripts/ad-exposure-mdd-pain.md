@@ -770,3 +770,45 @@ chol_md_pain_ad_eur_fit
     ## 15 0.0000000                  <NA>
     ## 14 0.0000000                  <NA>
     ## 1  0.0000000                  <NA>
+
+### Proportions of variance
+
+The proportion of variance captured by each factor can be calculated as
+the square of the factor loadings. This has a [non-central $`\Chi^2`$
+distribution](https://en.wikipedia.org/wiki/Noncentral_chi-squared_distribution)
+with one degree of freedom.
+
+Function to insert text with squared loading and confidence interval for
+placement into text given model, factor, and phenotype:
+
+``` r
+decomposition_variance_text <- function(model, factor_term, phenotype_term, digits = 2) {
+  # pull out line from model table for specified factor (left-hand side of equation)
+  # and phenotype (right-hand side of the equation)
+  loading <- 
+  model$results |>
+    filter(lhs == factor_term, rhs == phenotype_term) |>
+    select(STD_Genotype, STD_Genotype_SE)
+  # get standardised beta (mu) and standardised error (sigma)
+  mu <- loading |> pull(STD_Genotype)
+  # convert standard error to numeric since it can be printed as character values in the table
+  sigma <- loading |> pull(STD_Genotype_SE) |> as.numeric()
+
+  # calculate variance (squared loading) and its lower and upper 95% CI
+  variance <- mu^2
+  # non centrality parameter
+  ncp <- mu^2 / sigma^2
+  # calculate then rescale by sigma^2
+  l95 <- qchisq(0.025, df = 1, ncp = ncp) * sigma^2
+  u95 <- qchisq(0.975, df = 1, ncp = ncp) * sigma^2
+
+  str_glue("{round(variance, digits)} (CI = {round(l95, digits)}, {round(u95, digits)})")
+}
+```
+
+In the EUR cohorts, the proportion of genetic variance in AD exposure
+that was with pain and major depression was 0.59 (CI = 0.46, 0.73). AD
+exposure uniquely shared 0.29 (CI = 0.2, 0.39) of its variance with
+major depression only and 0.06 (CI = 0.02, 0.12) with chronic pain only.
+There was a residual proportion of variance of 0.12 (CI = 0.06, 0.21)
+that was shared with neither major depression nore chronic pain.

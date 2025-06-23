@@ -374,6 +374,7 @@ covariances</a></li>
 <li><a href="#md-and-ad" id="toc-md-and-ad">MD and AD</a></li>
 <li><a href="#pain-md-and-ad" id="toc-pain-md-and-ad">Pain, MD, and
 AD</a></li>
+<li><a href="#proportions-of-variance" id="toc-proportions-of-variance">Proportions of variance</a></li>
 </ul></li>
 </ul>
 </div>
@@ -1057,6 +1058,43 @@ chol_md_pain_ad_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;,
 ## 15 0.0000000                  &lt;NA&gt;
 ## 14 0.0000000                  &lt;NA&gt;
 ## 1  0.0000000                  &lt;NA&gt;</code></pre>
+</div>
+<div id="proportions-of-variance" class="section level3">
+<h3>Proportions of variance</h3>
+<p>The proportion of variance captured by each factor can be calculated
+as the square of the factor loadings. This has a <a href="https://en.wikipedia.org/wiki/Noncentral_chi-squared_distribution">non-central
+<span class="math inline">\(\Chi^2\)</span> distribution</a> with one
+degree of freedom.</p>
+<p>Function to insert text with squared loading and confidence interval
+for placement into text given model, factor, and phenotype:</p>
+<pre class="r"><code>decomposition_variance_text &lt;- function(model, factor_term, phenotype_term, digits = 2) {
+  # pull out line from model table for specified factor (left-hand side of equation)
+  # and phenotype (right-hand side of the equation)
+  loading &lt;- 
+  model$results |&gt;
+    filter(lhs == factor_term, rhs == phenotype_term) |&gt;
+    select(STD_Genotype, STD_Genotype_SE)
+  # get standardised beta (mu) and standardised error (sigma)
+  mu &lt;- loading |&gt; pull(STD_Genotype)
+  # convert standard error to numeric since it can be printed as character values in the table
+  sigma &lt;- loading |&gt; pull(STD_Genotype_SE) |&gt; as.numeric()
+
+  # calculate variance (squared loading) and its lower and upper 95% CI
+  variance &lt;- mu^2
+  # non centrality parameter
+  ncp &lt;- mu^2 / sigma^2
+  # calculate then rescale by sigma^2
+  l95 &lt;- qchisq(0.025, df = 1, ncp = ncp) * sigma^2
+  u95 &lt;- qchisq(0.975, df = 1, ncp = ncp) * sigma^2
+
+  str_glue(&quot;{round(variance, digits)} (CI = {round(l95, digits)}, {round(u95, digits)})&quot;)
+}</code></pre>
+<p>In the EUR cohorts, the proportion of genetic variance in AD exposure
+that was with pain and major depression was 0.59 (CI = 0.46, 0.73). AD
+exposure uniquely shared 0.29 (CI = 0.2, 0.39) of its variance with
+major depression only and 0.06 (CI = 0.02, 0.12) with chronic pain only.
+There was a residual proportion of variance of 0.12 (CI = 0.06, 0.21)
+that was shared with neither major depression nore chronic pain.</p>
 </div>
 </div>
 
