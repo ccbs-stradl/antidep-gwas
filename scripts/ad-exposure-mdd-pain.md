@@ -628,3 +628,145 @@ chol_eur_fit
     ## 15 0.0000000            NA
     ## 14 0.0000000            NA
     ## 1  0.0000000            NA
+
+Cholesky decomposition of MD then pain, to get unique overlap of latter
+with AD
+
+``` r
+chol_md_pain_ad_model <- "
+F1 =~ NA*MD + Pain + AD
+F2 =~ NA*Pain + AD
+F3 =~ NA*AD
+
+F1 ~~ 1*F1
+F2 ~~ 1*F2
+F3 ~~ 1*F3
+F1 ~~ 0*F2 + 0*F3
+F2 ~~ 0*F3
+
+Pain ~~ 0*Pain
+Pain ~~ 0*MD
+Pain ~~ 0*AD
+MD ~~ 0*MD
+MD ~~ 0*AD
+AD ~~ 0*AD
+"
+
+chol_md_pain_ad_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_md_pain_ad_model)
+```
+
+    ## [1] "Running primary model"
+    ## [1] "Calculating CFI"
+    ## [1] "Calculating Standardized Results"
+    ## [1] "Calculating SRMR"
+    ## elapsed 
+    ##   0.135 
+    ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
+
+``` r
+chol_md_pain_ad_eas_fit
+```
+
+    ## $modelfit
+    ##    chisq df p_chisq AIC CFI SRMR
+    ## df    NA  0      NA  NA  NA   NA
+    ## 
+    ## $results
+    ##     lhs op  rhs Unstand_Est         Unstand_SE STD_Genotype   STD_Genotype_SE
+    ## 3    F1 =~   MD  0.20189088 0.0280719313730079    1.0000000 0.139045071000494
+    ## 4    F1 =~ Pain  0.25873696  0.291149509996562    0.4170087 0.469248266380938
+    ## 2    F1 =~   AD  0.08669118  0.052888235254768    0.5196035 0.316997800611003
+    ## 9    F2 =~ Pain  0.56393714  0.495047444874914    0.9089025 0.797872420629095
+    ## 8    F2 =~   AD  0.14018685  0.166085565278506    0.8402422 0.995472111034695
+    ## 12   F3 =~   AD  0.02584975  0.959843302154151    0.1549362  5.75305055164958
+    ## 5    F1 ~~   F1  1.00000000                       1.0000000                  
+    ## 10   F2 ~~   F2  1.00000000                       1.0000000                  
+    ## 13   F3 ~~   F3  1.00000000                       1.0000000                  
+    ## 6    F1 ~~   F2  0.00000000                       0.0000000                  
+    ## 7    F1 ~~   F3  0.00000000                       0.0000000                  
+    ## 11   F2 ~~   F3  0.00000000                       0.0000000                  
+    ## 18 Pain ~~ Pain  0.00000000                       0.0000000                  
+    ## 16   MD ~~ Pain  0.00000000                       0.0000000                  
+    ## 17 Pain ~~   AD  0.00000000                       0.0000000                  
+    ## 15   MD ~~   MD  0.00000000                       0.0000000                  
+    ## 14   MD ~~   AD  0.00000000                       0.0000000                  
+    ## 1    AD ~~   AD  0.00000000                       0.0000000                  
+    ##      STD_All      p_value
+    ## 3  1.0000000 6.388992e-13
+    ## 4  0.4170087 3.741784e-01
+    ## 2  0.5196035 1.011843e-01
+    ## 9  0.9089025 2.546374e-01
+    ## 8  0.8402422 3.986336e-01
+    ## 12 0.1549362 9.785146e-01
+    ## 5  1.0000000           NA
+    ## 10 1.0000000           NA
+    ## 13 1.0000000           NA
+    ## 6  0.0000000           NA
+    ## 7  0.0000000           NA
+    ## 11 0.0000000           NA
+    ## 18 0.0000000           NA
+    ## 16 0.0000000           NA
+    ## 17 0.0000000           NA
+    ## 15 0.0000000           NA
+    ## 14 0.0000000           NA
+    ## 1  0.0000000           NA
+
+``` r
+chol_md_pain_ad_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_md_pain_ad_model)
+```
+
+    ## [1] "Running primary model"
+    ## [1] "Calculating CFI"
+    ## [1] "Calculating Standardized Results"
+    ## [1] "Calculating SRMR"
+    ## elapsed 
+    ##   0.135 
+    ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
+
+``` r
+chol_md_pain_ad_eur_fit
+```
+
+    ## $modelfit
+    ##    chisq df p_chisq AIC CFI SRMR
+    ## df    NA  0      NA  NA  NA   NA
+    ## 
+    ## $results
+    ##     lhs op  rhs Unstand_Est          Unstand_SE STD_Genotype    STD_Genotype_SE
+    ## 3    F1 =~   MD  0.24416572 0.00455611443594496    1.0000000 0.0186599263701944
+    ## 4    F1 =~ Pain  0.16917575 0.00984842654773008    0.6450561 0.0375514086255995
+    ## 2    F1 =~   AD  0.24025988 0.00657946524972344    0.9053205  0.024792007080392
+    ## 9    F2 =~ Pain  0.20040605  0.0135858599908452    0.7641352 0.0518019988428782
+    ## 8    F2 =~   AD  0.06395003  0.0136874386617364    0.2409694 0.0515754797525127
+    ## 12   F3 =~   AD  0.09282028   0.015210228617197    0.3497550  0.057313486571723
+    ## 5    F1 ~~   F1  1.00000000                        1.0000000                   
+    ## 10   F2 ~~   F2  1.00000000                        1.0000000                   
+    ## 13   F3 ~~   F3  1.00000000                        1.0000000                   
+    ## 6    F1 ~~   F2  0.00000000                        0.0000000                   
+    ## 7    F1 ~~   F3  0.00000000                        0.0000000                   
+    ## 11   F2 ~~   F3  0.00000000                        0.0000000                   
+    ## 18 Pain ~~ Pain  0.00000000                        0.0000000                   
+    ## 16   MD ~~ Pain  0.00000000                        0.0000000                   
+    ## 17 Pain ~~   AD  0.00000000                        0.0000000                   
+    ## 15   MD ~~   MD  0.00000000                        0.0000000                   
+    ## 14   MD ~~   AD  0.00000000                        0.0000000                   
+    ## 1    AD ~~   AD  0.00000000                        0.0000000                   
+    ##      STD_All               p_value
+    ## 3  1.0000000              < 5e-300
+    ## 4  0.6450561  3.88414982069391e-66
+    ## 2  0.9053205 6.04058520671843e-292
+    ## 9  0.7641352  3.02799501254861e-49
+    ## 8  0.2409694  2.98035590169464e-06
+    ## 12 0.3497550  1.04427959252669e-09
+    ## 5  1.0000000                  <NA>
+    ## 10 1.0000000                  <NA>
+    ## 13 1.0000000                  <NA>
+    ## 6  0.0000000                  <NA>
+    ## 7  0.0000000                  <NA>
+    ## 11 0.0000000                  <NA>
+    ## 18 0.0000000                  <NA>
+    ## 16 0.0000000                  <NA>
+    ## 17 0.0000000                  <NA>
+    ## 15 0.0000000                  <NA>
+    ## 14 0.0000000                  <NA>
+    ## 1  0.0000000                  <NA>
