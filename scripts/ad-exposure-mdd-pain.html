@@ -369,73 +369,21 @@ reference</a></li>
 <li><a href="#estimate-genetic-covariances" id="toc-estimate-genetic-covariances">Estimate genetic
 covariances</a></li>
 </ul></li>
-<li><a href="#model" id="toc-model">Model</a></li>
+<li><a href="#model" id="toc-model">Model</a>
+<ul>
+<li><a href="#md-and-ad" id="toc-md-and-ad">MD and AD</a></li>
+<li><a href="#pain-md-and-ad" id="toc-pain-md-and-ad">Pain, MD, and
+AD</a></li>
+</ul></li>
 </ul>
 </div>
 
 <pre class="r"><code>library(readr)
-library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;dplyr&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(stringr)
-library(GenomicSEM)</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::nobs&#39; by &#39;lavaan::nobs&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::first&#39; by &#39;data.table::first&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::last&#39; by &#39;data.table::last&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::resample&#39; by &#39;R.utils::resample&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::env&#39; by &#39;R.utils::env&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;data.table::first&#39; by &#39;dplyr::first&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::arrange&#39; by &#39;dplyr::arrange&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::count&#39; by &#39;dplyr::count&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::desc&#39; by &#39;dplyr::desc&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::summarise&#39; by &#39;dplyr::summarise&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::id&#39; by &#39;dplyr::id&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::rename&#39; by &#39;dplyr::rename&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::summarize&#39; by &#39;dplyr::summarize&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;data.table::last&#39; by &#39;dplyr::last&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;data.table::between&#39; by &#39;dplyr::between&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::combine&#39; by &#39;dplyr::combine&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::starts_with&#39; by &#39;dplyr::starts_with&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::failwith&#39; by &#39;dplyr::failwith&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::mutate&#39; by &#39;dplyr::mutate&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;Rcpp::.DollarNames&#39; by
-## &#39;utils::.DollarNames&#39; when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;Matrix::tail&#39; by &#39;utils::tail&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::object.size&#39; by &#39;utils::object.size&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;Rcpp::prompt&#39; by &#39;utils::prompt&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;Matrix::head&#39; by &#39;utils::head&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;R.utils::timestamp&#39; by &#39;utils::timestamp&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre class="r"><code>build_all &lt;- params$build_all</code></pre>
+library(dplyr)
+library(stringr)
+library(GenomicSEM)
+
+build_all &lt;- params$build_all</code></pre>
 <div id="sumstats" class="section level2">
 <h2>Sumstats</h2>
 <ul>
@@ -757,7 +705,9 @@ if (build_all) {
 </div>
 <div id="model" class="section level2">
 <h2>Model</h2>
-<p>Cholesky decomposition of MD and AD in EAS cohorts.</p>
+<div id="md-and-ad" class="section level3">
+<h3>MD and AD</h3>
+<p>Cholesky decomposition of MD and AD in AMR and SAS cohorts.</p>
 <pre class="r"><code>chol2_model &lt;- &quot;
 F1 =~ NA*MD + AD
 F2 =~ NA*AD
@@ -854,7 +804,11 @@ chol2_amr_fit &lt;- usermodel(amr_ldsc, estimation = &quot;DWLS&quot;, model = c
 ## 9 0.000000000         NA
 ## 8 0.000000000         NA
 ## 1 0.000000000         NA</code></pre>
-<p>Cholesky decomposition of pain, MD, and AD in EUR cohorts.</p>
+</div>
+<div id="pain-md-and-ad" class="section level3">
+<h3>Pain, MD, and AD</h3>
+<p>Cholesky decomposition of pain, MD, and AD in EAS and EUR
+cohorts.</p>
 <pre class="r"><code>chol_model &lt;- &quot;
 F1 =~ NA*Pain + MD + AD
 F2 =~ NA*MD + AD
@@ -978,6 +932,7 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## 15 0.0000000            NA
 ## 14 0.0000000            NA
 ## 1  0.0000000            NA</code></pre>
+</div>
 </div>
 
 

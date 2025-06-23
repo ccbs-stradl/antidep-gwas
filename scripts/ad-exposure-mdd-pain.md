@@ -368,7 +368,9 @@ if (build_all) {
 
 ## Model
 
-Cholesky decomposition of MD and AD in EAS cohorts.
+### MD and AD
+
+Cholesky decomposition of MD and AD in AMR and SAS cohorts.
 
 ``` r
 chol2_model <- "
@@ -484,7 +486,9 @@ chol2_sas_fit
     ## 8 0.000000000         NA
     ## 1 0.000000000         NA
 
-Cholesky decomposition of pain, MD, and AD in EUR cohorts.
+### Pain, MD, and AD
+
+Cholesky decomposition of pain, MD, and AD in EAS and EUR cohorts.
 
 ``` r
 chol_model <- "

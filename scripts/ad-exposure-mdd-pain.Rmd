@@ -372,8 +372,9 @@ if (build_all) {
 
 ## Model
 
+### MD and AD
 
-Cholesky decomposition of  MD and AD in EAS cohorts.
+Cholesky decomposition of  MD and AD in AMR and SAS cohorts.
 
 ```{r model2, cache = TRUE}
 chol2_model <- "
@@ -396,7 +397,9 @@ chol2_sas_fit <- usermodel(sas_ldsc, estimation = "DWLS", model = chol2_model)
 chol2_sas_fit
 ```
 
-Cholesky decomposition of pain, MD, and AD in EUR cohorts.
+### Pain, MD, and AD
+
+Cholesky decomposition of pain, MD, and AD in EAS and EUR cohorts.
 
 ```{r model3, cache = TRUE}
 
