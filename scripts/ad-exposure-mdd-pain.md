@@ -491,7 +491,7 @@ chol2_sas_fit
 Cholesky decomposition of pain, MD, and AD in EAS and EUR cohorts.
 
 ``` r
-chol_model <- "
+chol_pain_md_ad_model <- "
 F1 =~ NA*Pain + MD + AD
 F2 =~ NA*MD + AD
 F3 =~ NA*AD
@@ -510,7 +510,7 @@ MD ~~ 0*AD
 AD ~~ 0*AD
 "
 
-chol_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_model)
+chol_pain_md_ad_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_pain_md_ad_model)
 ```
 
     ## [1] "Running primary model"
@@ -518,11 +518,11 @@ chol_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_model)
     ## [1] "Calculating Standardized Results"
     ## [1] "Calculating SRMR"
     ## elapsed 
-    ##   0.196 
+    ##   0.139 
     ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
 
 ``` r
-chol_eas_fit
+chol_pain_md_ad_eas_fit
 ```
 
     ## $modelfit
@@ -570,7 +570,7 @@ chol_eas_fit
     ## 1  0.0000000          NA
 
 ``` r
-chol_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_model)
+chol_pain_md_ad_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_pain_md_ad_model)
 ```
 
     ## [1] "Running primary model"
@@ -578,11 +578,11 @@ chol_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_model)
     ## [1] "Calculating Standardized Results"
     ## [1] "Calculating SRMR"
     ## elapsed 
-    ##   0.187 
+    ##   0.139 
     ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
 
 ``` r
-chol_eur_fit
+chol_pain_md_ad_eur_fit
 ```
 
     ## $modelfit
@@ -791,24 +791,27 @@ decomposition_variance_text <- function(model, factor_term, phenotype_term, digi
     select(STD_Genotype, STD_Genotype_SE)
   # get standardised beta (mu) and standardised error (sigma)
   mu <- loading |> pull(STD_Genotype)
-  # convert standard error to numeric since it can be printed as character values in the table
+  # convert standard error to numeric since it is sometimes printed as
+  # character values in the table
   sigma <- loading |> pull(STD_Genotype_SE) |> as.numeric()
 
   # calculate variance (squared loading) and its lower and upper 95% CI
   variance <- mu^2
   # non centrality parameter
   ncp <- mu^2 / sigma^2
-  # calculate then rescale by sigma^2
+  # calculate interval boundaries and then rescale by sigma^2
   l95 <- qchisq(0.025, df = 1, ncp = ncp) * sigma^2
   u95 <- qchisq(0.975, df = 1, ncp = ncp) * sigma^2
 
+  "variance (CI = l95, u95)"
   str_glue("{round(variance, digits)} (CI = {round(l95, digits)}, {round(u95, digits)})")
 }
 ```
 
 In the EUR cohorts, the proportion of genetic variance in AD exposure
-that was with pain and major depression was 0.59 (CI = 0.46, 0.73). AD
-exposure uniquely shared 0.29 (CI = 0.2, 0.39) of its variance with
-major depression only and 0.06 (CI = 0.02, 0.12) with chronic pain only.
-There was a residual proportion of variance of 0.12 (CI = 0.06, 0.21)
-that was shared with neither major depression nore chronic pain.
+that was shared with major depression was 0.82 (CI = 0.73, 0.91) and
+with chronic pain was 0.59 (CI = 0.46, 0.73). AD exposure uniquely
+shared 0.29 (CI = 0.2, 0.39) of its variance with major depression only
+and 0.06 (CI = 0.02, 0.12) with chronic pain only. There was a residual
+proportion of variance of 0.12 (CI = 0.06, 0.21) that was shared with
+neither major depression nor chronic pain.

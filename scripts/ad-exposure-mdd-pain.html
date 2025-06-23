@@ -810,7 +810,7 @@ chol2_amr_fit &lt;- usermodel(amr_ldsc, estimation = &quot;DWLS&quot;, model = c
 <h3>Pain, MD, and AD</h3>
 <p>Cholesky decomposition of pain, MD, and AD in EAS and EUR
 cohorts.</p>
-<pre class="r"><code>chol_model &lt;- &quot;
+<pre class="r"><code>chol_pain_md_ad_model &lt;- &quot;
 F1 =~ NA*Pain + MD + AD
 F2 =~ NA*MD + AD
 F3 =~ NA*AD
@@ -829,15 +829,15 @@ MD ~~ 0*AD
 AD ~~ 0*AD
 &quot;
 
-chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = chol_model)</code></pre>
+chol_pain_md_ad_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = chol_pain_md_ad_model)</code></pre>
 <pre><code>## [1] &quot;Running primary model&quot;
 ## [1] &quot;Calculating CFI&quot;
 ## [1] &quot;Calculating Standardized Results&quot;
 ## [1] &quot;Calculating SRMR&quot;
 ## elapsed 
-##   0.596 
+##   0.139 
 ## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
-<pre class="r"><code>chol_eas_fit</code></pre>
+<pre class="r"><code>chol_pain_md_ad_eas_fit</code></pre>
 <pre><code>## $modelfit
 ##    chisq df p_chisq AIC CFI SRMR
 ## df    NA  0      NA  NA  NA   NA
@@ -881,15 +881,15 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## 15 0.0000000          NA
 ## 14 0.0000000          NA
 ## 1  0.0000000          NA</code></pre>
-<pre class="r"><code>chol_eur_fit &lt;- usermodel(eur_ldsc, estimation = &quot;DWLS&quot;, model = chol_model)</code></pre>
+<pre class="r"><code>chol_pain_md_ad_eur_fit &lt;- usermodel(eur_ldsc, estimation = &quot;DWLS&quot;, model = chol_pain_md_ad_model)</code></pre>
 <pre><code>## [1] &quot;Running primary model&quot;
 ## [1] &quot;Calculating CFI&quot;
 ## [1] &quot;Calculating Standardized Results&quot;
 ## [1] &quot;Calculating SRMR&quot;
 ## elapsed 
-##   0.335 
+##   0.138 
 ## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
-<pre class="r"><code>chol_eur_fit</code></pre>
+<pre class="r"><code>chol_pain_md_ad_eur_fit</code></pre>
 <pre><code>## $modelfit
 ##    chisq df p_chisq AIC CFI SRMR
 ## df    NA  0      NA  NA  NA   NA
@@ -1076,25 +1076,28 @@ for placement into text given model, factor, and phenotype:</p>
     select(STD_Genotype, STD_Genotype_SE)
   # get standardised beta (mu) and standardised error (sigma)
   mu &lt;- loading |&gt; pull(STD_Genotype)
-  # convert standard error to numeric since it can be printed as character values in the table
+  # convert standard error to numeric since it is sometimes printed as
+  # character values in the table
   sigma &lt;- loading |&gt; pull(STD_Genotype_SE) |&gt; as.numeric()
 
   # calculate variance (squared loading) and its lower and upper 95% CI
   variance &lt;- mu^2
   # non centrality parameter
   ncp &lt;- mu^2 / sigma^2
-  # calculate then rescale by sigma^2
+  # calculate interval boundaries and then rescale by sigma^2
   l95 &lt;- qchisq(0.025, df = 1, ncp = ncp) * sigma^2
   u95 &lt;- qchisq(0.975, df = 1, ncp = ncp) * sigma^2
 
+  &quot;variance (CI = l95, u95)&quot;
   str_glue(&quot;{round(variance, digits)} (CI = {round(l95, digits)}, {round(u95, digits)})&quot;)
 }</code></pre>
 <p>In the EUR cohorts, the proportion of genetic variance in AD exposure
-that was with pain and major depression was 0.59 (CI = 0.46, 0.73). AD
-exposure uniquely shared 0.29 (CI = 0.2, 0.39) of its variance with
-major depression only and 0.06 (CI = 0.02, 0.12) with chronic pain only.
-There was a residual proportion of variance of 0.12 (CI = 0.06, 0.21)
-that was shared with neither major depression nore chronic pain.</p>
+that was shared with major depression was 0.82 (CI = 0.73, 0.91) and
+with chronic pain was 0.59 (CI = 0.46, 0.73). AD exposure uniquely
+shared 0.29 (CI = 0.2, 0.39) of its variance with major depression only
+and 0.06 (CI = 0.02, 0.12) with chronic pain only. There was a residual
+proportion of variance of 0.12 (CI = 0.06, 0.21) that was shared with
+neither major depression nor chronic pain.</p>
 </div>
 </div>
 
