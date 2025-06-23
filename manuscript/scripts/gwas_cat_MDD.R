@@ -19,9 +19,9 @@ read_sheet <- function(sheet_index, path) {
   read_xlsx(here::here('manuscript/MDD_GWAS_Online_Results_(COJO).xlsx'), sheet = sheet_index)
 }
 
-pull_SNPs <- function(sheet){
+pull_SNPs <- function(sheet, p_threshold = 5e-8){
   sheet |>
-    filter(P <= 5e-8) |>
+    filter(P <= p_threshold) |>
     pull(SNP)
 }
 
