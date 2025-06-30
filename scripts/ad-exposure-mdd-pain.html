@@ -369,73 +369,22 @@ reference</a></li>
 <li><a href="#estimate-genetic-covariances" id="toc-estimate-genetic-covariances">Estimate genetic
 covariances</a></li>
 </ul></li>
-<li><a href="#model" id="toc-model">Model</a></li>
+<li><a href="#model" id="toc-model">Model</a>
+<ul>
+<li><a href="#md-and-ad" id="toc-md-and-ad">MD and AD</a></li>
+<li><a href="#pain-md-and-ad" id="toc-pain-md-and-ad">Pain, MD, and
+AD</a></li>
+<li><a href="#proportions-of-variance" id="toc-proportions-of-variance">Proportions of variance</a></li>
+</ul></li>
 </ul>
 </div>
 
 <pre class="r"><code>library(readr)
-library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;dplyr&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(stringr)
-library(GenomicSEM)</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::nobs&#39; by &#39;lavaan::nobs&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::first&#39; by &#39;data.table::first&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::last&#39; by &#39;data.table::last&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::resample&#39; by &#39;R.utils::resample&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::env&#39; by &#39;R.utils::env&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;data.table::first&#39; by &#39;dplyr::first&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::arrange&#39; by &#39;dplyr::arrange&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::count&#39; by &#39;dplyr::count&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::desc&#39; by &#39;dplyr::desc&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::summarise&#39; by &#39;dplyr::summarise&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::id&#39; by &#39;dplyr::id&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::rename&#39; by &#39;dplyr::rename&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::summarize&#39; by &#39;dplyr::summarize&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;data.table::last&#39; by &#39;dplyr::last&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;data.table::between&#39; by &#39;dplyr::between&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::combine&#39; by &#39;dplyr::combine&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::starts_with&#39; by &#39;dplyr::starts_with&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::failwith&#39; by &#39;dplyr::failwith&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;plyr::mutate&#39; by &#39;dplyr::mutate&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;Rcpp::.DollarNames&#39; by
-## &#39;utils::.DollarNames&#39; when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;Matrix::tail&#39; by &#39;utils::tail&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;gdata::object.size&#39; by &#39;utils::object.size&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;Rcpp::prompt&#39; by &#39;utils::prompt&#39; when
-## loading &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;Matrix::head&#39; by &#39;utils::head&#39; when loading
-## &#39;GenomicSEM&#39;</code></pre>
-<pre><code>## Warning: replacing previous import &#39;R.utils::timestamp&#39; by &#39;utils::timestamp&#39;
-## when loading &#39;GenomicSEM&#39;</code></pre>
-<pre class="r"><code>build_all &lt;- params$build_all</code></pre>
+library(dplyr)
+library(stringr)
+library(GenomicSEM)
+
+build_all &lt;- params$build_all</code></pre>
 <div id="sumstats" class="section level2">
 <h2>Sumstats</h2>
 <ul>
@@ -757,7 +706,9 @@ if (build_all) {
 </div>
 <div id="model" class="section level2">
 <h2>Model</h2>
-<p>Cholesky decomposition of MD and AD in EAS cohorts.</p>
+<div id="md-and-ad" class="section level3">
+<h3>MD and AD</h3>
+<p>Cholesky decomposition of MD and AD in AMR and SAS cohorts.</p>
 <pre class="r"><code>chol2_model &lt;- &quot;
 F1 =~ NA*MD + AD
 F2 =~ NA*AD
@@ -854,8 +805,12 @@ chol2_amr_fit &lt;- usermodel(amr_ldsc, estimation = &quot;DWLS&quot;, model = c
 ## 9 0.000000000         NA
 ## 8 0.000000000         NA
 ## 1 0.000000000         NA</code></pre>
-<p>Cholesky decomposition of pain, MD, and AD in EUR cohorts.</p>
-<pre class="r"><code>chol_model &lt;- &quot;
+</div>
+<div id="pain-md-and-ad" class="section level3">
+<h3>Pain, MD, and AD</h3>
+<p>Cholesky decomposition of pain, MD, and AD in EAS and EUR
+cohorts.</p>
+<pre class="r"><code>chol_pain_md_ad_model &lt;- &quot;
 F1 =~ NA*Pain + MD + AD
 F2 =~ NA*MD + AD
 F3 =~ NA*AD
@@ -874,15 +829,15 @@ MD ~~ 0*AD
 AD ~~ 0*AD
 &quot;
 
-chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = chol_model)</code></pre>
+chol_pain_md_ad_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = chol_pain_md_ad_model)</code></pre>
 <pre><code>## [1] &quot;Running primary model&quot;
 ## [1] &quot;Calculating CFI&quot;
 ## [1] &quot;Calculating Standardized Results&quot;
 ## [1] &quot;Calculating SRMR&quot;
 ## elapsed 
-##   0.596 
+##   0.139 
 ## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
-<pre class="r"><code>chol_eas_fit</code></pre>
+<pre class="r"><code>chol_pain_md_ad_eas_fit</code></pre>
 <pre><code>## $modelfit
 ##    chisq df p_chisq AIC CFI SRMR
 ## df    NA  0      NA  NA  NA   NA
@@ -926,15 +881,15 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## 15 0.0000000          NA
 ## 14 0.0000000          NA
 ## 1  0.0000000          NA</code></pre>
-<pre class="r"><code>chol_eur_fit &lt;- usermodel(eur_ldsc, estimation = &quot;DWLS&quot;, model = chol_model)</code></pre>
+<pre class="r"><code>chol_pain_md_ad_eur_fit &lt;- usermodel(eur_ldsc, estimation = &quot;DWLS&quot;, model = chol_pain_md_ad_model)</code></pre>
 <pre><code>## [1] &quot;Running primary model&quot;
 ## [1] &quot;Calculating CFI&quot;
 ## [1] &quot;Calculating Standardized Results&quot;
 ## [1] &quot;Calculating SRMR&quot;
 ## elapsed 
-##   0.335 
+##   0.138 
 ## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
-<pre class="r"><code>chol_eur_fit</code></pre>
+<pre class="r"><code>chol_pain_md_ad_eur_fit</code></pre>
 <pre><code>## $modelfit
 ##    chisq df p_chisq AIC CFI SRMR
 ## df    NA  0      NA  NA  NA   NA
@@ -978,6 +933,172 @@ chol_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = ch
 ## 15 0.0000000            NA
 ## 14 0.0000000            NA
 ## 1  0.0000000            NA</code></pre>
+<p>Cholesky decomposition of MD then pain, to get unique overlap of
+latter with AD</p>
+<pre class="r"><code>chol_md_pain_ad_model &lt;- &quot;
+F1 =~ NA*MD + Pain + AD
+F2 =~ NA*Pain + AD
+F3 =~ NA*AD
+
+F1 ~~ 1*F1
+F2 ~~ 1*F2
+F3 ~~ 1*F3
+F1 ~~ 0*F2 + 0*F3
+F2 ~~ 0*F3
+
+Pain ~~ 0*Pain
+Pain ~~ 0*MD
+Pain ~~ 0*AD
+MD ~~ 0*MD
+MD ~~ 0*AD
+AD ~~ 0*AD
+&quot;
+
+chol_md_pain_ad_eas_fit &lt;- usermodel(eas_ldsc, estimation = &quot;DWLS&quot;, model = chol_md_pain_ad_model)</code></pre>
+<pre><code>## [1] &quot;Running primary model&quot;
+## [1] &quot;Calculating CFI&quot;
+## [1] &quot;Calculating Standardized Results&quot;
+## [1] &quot;Calculating SRMR&quot;
+## elapsed 
+##   0.136 
+## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
+<pre class="r"><code>chol_md_pain_ad_eas_fit</code></pre>
+<pre><code>## $modelfit
+##    chisq df p_chisq AIC CFI SRMR
+## df    NA  0      NA  NA  NA   NA
+## 
+## $results
+##     lhs op  rhs Unstand_Est         Unstand_SE STD_Genotype   STD_Genotype_SE
+## 3    F1 =~   MD  0.20189088 0.0280719313730079    1.0000000 0.139045071000494
+## 4    F1 =~ Pain  0.25873696  0.291149509996562    0.4170087 0.469248266380938
+## 2    F1 =~   AD  0.08669118  0.052888235254768    0.5196035 0.316997800611003
+## 9    F2 =~ Pain  0.56393714  0.495047444874914    0.9089025 0.797872420629095
+## 8    F2 =~   AD  0.14018685  0.166085565278506    0.8402422 0.995472111034695
+## 12   F3 =~   AD  0.02584975  0.959843302154151    0.1549362  5.75305055164958
+## 5    F1 ~~   F1  1.00000000                       1.0000000                  
+## 10   F2 ~~   F2  1.00000000                       1.0000000                  
+## 13   F3 ~~   F3  1.00000000                       1.0000000                  
+## 6    F1 ~~   F2  0.00000000                       0.0000000                  
+## 7    F1 ~~   F3  0.00000000                       0.0000000                  
+## 11   F2 ~~   F3  0.00000000                       0.0000000                  
+## 18 Pain ~~ Pain  0.00000000                       0.0000000                  
+## 16   MD ~~ Pain  0.00000000                       0.0000000                  
+## 17 Pain ~~   AD  0.00000000                       0.0000000                  
+## 15   MD ~~   MD  0.00000000                       0.0000000                  
+## 14   MD ~~   AD  0.00000000                       0.0000000                  
+## 1    AD ~~   AD  0.00000000                       0.0000000                  
+##      STD_All      p_value
+## 3  1.0000000 6.388992e-13
+## 4  0.4170087 3.741784e-01
+## 2  0.5196035 1.011843e-01
+## 9  0.9089025 2.546374e-01
+## 8  0.8402422 3.986336e-01
+## 12 0.1549362 9.785146e-01
+## 5  1.0000000           NA
+## 10 1.0000000           NA
+## 13 1.0000000           NA
+## 6  0.0000000           NA
+## 7  0.0000000           NA
+## 11 0.0000000           NA
+## 18 0.0000000           NA
+## 16 0.0000000           NA
+## 17 0.0000000           NA
+## 15 0.0000000           NA
+## 14 0.0000000           NA
+## 1  0.0000000           NA</code></pre>
+<pre class="r"><code>chol_md_pain_ad_eur_fit &lt;- usermodel(eur_ldsc, estimation = &quot;DWLS&quot;, model = chol_md_pain_ad_model)</code></pre>
+<pre><code>## [1] &quot;Running primary model&quot;
+## [1] &quot;Calculating CFI&quot;
+## [1] &quot;Calculating Standardized Results&quot;
+## [1] &quot;Calculating SRMR&quot;
+## elapsed 
+##   0.129 
+## [1] &quot;Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)&quot;</code></pre>
+<pre class="r"><code>chol_md_pain_ad_eur_fit</code></pre>
+<pre><code>## $modelfit
+##    chisq df p_chisq AIC CFI SRMR
+## df    NA  0      NA  NA  NA   NA
+## 
+## $results
+##     lhs op  rhs Unstand_Est          Unstand_SE STD_Genotype    STD_Genotype_SE
+## 3    F1 =~   MD  0.24416572 0.00455611443594496    1.0000000 0.0186599263701944
+## 4    F1 =~ Pain  0.16917575 0.00984842654773008    0.6450561 0.0375514086255995
+## 2    F1 =~   AD  0.24025988 0.00657946524972344    0.9053205  0.024792007080392
+## 9    F2 =~ Pain  0.20040605  0.0135858599908452    0.7641352 0.0518019988428782
+## 8    F2 =~   AD  0.06395003  0.0136874386617364    0.2409694 0.0515754797525127
+## 12   F3 =~   AD  0.09282028   0.015210228617197    0.3497550  0.057313486571723
+## 5    F1 ~~   F1  1.00000000                        1.0000000                   
+## 10   F2 ~~   F2  1.00000000                        1.0000000                   
+## 13   F3 ~~   F3  1.00000000                        1.0000000                   
+## 6    F1 ~~   F2  0.00000000                        0.0000000                   
+## 7    F1 ~~   F3  0.00000000                        0.0000000                   
+## 11   F2 ~~   F3  0.00000000                        0.0000000                   
+## 18 Pain ~~ Pain  0.00000000                        0.0000000                   
+## 16   MD ~~ Pain  0.00000000                        0.0000000                   
+## 17 Pain ~~   AD  0.00000000                        0.0000000                   
+## 15   MD ~~   MD  0.00000000                        0.0000000                   
+## 14   MD ~~   AD  0.00000000                        0.0000000                   
+## 1    AD ~~   AD  0.00000000                        0.0000000                   
+##      STD_All               p_value
+## 3  1.0000000              &lt; 5e-300
+## 4  0.6450561  3.88414982069391e-66
+## 2  0.9053205 6.04058520671843e-292
+## 9  0.7641352  3.02799501254861e-49
+## 8  0.2409694  2.98035590169464e-06
+## 12 0.3497550  1.04427959252669e-09
+## 5  1.0000000                  &lt;NA&gt;
+## 10 1.0000000                  &lt;NA&gt;
+## 13 1.0000000                  &lt;NA&gt;
+## 6  0.0000000                  &lt;NA&gt;
+## 7  0.0000000                  &lt;NA&gt;
+## 11 0.0000000                  &lt;NA&gt;
+## 18 0.0000000                  &lt;NA&gt;
+## 16 0.0000000                  &lt;NA&gt;
+## 17 0.0000000                  &lt;NA&gt;
+## 15 0.0000000                  &lt;NA&gt;
+## 14 0.0000000                  &lt;NA&gt;
+## 1  0.0000000                  &lt;NA&gt;</code></pre>
+</div>
+<div id="proportions-of-variance" class="section level3">
+<h3>Proportions of variance</h3>
+<p>The proportion of variance captured by each factor can be calculated
+as the square of the factor loadings. This has a <a href="https://en.wikipedia.org/wiki/Noncentral_chi-squared_distribution">non-central
+<span class="math inline">\(\Chi^2\)</span> distribution</a> with one
+degree of freedom.</p>
+<p>Function to insert text with squared loading and confidence interval
+for placement into text given model, factor, and phenotype:</p>
+<pre class="r"><code>decomposition_variance_text &lt;- function(model, factor_term, phenotype_term, digits = 2) {
+  # pull out line from model table for specified factor (left-hand side of equation)
+  # and phenotype (right-hand side of the equation)
+  loading &lt;- 
+  model$results |&gt;
+    filter(lhs == factor_term, rhs == phenotype_term) |&gt;
+    select(STD_Genotype, STD_Genotype_SE)
+  # get standardised beta (mu) and standardised error (sigma)
+  mu &lt;- loading |&gt; pull(STD_Genotype)
+  # convert standard error to numeric since it is sometimes printed as
+  # character values in the table
+  sigma &lt;- loading |&gt; pull(STD_Genotype_SE) |&gt; as.numeric()
+
+  # calculate variance (squared loading) and its lower and upper 95% CI
+  variance &lt;- mu^2
+  # non centrality parameter
+  ncp &lt;- mu^2 / sigma^2
+  # calculate interval boundaries and then rescale by sigma^2
+  l95 &lt;- qchisq(0.025, df = 1, ncp = ncp) * sigma^2
+  u95 &lt;- qchisq(0.975, df = 1, ncp = ncp) * sigma^2
+
+  &quot;variance (CI = l95, u95)&quot;
+  str_glue(&quot;{round(variance, digits)} (CI = {round(l95, digits)}, {round(u95, digits)})&quot;)
+}</code></pre>
+<p>In the EUR cohorts, the proportion of genetic variance in AD exposure
+that was shared with major depression was 0.82 (CI = 0.73, 0.91) and
+with chronic pain was 0.59 (CI = 0.46, 0.73). AD exposure uniquely
+shared 0.29 (CI = 0.2, 0.39) of its variance with major depression only
+and 0.06 (CI = 0.02, 0.12) with chronic pain only. There was a residual
+proportion of variance of 0.12 (CI = 0.06, 0.21) that was shared with
+neither major depression nor chronic pain.</p>
+</div>
 </div>
 
 

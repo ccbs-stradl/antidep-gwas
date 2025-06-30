@@ -372,8 +372,9 @@ if (build_all) {
 
 ## Model
 
+### MD and AD
 
-Cholesky decomposition of  MD and AD in EAS cohorts.
+Cholesky decomposition of  MD and AD in AMR and SAS cohorts.
 
 ```{r model2, cache = TRUE}
 chol2_model <- "
@@ -396,11 +397,13 @@ chol2_sas_fit <- usermodel(sas_ldsc, estimation = "DWLS", model = chol2_model)
 chol2_sas_fit
 ```
 
-Cholesky decomposition of pain, MD, and AD in EUR cohorts.
+### Pain, MD, and AD
+
+Cholesky decomposition of pain, MD, and AD in EAS and EUR cohorts.
 
 ```{r model3, cache = TRUE}
 
-chol_model <- "
+chol_pain_md_ad_model <- "
 F1 =~ NA*Pain + MD + AD
 F2 =~ NA*MD + AD
 F3 =~ NA*AD
@@ -419,9 +422,72 @@ MD ~~ 0*AD
 AD ~~ 0*AD
 "
 
-chol_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_model)
-chol_eas_fit
+chol_pain_md_ad_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_pain_md_ad_model)
+chol_pain_md_ad_eas_fit
 
-chol_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_model)
-chol_eur_fit
+chol_pain_md_ad_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_pain_md_ad_model)
+chol_pain_md_ad_eur_fit
 ```
+
+Cholesky decomposition of MD then pain, to get unique overlap of latter with AD 
+```{r model4, cache = TRUE}
+
+chol_md_pain_ad_model <- "
+F1 =~ NA*MD + Pain + AD
+F2 =~ NA*Pain + AD
+F3 =~ NA*AD
+
+F1 ~~ 1*F1
+F2 ~~ 1*F2
+F3 ~~ 1*F3
+F1 ~~ 0*F2 + 0*F3
+F2 ~~ 0*F3
+
+Pain ~~ 0*Pain
+Pain ~~ 0*MD
+Pain ~~ 0*AD
+MD ~~ 0*MD
+MD ~~ 0*AD
+AD ~~ 0*AD
+"
+
+chol_md_pain_ad_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_md_pain_ad_model)
+chol_md_pain_ad_eas_fit
+
+chol_md_pain_ad_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_md_pain_ad_model)
+chol_md_pain_ad_eur_fit
+```
+
+### Proportions of variance
+
+The proportion of variance captured by each factor can be calculated as the square of the factor loadings. This has a [non-central $\Chi^2$ distribution](https://en.wikipedia.org/wiki/Noncentral_chi-squared_distribution) with one degree of freedom.
+
+Function to insert text with squared loading and confidence interval for placement into text given model, factor, and phenotype:
+```{r decomposition_variance}
+decomposition_variance_text <- function(model, factor_term, phenotype_term, digits = 2) {
+  # pull out line from model table for specified factor (left-hand side of equation)
+  # and phenotype (right-hand side of the equation)
+  loading <- 
+  model$results |>
+    filter(lhs == factor_term, rhs == phenotype_term) |>
+    select(STD_Genotype, STD_Genotype_SE)
+  # get standardised beta (mu) and standardised error (sigma)
+  mu <- loading |> pull(STD_Genotype)
+  # convert standard error to numeric since it is sometimes printed as
+  # character values in the table
+  sigma <- loading |> pull(STD_Genotype_SE) |> as.numeric()
+
+  # calculate variance (squared loading) and its lower and upper 95% CI
+  variance <- mu^2
+  # non centrality parameter
+  ncp <- mu^2 / sigma^2
+  # calculate interval boundaries and then rescale by sigma^2
+  l95 <- qchisq(0.025, df = 1, ncp = ncp) * sigma^2
+  u95 <- qchisq(0.975, df = 1, ncp = ncp) * sigma^2
+
+  "variance (CI = l95, u95)"
+  str_glue("{round(variance, digits)} (CI = {round(l95, digits)}, {round(u95, digits)})")
+}
+```
+
+In the EUR cohorts, the proportion of genetic variance in AD exposure that was shared with major depression was `r decomposition_variance_text(chol_md_pain_ad_eur_fit, "F1", "AD")` and with chronic pain  was `r decomposition_variance_text(chol_pain_md_ad_eur_fit, "F1", "AD")`. AD exposure uniquely shared `r decomposition_variance_text(chol_pain_md_ad_eur_fit, "F2", "AD")` of its variance with major depression only and `r decomposition_variance_text(chol_md_pain_ad_eur_fit, "F2", "AD")` with chronic pain only. There was a residual proportion of variance of `r decomposition_variance_text(chol_pain_md_ad_eur_fit, "F3", "AD")` that was shared with neither major depression nor chronic pain.

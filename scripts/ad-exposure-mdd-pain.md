@@ -368,7 +368,9 @@ if (build_all) {
 
 ## Model
 
-Cholesky decomposition of MD and AD in EAS cohorts.
+### MD and AD
+
+Cholesky decomposition of MD and AD in AMR and SAS cohorts.
 
 ``` r
 chol2_model <- "
@@ -484,10 +486,12 @@ chol2_sas_fit
     ## 8 0.000000000         NA
     ## 1 0.000000000         NA
 
-Cholesky decomposition of pain, MD, and AD in EUR cohorts.
+### Pain, MD, and AD
+
+Cholesky decomposition of pain, MD, and AD in EAS and EUR cohorts.
 
 ``` r
-chol_model <- "
+chol_pain_md_ad_model <- "
 F1 =~ NA*Pain + MD + AD
 F2 =~ NA*MD + AD
 F3 =~ NA*AD
@@ -506,7 +510,7 @@ MD ~~ 0*AD
 AD ~~ 0*AD
 "
 
-chol_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_model)
+chol_pain_md_ad_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_pain_md_ad_model)
 ```
 
     ## [1] "Running primary model"
@@ -514,11 +518,11 @@ chol_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_model)
     ## [1] "Calculating Standardized Results"
     ## [1] "Calculating SRMR"
     ## elapsed 
-    ##   0.196 
+    ##   0.139 
     ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
 
 ``` r
-chol_eas_fit
+chol_pain_md_ad_eas_fit
 ```
 
     ## $modelfit
@@ -566,7 +570,7 @@ chol_eas_fit
     ## 1  0.0000000          NA
 
 ``` r
-chol_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_model)
+chol_pain_md_ad_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_pain_md_ad_model)
 ```
 
     ## [1] "Running primary model"
@@ -574,11 +578,11 @@ chol_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_model)
     ## [1] "Calculating Standardized Results"
     ## [1] "Calculating SRMR"
     ## elapsed 
-    ##   0.187 
+    ##   0.139 
     ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
 
 ``` r
-chol_eur_fit
+chol_pain_md_ad_eur_fit
 ```
 
     ## $modelfit
@@ -624,3 +628,190 @@ chol_eur_fit
     ## 15 0.0000000            NA
     ## 14 0.0000000            NA
     ## 1  0.0000000            NA
+
+Cholesky decomposition of MD then pain, to get unique overlap of latter
+with AD
+
+``` r
+chol_md_pain_ad_model <- "
+F1 =~ NA*MD + Pain + AD
+F2 =~ NA*Pain + AD
+F3 =~ NA*AD
+
+F1 ~~ 1*F1
+F2 ~~ 1*F2
+F3 ~~ 1*F3
+F1 ~~ 0*F2 + 0*F3
+F2 ~~ 0*F3
+
+Pain ~~ 0*Pain
+Pain ~~ 0*MD
+Pain ~~ 0*AD
+MD ~~ 0*MD
+MD ~~ 0*AD
+AD ~~ 0*AD
+"
+
+chol_md_pain_ad_eas_fit <- usermodel(eas_ldsc, estimation = "DWLS", model = chol_md_pain_ad_model)
+```
+
+    ## [1] "Running primary model"
+    ## [1] "Calculating CFI"
+    ## [1] "Calculating Standardized Results"
+    ## [1] "Calculating SRMR"
+    ## elapsed 
+    ##   0.135 
+    ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
+
+``` r
+chol_md_pain_ad_eas_fit
+```
+
+    ## $modelfit
+    ##    chisq df p_chisq AIC CFI SRMR
+    ## df    NA  0      NA  NA  NA   NA
+    ## 
+    ## $results
+    ##     lhs op  rhs Unstand_Est         Unstand_SE STD_Genotype   STD_Genotype_SE
+    ## 3    F1 =~   MD  0.20189088 0.0280719313730079    1.0000000 0.139045071000494
+    ## 4    F1 =~ Pain  0.25873696  0.291149509996562    0.4170087 0.469248266380938
+    ## 2    F1 =~   AD  0.08669118  0.052888235254768    0.5196035 0.316997800611003
+    ## 9    F2 =~ Pain  0.56393714  0.495047444874914    0.9089025 0.797872420629095
+    ## 8    F2 =~   AD  0.14018685  0.166085565278506    0.8402422 0.995472111034695
+    ## 12   F3 =~   AD  0.02584975  0.959843302154151    0.1549362  5.75305055164958
+    ## 5    F1 ~~   F1  1.00000000                       1.0000000                  
+    ## 10   F2 ~~   F2  1.00000000                       1.0000000                  
+    ## 13   F3 ~~   F3  1.00000000                       1.0000000                  
+    ## 6    F1 ~~   F2  0.00000000                       0.0000000                  
+    ## 7    F1 ~~   F3  0.00000000                       0.0000000                  
+    ## 11   F2 ~~   F3  0.00000000                       0.0000000                  
+    ## 18 Pain ~~ Pain  0.00000000                       0.0000000                  
+    ## 16   MD ~~ Pain  0.00000000                       0.0000000                  
+    ## 17 Pain ~~   AD  0.00000000                       0.0000000                  
+    ## 15   MD ~~   MD  0.00000000                       0.0000000                  
+    ## 14   MD ~~   AD  0.00000000                       0.0000000                  
+    ## 1    AD ~~   AD  0.00000000                       0.0000000                  
+    ##      STD_All      p_value
+    ## 3  1.0000000 6.388992e-13
+    ## 4  0.4170087 3.741784e-01
+    ## 2  0.5196035 1.011843e-01
+    ## 9  0.9089025 2.546374e-01
+    ## 8  0.8402422 3.986336e-01
+    ## 12 0.1549362 9.785146e-01
+    ## 5  1.0000000           NA
+    ## 10 1.0000000           NA
+    ## 13 1.0000000           NA
+    ## 6  0.0000000           NA
+    ## 7  0.0000000           NA
+    ## 11 0.0000000           NA
+    ## 18 0.0000000           NA
+    ## 16 0.0000000           NA
+    ## 17 0.0000000           NA
+    ## 15 0.0000000           NA
+    ## 14 0.0000000           NA
+    ## 1  0.0000000           NA
+
+``` r
+chol_md_pain_ad_eur_fit <- usermodel(eur_ldsc, estimation = "DWLS", model = chol_md_pain_ad_model)
+```
+
+    ## [1] "Running primary model"
+    ## [1] "Calculating CFI"
+    ## [1] "Calculating Standardized Results"
+    ## [1] "Calculating SRMR"
+    ## elapsed 
+    ##   0.135 
+    ## [1] "Model fit statistics are all printed as NA as you have specified a fully saturated model (i.e., df = 0)"
+
+``` r
+chol_md_pain_ad_eur_fit
+```
+
+    ## $modelfit
+    ##    chisq df p_chisq AIC CFI SRMR
+    ## df    NA  0      NA  NA  NA   NA
+    ## 
+    ## $results
+    ##     lhs op  rhs Unstand_Est          Unstand_SE STD_Genotype    STD_Genotype_SE
+    ## 3    F1 =~   MD  0.24416572 0.00455611443594496    1.0000000 0.0186599263701944
+    ## 4    F1 =~ Pain  0.16917575 0.00984842654773008    0.6450561 0.0375514086255995
+    ## 2    F1 =~   AD  0.24025988 0.00657946524972344    0.9053205  0.024792007080392
+    ## 9    F2 =~ Pain  0.20040605  0.0135858599908452    0.7641352 0.0518019988428782
+    ## 8    F2 =~   AD  0.06395003  0.0136874386617364    0.2409694 0.0515754797525127
+    ## 12   F3 =~   AD  0.09282028   0.015210228617197    0.3497550  0.057313486571723
+    ## 5    F1 ~~   F1  1.00000000                        1.0000000                   
+    ## 10   F2 ~~   F2  1.00000000                        1.0000000                   
+    ## 13   F3 ~~   F3  1.00000000                        1.0000000                   
+    ## 6    F1 ~~   F2  0.00000000                        0.0000000                   
+    ## 7    F1 ~~   F3  0.00000000                        0.0000000                   
+    ## 11   F2 ~~   F3  0.00000000                        0.0000000                   
+    ## 18 Pain ~~ Pain  0.00000000                        0.0000000                   
+    ## 16   MD ~~ Pain  0.00000000                        0.0000000                   
+    ## 17 Pain ~~   AD  0.00000000                        0.0000000                   
+    ## 15   MD ~~   MD  0.00000000                        0.0000000                   
+    ## 14   MD ~~   AD  0.00000000                        0.0000000                   
+    ## 1    AD ~~   AD  0.00000000                        0.0000000                   
+    ##      STD_All               p_value
+    ## 3  1.0000000              < 5e-300
+    ## 4  0.6450561  3.88414982069391e-66
+    ## 2  0.9053205 6.04058520671843e-292
+    ## 9  0.7641352  3.02799501254861e-49
+    ## 8  0.2409694  2.98035590169464e-06
+    ## 12 0.3497550  1.04427959252669e-09
+    ## 5  1.0000000                  <NA>
+    ## 10 1.0000000                  <NA>
+    ## 13 1.0000000                  <NA>
+    ## 6  0.0000000                  <NA>
+    ## 7  0.0000000                  <NA>
+    ## 11 0.0000000                  <NA>
+    ## 18 0.0000000                  <NA>
+    ## 16 0.0000000                  <NA>
+    ## 17 0.0000000                  <NA>
+    ## 15 0.0000000                  <NA>
+    ## 14 0.0000000                  <NA>
+    ## 1  0.0000000                  <NA>
+
+### Proportions of variance
+
+The proportion of variance captured by each factor can be calculated as
+the square of the factor loadings. This has a [non-central $`\Chi^2`$
+distribution](https://en.wikipedia.org/wiki/Noncentral_chi-squared_distribution)
+with one degree of freedom.
+
+Function to insert text with squared loading and confidence interval for
+placement into text given model, factor, and phenotype:
+
+``` r
+decomposition_variance_text <- function(model, factor_term, phenotype_term, digits = 2) {
+  # pull out line from model table for specified factor (left-hand side of equation)
+  # and phenotype (right-hand side of the equation)
+  loading <- 
+  model$results |>
+    filter(lhs == factor_term, rhs == phenotype_term) |>
+    select(STD_Genotype, STD_Genotype_SE)
+  # get standardised beta (mu) and standardised error (sigma)
+  mu <- loading |> pull(STD_Genotype)
+  # convert standard error to numeric since it is sometimes printed as
+  # character values in the table
+  sigma <- loading |> pull(STD_Genotype_SE) |> as.numeric()
+
+  # calculate variance (squared loading) and its lower and upper 95% CI
+  variance <- mu^2
+  # non centrality parameter
+  ncp <- mu^2 / sigma^2
+  # calculate interval boundaries and then rescale by sigma^2
+  l95 <- qchisq(0.025, df = 1, ncp = ncp) * sigma^2
+  u95 <- qchisq(0.975, df = 1, ncp = ncp) * sigma^2
+
+  "variance (CI = l95, u95)"
+  str_glue("{round(variance, digits)} (CI = {round(l95, digits)}, {round(u95, digits)})")
+}
+```
+
+In the EUR cohorts, the proportion of genetic variance in AD exposure
+that was shared with major depression was 0.82 (CI = 0.73, 0.91) and
+with chronic pain was 0.59 (CI = 0.46, 0.73). AD exposure uniquely
+shared 0.29 (CI = 0.2, 0.39) of its variance with major depression only
+and 0.06 (CI = 0.02, 0.12) with chronic pain only. There was a residual
+proportion of variance of 0.12 (CI = 0.06, 0.21) that was shared with
+neither major depression nor chronic pain.
