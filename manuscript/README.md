@@ -1,28 +1,47 @@
 # Documentation for figures, tables, data associated with the manuscript write up
 
-Enables us to keep track of where figures and tables come from.
+## Results
 
-Maybe include an .Rmd which outputs text with key numeric values, eg. sample sizes.
+### GWAS meta-analysis
 
-## Figures
+-   Half effective sample sizes (`manuscript/scripts/meta_analysis_cohort_summary_table.R` & `manuscript/tables_main.Rmd`)
+-   Number of significant SNPs in each GWAS (`manuscript/scripts/meta_results_section.R`)
+-   Supplementary Table (`manuscript/scripts/supplementary_tables_excell.R` & `manuscript/scripts/supplementary_tables_excel_functions.R`)
+-   Supplementary Figures (`scripts/fixed.Rmd`, `scripts/multi.Rmd`, `workflows/meta.nf` & `manuscript/supplementary_material.Rmd`)
+-   Online Materials (`manuscript/online_materials_excel.R`)
 
-|        Figure Name        |                             Legend (_draft version_)                             |                         Location                         |         Script         |
-| :-----------------------: | :------------------------------------------------------------------------------: | :------------------------------------------------------: | :--------------------: |
-| Supplementary Figure XXXX |                           _chr3 - PLCL2, 1 SNP in CS_                            | `fineMapping/plots/region_plot_3:16751665:16962555.png`  | `fine_mapping_plots.R` |
-| Supplementary Figure XXXX |                      _chr7 - no gene mapped, 2 SNPs in CS_                       | `fineMapping/plots/region_plot_7:41140716:41340716.png`  | `fine_mapping_plots.R` |
-| Supplementary Figure XXXX |                           _chr17 - WNT3, 1 SNP in CS_                            | `fineMapping/plots/region_plot_17:44752612:44952612.png` | `fine_mapping_plots.R` |
-| Supplementary Figure XXXX | _Plot showing SNPs in credible sets are only sig in EUR not AFR or SAS samples._ |        `fineMapping/plots/POST-HOC_PROB_POP.png`         | `fine_mapping_plots.R` |
+### Fine-mapping using SuSiEx
 
-## Tables
+-   Text on credible sets taken from `manuscript/tables/OM1_clumps_finemap.xlsx` and Supplementary Figures 26-28.
+-   Online Materials (`manuscript/online_materials_excel.R`)
+-   Supplementary Figures (`scripts/fine_mapping_plots.R`, `manuscript/supplementary_material.Rmd`)
 
-| Table Name |             Legend (_draft version_)       |        Location                |           Script         |
-| :--------: | :----------------: | :---------------------------: | :------------------------: |
-|  Table X   |     Summary of cohorts included in MR-MEGA meta-analysis. Each row contains sample size information for a meta-analysis of each anti-depressant phenotype. This includes the number of cases, controls and effective sample size (neff) are in each cohort: All of Us, Biobank Japan (BBJ), FinnGen, Generation Scotland (GenScot) and UK Biobank (UKB). Cells with NA mean that cohort was not included in that meta-analysis.  | `antidep-gwas/manuscript/tables/meta_analysis_cohort_summary_table_mrmega.csv` | `antidep-gwas/manuscript/scripts/meta_analysis_cohort_summary_table.R` |
-|  Table X   |   Summary of cohorts included in fixed meta-analysis. Each row contains sample size information for a meta-analysis of each ancestry cluster and anti-depressant phenotype combination. This includes the number of cases, controls and effective sample size (neff) are in each cohort: All of Us, Biobank Japan (BBJ), FinnGen, Generation Scotland (GenScot) and UK Biobank (UKB). Cells with NA mean that cohort was not included in that meta-analysis.  | `antidep-gwas/manuscript/tables/meta_analysis_cohort_summary_table_fixed.csv`  | `antidep-gwas/manuscript/scripts/meta_analysis_cohort_summary_table.R` |
-|  Table X   | Overlap of anti-depressant exposure associated genes with genes identified in MDD GWAS (Adams et al. 2025). The denominator is total number of genes identified by each method in the antidepressant exposure GWAS. The numerator is the number of those genes also itentified by that method in the MDD GWAS. The columns represent the anti-depressant meta-analysis or cross-ancestry if using a multi-ancestry method. |    `antidep-gwas/manuscript/tables/antidep_gwas_mdd_gwas_summary_table.csv`    |        `antidep-gwas/manuscript/scripts/MDD_GWAS_gene_overlap*`        |
+### Gene-set associations
 
-|        Table Name        |                                                         Legend (_draft version_)                                                          |                            Location                             |                        Script                         |
-| :----------------------: | :---------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------: | :---------------------------------------------------: |
-| Supplementary Table XXXX | Significant positionally mapped genes using mBAT-combo (Bonferroni corrected P \< 0.05), for all ancestries and antidepressant subgroups. |         `antidep-gwas/manuscript/tables/mBAT-combo.csv`         | `antidep-gwas/manuscript/scripts/tables_mBAT-combo.R` |
-| Supplementary Table XXXX |         _Summary file output from susiex limited to significant credible set snps. Columns separated into respective ancestries._         | `antidep-gwas/manuscript/tables/susiex_significant_summary.csv` |   `antidep-gwas/manuscript/scripts/tables_susiex.R`   |
-| Supplementary Table XXXX |      _Credible set file output from susiex limited to significant credible set snps. Columns separated into respective ancestries._       |   `antidep-gwas/manuscript/tables/susiex_significant_cs.csv`    |   `antidep-gwas/manuscript/scripts/tables_susiex.R`   |
+-   Text taken from inspecting `manuscript/tables/OM2_gene_mapping.xlsx`
+-   Online Materials (`manuscript/scripts/tables_mBAT-combo.R` & `manuscript/online_materials_excel.R`)
+
+### Cross-ancestry genetic correlations
+
+-   Supplementary Tables (`manuscript/scripts/supplementary_tables_excell.R` & `manuscript/scripts/supplementary_tables_excel_functions.R`)
+-   Text taken from inspecting tables generated in: `manuscript/scripts/tables_rg_ldsc_gwas.R`, `manuscript/scripts/tables_rg_ldsc_meta.R`,
+`manuscript/scripts/tables_rg_popcorn_gwas.R`, `manuscript/scripts/tables_rg_popcorn_meta.R`, `manuscript/scripts/rg_ldsc_external_references.R`.
+
+### Summary-based Mendelian Randomisation
+
+-   Text taken from running `manuscript/scripts/smr.R`.
+-   Online Materials (`manuscript/online_materials_excel.R`)
+
+### Drug target enrichment analysis
+
+-   Drug Targetor run by collaborator (Ivan Andrushevich Petukhov). Results rendered to tables in `manuscript/scripts/drug_targetor.R`, `manuscript/online_materials_excel.R` and `manuscript/tables_main.Rmd`.
+
+### Genomic decomposition of antidepressant indicators
+
+-   Text from `scripts/ad-exposure-mdd-pain.Rmd`.
+
+### Comparing results to MD GWAS
+
+-   Supplementary Table (`manuscript/scripts/supplementary_tables_excell.R` & `manuscript/scripts/supplementary_tables_excel_functions.R`).
+-   Text taken from running scripts in and inspecting tables manually: `manuscript/scripts/MDD_GWAS_gene_overlap.R` & `manuscript/scripts/MDD_GWAS_gene_overlap_summary_table.R`.
+
