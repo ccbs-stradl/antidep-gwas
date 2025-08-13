@@ -4,6 +4,7 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(stringr)
+library(glue)
 
 
 # popcorn log directory
@@ -30,7 +31,9 @@ popcorns <- bind_rows(popcorn_tables, .id = "filename") |>
 
 # keep cross-cluster comparisons
 popcorns_keep <- popcorns |>
-  filter(p1_cluster != p2_cluster)
+  filter(p1_cluster != p2_cluster) |>
+  mutate(CI = str_c("(", round(pgi - 1.96 * SE, 3), ", ", round(pgi + 1.96 * SE, 3), ")")) |>
+  relocate(CI, .after = SE)
 
 file_name <- here::here("manuscript/tables/rg_popcorn_meta.csv")
 write_csv(popcorns_keep, file_name)
@@ -51,6 +54,7 @@ colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
                           "p2_cluster" = "Ancestry cluster of second meta-analysed phenotype", 
                           "pgi" = "Genetic impact correlation",
                           "SE" = "Standard error of genetic impact correlation",
+                          "CI" = "Confidence interval of genetic impact correlation",
                           "Z" = "Z statistic of genetic impact correlation",
                           "P (Z)" = "p-value of Z statistic of genetic impact correlation"
 )

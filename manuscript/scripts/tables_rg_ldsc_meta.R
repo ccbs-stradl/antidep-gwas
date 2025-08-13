@@ -4,6 +4,7 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(stringr)
+library(glue)
 
 
 # between meta ldsc log directory
@@ -45,7 +46,9 @@ ldsc_datasets <- ldsc_tables |>
   separate(p2, into = c("p2_meta", "p2_version", "p2_method", "p2_pheno", "p2_cluster", "p2_ext"),
            sep = "[-.]+", extra = "merge") |>
   # remove column with file extension
-  select(-ends_with('_ext'))
+  select(-ends_with('_ext')) |>
+  mutate(ci = str_c("(", round(rg - 1.96 * se, 3), ", ", round(rg + 1.96 * se, 3), ")")) |>
+  relocate(ci, .after = se)
 
 ext_ldsc_datasets <- ext_ldsc_tables |>
   separate(p1, into = c("p1_meta", "p1_version", "p1_method", "p1_pheno", "p1_cluster", "p1_ext"),
@@ -53,7 +56,9 @@ ext_ldsc_datasets <- ext_ldsc_tables |>
   separate(p2, into = c("p2_pheno", "p2_ext"),
            sep = "[-.]+", extra = "merge") |>
   # remove column with file extension
-  select(-ends_with('_ext'))
+  select(-ends_with('_ext')) |>
+  mutate(ci = str_c("(", round(rg - 1.96 * se, 3), ", ", round(rg + 1.96 * se, 3), ")")) |>
+  relocate(ci, .after = se)
 
 write_csv(ldsc_datasets, here::here("manuscript/tables/rg_ldsc_meta.csv"))
 write_csv(ext_ldsc_datasets, here::here("manuscript/tables/rg_ldsc_meta_external.csv"))
@@ -75,6 +80,7 @@ colname_descriptions_rg_ldsc_meta <- c("p1_meta" = "Name of first meta-analysed 
                           "p2_cluster" = "Ancestry cluster of second meta-analysed phenotype", 
                           "rg" = "Genetic correlation",
                           "se" = "Standard error of genetic correlation",
+                          "ci" = "Confidence interval of genetic correlation",
                           "z" = "Z-score of genetic correlation",
                           "p" = "p-value of genetic correlation", 
                           "h2_obs" = "Observed scale heritability for second cohort",
@@ -101,6 +107,7 @@ colname_descriptions_rg_ldsc_meta_external <- c("p1_meta" = "Name of first meta-
                           "p2_pheno" = "Anti-depressant phenotype of second meta-analysed phenotype", 
                           "rg" = "Genetic correlation",
                           "se" = "Standard error of genetic correlation",
+                          "ci" = "Confidence interval of genetic correlation",
                           "z" = "Z-score of genetic correlation",
                           "p" = "p-value of genetic correlation", 
                           "h2_obs" = "Observed scale heritability for second cohort",
