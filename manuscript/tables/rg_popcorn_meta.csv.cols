@@ -11,5 +11,6 @@ p2_pheno	Anti-depressant phenotype of second meta-analysed phenotype
 p2_cluster	Ancestry cluster of second meta-analysed phenotype
 pgi	Genetic impact correlation
 SE	Standard error of genetic impact correlation
+CI	95% Confidence interval of genetic impact correlation
 Z	Z statistic of genetic impact correlation
 P (Z)	p-value of Z statistic of genetic impact correlation

@@ -11,6 +11,7 @@ p2_pheno	Anti-depressant phenotype of second meta-analysed phenotype
 p2_cluster	Ancestry cluster of second meta-analysed phenotype
 rg	Genetic correlation
 se	Standard error of genetic correlation
+ci	95% Confidence interval of genetic correlation
 z	Z-score of genetic correlation
 p	p-value of genetic correlation
 h2_obs	Observed scale heritability for second cohort

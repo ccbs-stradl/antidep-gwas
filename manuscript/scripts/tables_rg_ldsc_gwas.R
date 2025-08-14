@@ -4,6 +4,7 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(stringr)
+library(glue)
 
 
 # ldsc log directory
@@ -50,7 +51,9 @@ ldsc_datasets_keep <- ldsc_datasets |>
          str_c(p2_cohort, p2_version, sep = "-") %in% cohorts_versions) |>
   filter(p1_pheno != "N06AX", p2_pheno != "N06AX") |>
   select(-ext) |>
-  select(starts_with("p1"), starts_with("p2"), everything())
+  select(starts_with("p1"), starts_with("p2"), everything()) |>
+  mutate(ci = str_c("(", round(rg + qnorm(0.025) * se, 3), ", ", round(rg + qnorm(0.975) * se, 3), ")")) |>
+  relocate(ci, .after = se)
 
 file_name <- here::here("manuscript/tables/rg_ldsc_gwas.csv")
 write_csv(ldsc_datasets_keep, file_name)
@@ -66,6 +69,7 @@ colname_descriptions <- c("p1_cohort" = "Name of first cohort",
                           "p2_version" = "Version of second cohort",
                           "rg" = "Genetic correlation",
                           "se" = "Standard error of genetic correlation",
+                          "ci" = "95% confidence interval of genetic correlation",
                           "z" = "Z-score of genetic correlation",
                           "p" = "p-value of genetic correlation", 
                           "h2_obs" = "Observed scale heritability for second cohort",

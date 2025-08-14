@@ -9,6 +9,7 @@ p2_cluster	Ancestry cluster of second cohort
 p2_version	Version of second cohort
 rg	Genetic correlation
 se	Standard error of genetic correlation
+ci	95% confidence interval of genetic correlation
 z	Z-score of genetic correlation
 p	p-value of genetic correlation
 h2_obs	Observed scale heritability for second cohort
