@@ -5,6 +5,7 @@ library(tidyr)
 library(readr)
 library(stringr)
 library(glue)
+library(data.table)
 
 
 # between meta ldsc log directory
@@ -47,7 +48,7 @@ ldsc_datasets <- ldsc_tables |>
            sep = "[-.]+", extra = "merge") |>
   # remove column with file extension
   select(-ends_with('_ext')) |>
-  mutate(ci = str_c("(", round(rg - 1.96 * se, 3), ", ", round(rg + 1.96 * se, 3), ")")) |>
+  mutate(ci = str_c("(", round(rg + qnorm(0.025) * se, 3), ", ", round(rg + qnorm(0.975) * se, 3), ")")) |>
   relocate(ci, .after = se)
 
 ext_ldsc_datasets <- ext_ldsc_tables |>
@@ -57,7 +58,7 @@ ext_ldsc_datasets <- ext_ldsc_tables |>
            sep = "[-.]+", extra = "merge") |>
   # remove column with file extension
   select(-ends_with('_ext')) |>
-  mutate(ci = str_c("(", round(rg - 1.96 * se, 3), ", ", round(rg + 1.96 * se, 3), ")")) |>
+  mutate(ci = str_c("(", round(rg + qnorm(0.025) * se, 3), ", ", round(rg + qnorm(0.975) * se, 3), ")")) |>
   relocate(ci, .after = se)
 
 write_csv(ldsc_datasets, here::here("manuscript/tables/rg_ldsc_meta.csv"))
@@ -80,7 +81,7 @@ colname_descriptions_rg_ldsc_meta <- c("p1_meta" = "Name of first meta-analysed 
                           "p2_cluster" = "Ancestry cluster of second meta-analysed phenotype", 
                           "rg" = "Genetic correlation",
                           "se" = "Standard error of genetic correlation",
-                          "ci" = "Confidence interval of genetic correlation",
+                          "ci" = "95% Confidence interval of genetic correlation",
                           "z" = "Z-score of genetic correlation",
                           "p" = "p-value of genetic correlation", 
                           "h2_obs" = "Observed scale heritability for second cohort",

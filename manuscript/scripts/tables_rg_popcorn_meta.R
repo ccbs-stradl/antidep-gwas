@@ -32,7 +32,7 @@ popcorns <- bind_rows(popcorn_tables, .id = "filename") |>
 # keep cross-cluster comparisons
 popcorns_keep <- popcorns |>
   filter(p1_cluster != p2_cluster) |>
-  mutate(CI = str_c("(", round(pgi - 1.96 * SE, 3), ", ", round(pgi + 1.96 * SE, 3), ")")) |>
+  mutate(CI = str_c("(", round(pgi + qnorm(0.025) * SE, 3), ", ", round(pgi + qnorm(0.975) * SE, 3), ")")) |>
   relocate(CI, .after = SE)
 
 file_name <- here::here("manuscript/tables/rg_popcorn_meta.csv")
@@ -54,7 +54,7 @@ colname_descriptions <- c("p1_meta" = "Name of first meta-analysed phenotype",
                           "p2_cluster" = "Ancestry cluster of second meta-analysed phenotype", 
                           "pgi" = "Genetic impact correlation",
                           "SE" = "Standard error of genetic impact correlation",
-                          "CI" = "Confidence interval of genetic impact correlation",
+                          "CI" = "95% Confidence interval of genetic impact correlation",
                           "Z" = "Z statistic of genetic impact correlation",
                           "P (Z)" = "p-value of Z statistic of genetic impact correlation"
 )

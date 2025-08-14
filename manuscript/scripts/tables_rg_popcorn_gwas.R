@@ -43,7 +43,7 @@ popcorns_keep <- popcorns |>
          str_c(p2_cohort, p2_version, sep = "-") %in% cohorts_versions) |>
          filter(p1_cluster != p2_cluster) |>
          filter(p1_pheno != "N06AX", p2_pheno != "N06AX") |>
-         mutate(CI = str_c("(", round(pgi - 1.96 * SE, 3), ", ", round(pgi + 1.96 * SE, 3), ")")) |>
+         mutate(CI = str_c("(", round(pgi + qnorm(0.025) * SE, 3), ", ", round(pgi + qnorm(0.975) * SE, 3), ")")) |>
          relocate(CI, .after = SE)
 
 file_name <- here::here("manuscript/tables/rg_popcorn_gwas.csv")
@@ -62,7 +62,7 @@ colname_descriptions <- c("p1_cohort" = "Name of first cohort",
                           "p2_version" = "Version of second cohort",
                           "pgi" = "Genetic impact correlation",
                           "SE" = "Standard error of genetic impact correlation",
-                          "CI" = "Confidence interval of genetic impact correlation",
+                          "CI" = "95% Confidence interval of genetic impact correlation",
                           "Z" = "Z statistic of genetic impact correlation",
                           "P (Z)" = "p-value of Z statistic of genetic impact correlation"
 )
