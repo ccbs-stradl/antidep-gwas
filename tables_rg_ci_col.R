@@ -1,5 +1,8 @@
-# Run this script after other tables_rg_*.R scripts
-# to add confidence interval column to the rg results tables
+# Run this script after other tables_rg_*.R scripts, if you need to add CIs
+# columns to those tables. 
+# Then run supplementary_tables_excell.R to update the Supplementary table file.
+# Note that this script does not make the sidecar .cols files with updated CI so 
+# manual edit of the README sheet in excel may be required.
 # ------------------------------------------------------------------------------
 # Function to read in tables and returned a named list,
 # where the name is the file name without extension
