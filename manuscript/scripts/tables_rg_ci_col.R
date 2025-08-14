@@ -1,4 +1,4 @@
-# Run this script after other tables_rg_*.R scripts, if you need to add CIs
+# Run this script after other tables_rg_*.R scripts, only if you need to add CIs
 # columns to those tables. 
 # Then run supplementary_tables_excell.R to update the Supplementary table file.
 # Note that this script does not make the sidecar .cols files with updated CI so 
