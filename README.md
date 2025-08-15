@@ -28,4 +28,4 @@ Symlinks to the directories `fineMapping/`, `maps/` `meta/` & `models/` need to 
 
 ## Contact
 
-For questions or collaboration inquiries, please contact Mark Adams ([mark.adams\@ed.ac.uk](mailto:mark.adams@ed.ac.uk){.email}).
+For questions or collaboration inquiries, please contact Mark Adams ([mark.adams\@ed.ac.uk](mailto:mark.adams@ed.ac.uk)).
