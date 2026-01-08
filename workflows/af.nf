@@ -57,7 +57,21 @@ workflow {
     AF_CH = AF_IN(VCF_IN_CH)
     // convert tables to parquet
     AF_PARQUET_CH = PARQUET(AF_CH)
-      .view()
+
+/*
+  Allele frequency correlations
+*/
+  // process inputs into metasets
+  AF_IN_CH = AF_PARQUET_CH
+    .combine(IN_META_CH, by: 0)
+    .transpose(by: 4)
+    .map { it -> [[metaset: it[4].metaset]].plus(it) }
+    .groupTuple(by: 0)
+    // do not keep last element, which is the metaset tracker dictionary
+    .map { it -> it[0..4] }
+
+  CORR_CH = CORR(AF_IN_CH)
+    .view()
 
 }
 
@@ -100,7 +114,7 @@ process PARQUET {
   label 'analysis'
 
   cpus 1
-  memory 2.GB
+  memory 8.GB
   time 10.m
 
   input:
@@ -119,8 +133,45 @@ process PARQUET {
 
   afs_paths = "${afs}"
 
-  afs = pl.scan_csv(afs_paths, separator = "\\t", new_columns = ["CHROM", "POS", "ID", "ALT", "REF", "AFCAS", "AFCON"])
+  afs = pl.scan_csv(afs_paths, separator = "\\t", new_columns = ["CHROM", "POS", "ID", "ALT", "REF", "${dataset}.AFCAS", "${dataset}.AFCON"])
 
   afs.sink_parquet("${dataset}.parquet")
+  """
+}
+
+/*
+  Calculate correlations between allele frequencies
+*/
+process CORR {
+  tag "${metaset.metaset}"
+  label 'analysis'
+
+  cpus 16
+  memory 128.GB
+  time 30.m
+
+  input:
+  tuple val(metaset), val(details), val(datasets), path(afs), path(csvs)
+
+  output:
+  tuple val(metaset), path("${metaset.metaset}.corr.txt")
+
+  script:
+  """
+  #!python3
+  import os
+
+  os.environ["POLARS_MAX_THREADS"] = "${task.cpus}"
+  import polars as pl
+  from functools import reduce
+
+  afs_paths = "${afs}"
+
+  afs_list = [pl.scan_parquet(path) for path in afs_paths.split()]
+
+  afs = reduce(
+    lambda left, right: left.join(right, on = ["CHROM", "POS", "ID", "ALT", "REF"], how = "inner"),
+    afs_list
+  )
   """
 }
