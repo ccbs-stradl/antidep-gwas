@@ -3,7 +3,7 @@
 */
 
 params.vcf = "results/vcf/gwas/GRCh38/*.{vcf.gz,vcf.gz.tbi,csv}"
-params.metasets = "metasets/*.csv"
+params.metasets = "inputs/metasets/*.csv"
 
 workflow {
   /*
@@ -24,4 +24,103 @@ workflow {
       .transpose()
       .map { it -> it[1].plus([metaset: it[0]]) }
 
+  /*
+    Pre-processing
+  */
+    
+    // select datasets that are used by a metaset
+    // key to cohort and version
+    VCF_CV_CH = VCF_CH
+      .map { it -> [it[0].cohort, it[0].version].plus(it) }
+    METASET_CV_CH = METASET_CH
+      .map { it -> [it.cohort, it.version].plus(it) }
+      
+    // merge datasets with metasets, then gather distinct datasets
+    VCF_IN_METASET_CH = METASET_CV_CH
+      .combine(VCF_CV_CH, by: [0, 1])
+      .map { it -> [it[3], it[4], it[5], it[2]]}
+      .groupTuple(by: [0, 1, 2])
+
+    // remove metaset information for input processing
+    VCF_IN_CH = VCF_IN_METASET_CH
+      .map { it -> it[0..2]}
+
+    // track metasets
+    IN_META_CH = VCF_IN_METASET_CH
+      .map { it ->  it[0,3] }
+        
+  /*
+    Extract and convert
+  */
+
+    // get allele frequency colums from VCF
+    AF_CH = AF_IN(VCF_IN_CH)
+    // convert tables to parquet
+    AF_PARQUET_CH = PARQUET(AF_CH)
+      .view()
+
+}
+
+/* Query VCFs to extract allele frequency information
+*/
+
+process AF_IN {
+  tag "${dataset}"
+  label 'tools'
+
+  cpus 1
+  memory 1.GB
+  time 30.m
+
+  input:
+  tuple val(details), val(dataset), path(vcf)
+
+  output:
+  tuple val(details), val(dataset), path("${dataset}.txt.gz"), path("${dataset}.csv", includeInputs: true)
+
+  script:
+  """
+  # bcf query to get required columns
+  bcftools norm -Ou -m- ${dataset}.vcf.gz |\
+  bcftools query \
+  -H -f '%CHROM %POS %ID %ALT %REF [%AFCAS] [%AFCON]\n' |\
+  awk -v OFS='\t' '\$1 = \$1' |\
+  gzip -c > ${dataset}.txt.gz
+  """
+
+
+}
+
+/*
+Convert tables to arrow/parquet
+*/
+
+process PARQUET {
+  tag "${dataset}"
+  label 'analysis'
+
+  cpus 1
+  memory 2.GB
+  time 10.m
+
+  input:
+  tuple val(details), val(dataset), path(afs), path(csv)
+
+  output:
+  tuple val(details), val(dataset), path("${dataset}.parquet"), path(csv, includeInputs: true)
+
+  script:
+  """
+  #!python3
+  import os
+
+  os.environ["POLARS_MAX_THREADS"] = "${task.cpus}"
+  import polars as pl
+
+  afs_paths = "${afs}"
+
+  afs = pl.scan_csv(afs_paths, separator = "\\t", new_columns = ["CHROM", "POS", "ID", "ALT", "REF", "AFCAS", "AFCON"])
+
+  afs.sink_parquet("${dataset}.parquet")
+  """
 }
