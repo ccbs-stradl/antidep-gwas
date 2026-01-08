@@ -71,7 +71,6 @@ workflow {
     .map { it -> it[0..4] }
 
   CORR_CH = CORR(AF_IN_CH)
-    .view()
 
 }
 
@@ -146,15 +145,17 @@ process CORR {
   tag "${metaset.metaset}"
   label 'analysis'
 
-  cpus 16
-  memory 128.GB
+  publishDir "manuscript/tables", mode: 'copy'
+
+  cpus 8
+  memory 31.GB
   time 30.m
 
   input:
   tuple val(metaset), val(details), val(datasets), path(afs), path(csvs)
 
   output:
-  tuple val(metaset), path("${metaset.metaset}.corr.txt")
+  tuple val(metaset), path("${metaset.metaset}.corr.csv")
 
   script:
   """
@@ -166,12 +167,21 @@ process CORR {
   from functools import reduce
 
   afs_paths = "${afs}"
+  variant_ids = ["CHROM", "POS", "ID", "ALT", "REF"]
 
   afs_list = [pl.scan_parquet(path) for path in afs_paths.split()]
 
+  # join all data frame together
   afs = reduce(
     lambda left, right: left.join(right, on = ["CHROM", "POS", "ID", "ALT", "REF"], how = "inner"),
     afs_list
   )
+
+  # select allele frequency columns
+  af_cas_con = afs.select(pl.exclude(["CHROM", "POS", "ID", "ALT", "REF"]))
+
+  af_corr = af_cas_con.collect(engine = "streaming").corr()
+
+  af_corr.write_csv("${metaset.metaset}.corr.csv")
   """
 }
