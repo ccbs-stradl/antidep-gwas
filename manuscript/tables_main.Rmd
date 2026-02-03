@@ -64,6 +64,29 @@ saveWorkbook(wb, file_path , overwrite = TRUE)
 ```
 
 
+```{r hits}
+# clumped hits
+clumps_fixed <- read_csv(here::here("manuscript/tables/clumps_fixed_antidep-2501.clumps.csv"))
+clumps_mrmega <- read_csv(here::here("manuscript/tables/clumps_mrmega_antidep-2501.clumps.csv"))
+
+clumps <- bind_rows(clumps_fixed, clumps_mrmega) |>
+  group_by(dataset) |>
+  count(name = "nsnps") |>
+  ungroup() |>
+  separate_wider_delim(
+    dataset,
+    delim = "-",
+    names = c("ATC", "Cluster")
+  ) |>
+  mutate(
+    Cluster = if_else(
+      Cluster == "DIV",
+      true = "MR-MEGA",
+      false = Cluster
+    )
+  )
+```
+
 ```{r sample_size}
 # summary sample size counts for fixed and mr-mega analyis
 # break down by cluster for fixed, just show totals for MR-MEGA
@@ -91,13 +114,13 @@ bind_rows(summary_table_fixed, summary_table_mrmega) |>
                          false = cluster)) |>
   group_by(method, ATC, Cluster) |>
   summarize(`N studies` = n(), across(cases:neff, sum)) |>
-  transmute(ATC, Cluster, `N studies`, Cases = cases, Controls = controls,
-            `Neff/2` = round(neff/2, 2)) |>
   ungroup() |>
-  select(-method)
+  left_join(clumps, by = c("ATC", "Cluster")) |>
+  transmute(ATC, Cluster, `N studies`, Cases = cases, Controls = controls,
+            `Neff/2` = round(neff/2, 2), `GWAS Loci` = coalesce(nsnps, 0))
 ```
 
-**Table `r sample_size_table_idx`:** Sample sizes for GWAS meta-analyses. Fixed-effects analyses are listed separately for each population cluster (AFR, AMR, EAS, EUR, MID, and SAS) and totals are given for the multi-ancestry analysis (MR-MEGA). Neff/2 = half effective sample size. ATC = Anatomical Therapeutic Chemical classification subgroups (N06A: antidepressants; N06AA: non-selective monoamine reuptake inhibitors; N06AB: selective serotonin reuptake inhibitors).
+**Table `r sample_size_table_idx`:** Sample sizes and number of associated loci for GWAS meta-analyses. Fixed-effects analyses are listed separately for each population cluster (AFR, AMR, EAS, EUR, MID, and SAS) and totals are given for the multi-ancestry analysis (MR-MEGA). Neff/2 = half effective sample size. ATC = Anatomical Therapeutic Chemical classification subgroups (N06A: antidepressants; N06AA: non-selective monoamine reuptake inhibitors; N06AB: selective serotonin reuptake inhibitors).
 
 ```{r sample_size_table}
 # print thousands seperator

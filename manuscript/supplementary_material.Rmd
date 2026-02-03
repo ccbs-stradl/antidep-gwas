@@ -47,13 +47,23 @@ SNPs with effective sample sizes < 0.8 or with duplicate IDs were removed from t
 
 # Results
 
+## Allele frequency correlations
+
+```{r af_corr, results="asis", echo=FALSE}
+fig_num <- offset + 1
+fig <- here::here("scripts", "gwas-af_files", "figure-gfm", "corrplot-1.png")
+cat("![](", fig, ")\n\n", sep = "")
+cat(paste0("**", glue("Supplementary Figure {fig_num}"), ". Correlations in case and control allele frequencies among all summary statistics.** AOU = All of Us, BBJ = Biobank Japan, FG = FinnGen, GS = GenScot UKB = UK Biobank; Ca = Cases, Co = Controls; A = N06A, AA = N06AA, AB = N06AB, AX = N06AX."))
+offset <- fig_num
+```
+
 ## GWAS meta-analysis
 
 ```{r fixed_upset, results="asis", echo=FALSE}
-fig_num <- 1
-fig <- here::here("scripts", "fixed_files", "figure-gfm", "overlaps-1.png")
+fig_num <- offset + 1
+fig <- here::here("scripts", "loci_files", "figure-gfm", "overlaps-1.png")
 cat("![](", fig, ")\n\n", sep = "")
-cat(paste0("**", glue("Supplementary Figure {fig_num}"), ". Number of idependent genome wide significant SNPs in each fixed meta-analysis.** Plot shows overlap in significant SNPs between antidepressant phenotype and ancestries. Genome wide significance is defined as p-value < 5e-8."))
+cat(paste0("**", glue("Supplementary Figure {fig_num}"), ". Number of idependent genome wide significant SNPs in each meta-analysis.** Plot shows overlap in significant SNPs between antidepressant phenotype and ancestry clusters. Genome wide significance is defined as p-value < 5e-8."))
 offset <- fig_num
 ```
 

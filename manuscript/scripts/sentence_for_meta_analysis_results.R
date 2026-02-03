@@ -6,7 +6,7 @@
 library("rjson")
 library(stringr)
 
-json_files <- list.files("vcf/meta/GRCh38",
+json_files <- list.files("results/vcf/meta/GRCh38",
            pattern = "N06A-.*\\.json$",
            full.names = TRUE)
 
@@ -18,7 +18,7 @@ json_data <- lapply(json_files, function(json_file) {
 lapply(json_data, function(json){
   cluster <- json[["cluster"]]
   neff <- json[["neff"]]
-  N <- round(neff/2, 3)
+  N <- round(neff/2, 0)
   paste0(cluster, " = ",N , "; ")
 }) %>% do.call(paste0, .)
 
