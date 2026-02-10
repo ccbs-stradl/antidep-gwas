@@ -13,6 +13,8 @@ library(topr)
 library(UpSetR)
 library(plyranges)
 library(ggplot2)
+library(readxl)
+library(easylift)
 ```
 
 ```{r metaset}
@@ -52,8 +54,13 @@ clumped_ranges_grs <- lapply(clumps, function(cr) {
       start,
       end,
       ID = matches("^(ID|MarkerName)$")) |>
-    mutate(CHROM = str_remove(CHROM, "chr")) |>
-    mutate(CHROM = if_else(CHROM == "X", true = "23", false = CHROM)) |>
+    mutate(
+      CHROM = if_else(
+        str_detect(CHROM, "chr"),
+        true = as.character(CHROM),
+        false = str_c("chr", CHROM)
+      )
+    ) |>
     as_granges(seqnames = CHROM, start = start, end = end) |>
     set_genome_info(genome = "hg38")
 })
@@ -130,3 +137,37 @@ filter_by_non_overlaps(
 ```
 
 
+## MDD2025
+
+Compare to PGC MDD
+```{r mdd2025}
+mdd2025_all <- read_excel(here::here("manuscript/reference/MDD_GWAS_Online_Results_(COJO).xlsx"), sheet = 2) |>
+  mutate(P = as.numeric(P))
+
+mdd2025_eur <- read_excel(here::here("manuscript/reference/MDD_GWAS_Online_Results_(COJO).xlsx"), sheet = 3)
+
+mdd2025_list <- list(mdd2025_all = mdd2025_all, mdd2025_eur = mdd2025_eur)
+
+mdd2025_hg19_grs <- lapply(mdd2025_list, function(cr) {
+  cr |>
+    transmute(
+      CHROM = if_else(CHR == 23, true = "chrX", false = str_c("chr", CHR)),
+      start = Locus.Left,
+      end = Locus.Right,
+      SNP
+    ) |>
+    as_granges(seqnames = CHROM, start = start, end = end) |>
+    set_genome_info(genome = "hg19")
+})
+
+chain <- here::here("reference/hg19ToHg38.over.chain.gz")
+
+mdd2025_grs <- lapply(mdd2025_hg19_grs, function(gr) easylift(gr, "hg38", chain))
+
+mdd2025_gr <- reduce_ranges(bind_ranges(mdd2025_grs))
+```
+
+Overlaps
+```{r}
+length(filter_by_overlaps(all_gr, mdd2025_gr))
+```
