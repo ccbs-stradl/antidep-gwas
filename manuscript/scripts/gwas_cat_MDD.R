@@ -16,7 +16,7 @@ library(readxl)
 ################################
 ######## FUNCTIONS #############
 read_sheet <- function(sheet_index, path) {
-  read_xlsx(here::here('manuscript/MDD_GWAS_Online_Results_(COJO).xlsx'), sheet = sheet_index)
+  read_xlsx(here::here('manuscript/reference/MDD_GWAS_Online_Results_(COJO).xlsx'), sheet = sheet_index)
 }
 
 pull_SNPs <- function(sheet, p_threshold = 5e-8){
@@ -62,7 +62,7 @@ if(!exists("gwcat")) {
 ancestry <- list("multi" = 2,
                  "EUR" = 3)
 
-gwascat_tables  <- main(gwcat = gwcat, ancestry = ancestry, path = here::here('manuscript/MDD_GWAS_Online_Results_(COJO).xlsx'))
+gwascat_tables  <- main(gwcat = gwcat, ancestry = ancestry, path = here::here('manuscript/reference/MDD_GWAS_Online_Results_(COJO).xlsx'))
 gwascat_tables
 
 # ------------------------------
