@@ -79,35 +79,40 @@ main <- function() {
   # Set table_index to 1
   table_index <- update_table_index(0)
 
-
-# Create the supplementary table for the clumps and fine mapping results
-create_table(
-  paths = rep("manuscript/tables", 4),
-  regex = c(
-    "clumps_fixed_antidep-2501.clumps",
-    "clumps_mrmega_antidep-2501.clumps",
-    "susiex_significant_summary",
-    "susiex_significant_cs"
-  ),
-  sheet_names = c(
-    "clumps fixed",
-    "clumps MR-MEGA",
-    "SuSiEx summary",
-    "SuSiEx credible sets"
-  ),
-  excel_file_name = here::here(glue("manuscript/tables/OM{table_index}_clumps_finemap.xlsx")),
-  table_index,
-  legend_title = "Clumping and fine mapping results for the meta-analysis of the antidepressant GWAS.",
-  legend_text_prefix = "Results are divided into ",
-  legend_text_sections = c(
-    "fixed clumping results across all ancestries and antidepressant phenotypes",
-    "MR-MEGA clumping results",
-    "significant SuSiEx summary statistics",
-    "significant SuSiEx credible sets"
-  ),
-  cell_title_width = 30,
-  cell_title_height = 50
-)
+  # Create the supplementary table for the LDSC/popcorn results
+  create_table(
+    paths = rep("manuscript/tables", 6),
+    regex = c(
+      "rg_ldsc_gwas.csv",
+      "rg_ldsc_meta.csv",
+      "rg_ldsc_meta_external",
+      "rg_ldsc_external_references",
+      "rg_popcorn_gwas",
+      "rg_popcorn_meta"
+    ),
+    sheet_names = c(
+      "LDSC gwas",
+      "LDSC meta",
+      "LDSC meta external",
+      "GWAS references",
+      "Popcorn gwas",
+      "Popcorn meta"
+    ),
+    excel_file_name = here::here(glue("manuscript/tables/OM{table_index}_ldsc_popcorn.xlsx")),
+    table_index,
+    legend_title = "Cross-ancestry genetic correlations (LDSC and popcorn) between cohorts, meta-analyses and external traits", # nolint
+    legend_text_prefix = "Results are divided into ",
+    legend_text_sections = c(
+      "LDSC of input cohort GWASs",
+      "LDSC of meta-analysed GWASs",
+      "LDSC of meta-analysed GWASs with external traits",
+      "References for external traits used in the LDSC analysis",
+      "Popcorn of input cohort GWASs",
+      "Popcorn of meta-analysed GWASs"
+    ),
+    cell_title_width = 47,
+    cell_title_height = 32
+  )
 
 # Update table index
 table_index <- update_table_index(table_index)
