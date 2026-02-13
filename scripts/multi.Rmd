@@ -53,19 +53,19 @@ mrmega_n06ab_assoc <- get_assoc(mrmega_n06ab)
 
 ```
 
-```{r multi_manhattan_n06a, fig.width=8, fig.height=4.5, dpi=218, cache = TRUE}
+```{r multi_manhattan_n06a, fig.width=8, fig.height=4.5, dpi=300, cache = TRUE}
 plot_manhat(mrmega_n06a_assoc)
 
 ```
 
 
-```{r multi_manhattan_n06aa, fig.width=8, fig.height=4.5, dpi=218, cache = TRUE}
+```{r multi_manhattan_n06aa, fig.width=8, fig.height=4.5, dpi=300, cache = TRUE}
 plot_manhat(mrmega_n06aa_assoc)
 
 ```
 
 
-```{r multi_manhattan_n06ab, fig.width=8, fig.height=4.5, dpi=218, cache = TRUE}
+```{r multi_manhattan_n06ab, fig.width=8, fig.height=4.5, dpi=300, cache = TRUE}
 plot_manhat(mrmega_n06ab_assoc)
 
 ```

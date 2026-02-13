@@ -3,108 +3,13 @@ Antidepressant exposure GWAS fixed-effects meta-analysis
 
 ``` r
 library(dplyr)
-```
-
-    ## 
-    ## Attaching package: 'dplyr'
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     filter, lag
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, setdiff, setequal, union
-
-``` r
 library(here)
-```
-
-    ## here() starts at /Users/mark/Work/antidep-gwas
-
-``` r
 library(readr)
 library(stringr)
 library(tidyr)
 library(topr)
 library(UpSetR)
 library(plyranges)
-```
-
-    ## Loading required package: BiocGenerics
-
-    ## 
-    ## Attaching package: 'BiocGenerics'
-
-    ## The following objects are masked from 'package:dplyr':
-    ## 
-    ##     combine, intersect, setdiff, union
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     IQR, mad, sd, var, xtabs
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     anyDuplicated, aperm, append, as.data.frame, basename, cbind,
-    ##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
-    ##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
-    ##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-    ##     Position, rank, rbind, Reduce, rownames, sapply, setdiff, table,
-    ##     tapply, union, unique, unsplit, which.max, which.min
-
-    ## Loading required package: IRanges
-
-    ## Loading required package: S4Vectors
-
-    ## Loading required package: stats4
-
-    ## 
-    ## Attaching package: 'S4Vectors'
-
-    ## The following object is masked from 'package:tidyr':
-    ## 
-    ##     expand
-
-    ## The following objects are masked from 'package:dplyr':
-    ## 
-    ##     first, rename
-
-    ## The following object is masked from 'package:utils':
-    ## 
-    ##     findMatches
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     expand.grid, I, unname
-
-    ## 
-    ## Attaching package: 'IRanges'
-
-    ## The following objects are masked from 'package:dplyr':
-    ## 
-    ##     collapse, desc, slice
-
-    ## Loading required package: GenomicRanges
-
-    ## Loading required package: GenomeInfoDb
-
-    ## 
-    ## Attaching package: 'plyranges'
-
-    ## The following object is masked from 'package:IRanges':
-    ## 
-    ##     slice
-
-    ## The following objects are masked from 'package:dplyr':
-    ## 
-    ##     between, n, n_distinct
-
-    ## The following object is masked from 'package:stats':
-    ## 
-    ##     filter
-
-``` r
 library(ggplot2)
 ```
 
@@ -348,6 +253,10 @@ manh_pheno("N06A", sumstats, min_p, cluster_colors)
 ```
 
 ![](fixed_files/figure-gfm/manhattan_n06a-1.png)<!-- -->
+
+``` r
+ggsave(here::here("scripts/fixed_files/figure-gfm/manhattan_n06a-1.pdf"), width = 12, height = 6.75)
+```
 
 ### N06AA
 
